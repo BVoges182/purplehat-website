@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purple Hat — Accounting, elevated by intelligence</title>
+  <meta name="description" content="Purple Hat is a modern accounting practice. Monthly accounting, management reports, annual financial statements, and AI integrations for Xero and QuickBooks.">
+  <meta name="theme-color" content="#f6f3ff">
+  <link rel="icon" href="logo.png?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lilac: "#f6f3ff",
+            ink: "#2a1548",
+            mute: "#5c5470",
+            plum: "#6d28d9"
+          },
+          fontFamily: {
+            display: ["Nunito", "sans-serif"],
+            sans: ["Outfit", "sans-serif"]
+          },
+          maxWidth: { page: "72rem" },
+          boxShadow: {
+            card: "0 18px 40px rgba(76, 29, 149, 0.08)",
+            soft: "0 10px 30px rgba(76, 29, 149, 0.12)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+    body {
+      margin: 0;
+      overflow-x: clip;
+      color: #4c4560;
+      font-family: Outfit, sans-serif;
+      background:
+        radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
+        radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
+        radial-gradient(680px 420px at 50% 110%, rgba(221, 214, 254, 0.55), transparent 50%),
+        #f7f4ff;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .font-display { font-family: Nunito, sans-serif; }
+    ::selection { background: #ddd6fe; color: #2a1548; }
+    :focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; }
+    .skip {
+      position: absolute; left: 1rem; top: -4rem; z-index: 80;
+      background: #2a1548; color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px;
+    }
+    .skip:focus { top: 1rem; }
+    #nav {
+      background: rgba(247, 244, 255, 0.72);
+      border-bottom: 1px solid transparent;
+      backdrop-filter: blur(16px);
+      transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    #nav.is-scrolled {
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom-color: rgba(109, 40, 217, 0.08);
+      box-shadow: 0 10px 30px rgba(76, 29, 149, 0.06);
+    }
+    .nav-link { color: #4c4560; font-weight: 500; }
+    .nav-link:hover, .nav-link.is-active { color: #5b21b6; }
+    .nav-item { position: relative; }
+    .nav-item::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 100%;
+      height: 0.9rem;
+    }
+    .nav-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.7rem);
+      left: 50%;
+      translate: -50% 0;
+      min-width: 15rem;
+      padding: 0.4rem;
+      border-radius: 1rem;
+      background: #fff;
+      border: 1px solid rgba(109, 40, 217, 0.12);
+      box-shadow: 0 16px 40px rgba(76, 29, 149, 0.12);
+      z-index: 60;
+    }
+    .nav-item:hover .nav-menu,
+    .nav-item:focus-within .nav-menu { display: block; }
+    .nav-menu a {
+      display: block;
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.8rem;
+      color: #2a1548;
+      font-weight: 600;
+    }
+    .nav-menu a:hover,
+    .nav-menu a[aria-current="page"] { background: #f5f0ff; color: #5b21b6; }
+    .chev { transition: transform 0.2s ease; }
+    .is-expanded .chev { transform: rotate(180deg); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px;
+      font-family: Nunito, sans-serif; font-weight: 800; letter-spacing: 0.01em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+      box-shadow: 0 10px 24px rgba(109, 40, 217, 0.28);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(109, 40, 217, 0.34); }
+    .btn-ghost {
+      color: #4c1d95; background: #fff;
+      border: 1px solid rgba(109, 40, 217, 0.18);
+    }
+    .btn-ghost:hover { transform: translateY(-2px); background: #f5f3ff; }
+    .mascot { filter: drop-shadow(0 22px 28px rgba(76, 29, 149, 0.18)); animation: floaty 6.5s ease-in-out infinite; }
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(109, 40, 217, 0.08);
+      box-shadow: 0 16px 40px rgba(76, 29, 149, 0.07);
+      border-radius: 1.5rem;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 22px 46px rgba(76, 29, 149, 0.12); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      border-radius: 999px; background: #fff; color: #6d28d9;
+      border: 1px solid rgba(109, 40, 217, 0.12);
+      font-family: Nunito, sans-serif; font-weight: 800;
+      font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 0.35rem 0.75rem;
+    }
+    .reveal {
+      opacity: 0; transform: translateY(22px);
+      animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation-play-state: paused;
+    }
+    .reveal.in { animation-play-state: running; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform 0.3s ease, top 0.3s ease, opacity 0.2s ease; }
+    .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
+    .is-open .line-1 { top: 21px; transform: rotate(45deg); }
+    .is-open .line-2 { opacity: 0; }
+    .is-open .line-3 { top: 21px; transform: rotate(-45deg); }
+    #mobile-nav { background: #f7f4ff; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; animation: none; }
+      .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover { animation: none; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header id="nav" class="fixed inset-x-0 top-0 z-50">
+    <div class="mx-auto flex h-[4.5rem] w-full max-w-page items-center justify-between gap-4 px-5 sm:px-8">
+      <a href="#top" class="flex min-w-0 items-center gap-2.5">
+        <img src="logo.png?v=4" alt="" class="h-11 w-11 object-contain" width="44" height="44">
+        <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
+      </a>
+      <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
+        <a class="nav-link" href="#about">About</a>
+        <a class="nav-link" href="#practice">What I Do</a>
+        <a class="nav-link" href="#services">Services</a>
+        <div class="nav-item">
+          <a class="nav-link inline-flex items-center gap-1" id="integrations-trigger" href="integrations.html" aria-haspopup="true" aria-expanded="false">
+            Integrations
+            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </a>
+          <div class="nav-menu" role="group" aria-label="Integrations">
+            <a href="integrations.html">Overview</a>
+            <a href="integrations-booking-calendar.html">Booking calendar</a>
+          </div>
+        </div>
+        <a class="nav-link" href="#contact">Contact</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm min-[360px]:inline-flex" href="#book">Book a Call</a>
+        <button id="nav-toggle" class="relative h-11 w-11 md:hidden" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span class="line line-1"></span>
+          <span class="line line-2"></span>
+          <span class="line line-3"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="mobile-nav" class="fixed inset-x-0 bottom-0 top-[4.5rem] z-40 hidden flex-col md:hidden" hidden>
+    <nav class="flex flex-1 flex-col gap-1 px-6 py-8" aria-label="Mobile">
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#about">About</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#practice">What I Do</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#services">Services</a>
+      <div>
+        <div class="flex items-center">
+          <a class="flex-1 rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="integrations.html">Integrations</a>
+          <button id="mobile-integrations-toggle" class="flex h-11 w-11 items-center justify-center rounded-full text-ink" type="button" aria-expanded="false" aria-controls="mobile-integrations-panel" aria-label="Show Integrations pages">
+            <svg class="chev" width="16" height="16" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div id="mobile-integrations-panel" class="hidden flex-col pb-2 pl-4" hidden>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations.html">Overview</a>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations-booking-calendar.html">Booking calendar</a>
+        </div>
+      </div>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#contact">Contact</a>
+      <a class="btn btn-primary mt-6 w-full" href="#book">Book a Call</a>
+    </nav>
+  </div>
+
+  <main id="main">
+    <section id="top" class="mx-auto grid min-h-[100svh] w-full max-w-page items-center gap-10 px-5 pb-16 pt-28 sm:px-8 lg:grid-cols-2 lg:gap-6 lg:pt-24">
+      <div class="order-2 min-w-0 max-w-xl lg:order-1">
+        <p class="pill mb-5">Modern accounting practice</p>
+        <h1 class="font-display text-[clamp(2.5rem,5vw,4.35rem)] font-extrabold leading-[1.05] tracking-tight text-ink">
+          Accounting, elevated by AI.
+        </h1>
+        <p class="mt-5 text-lg leading-relaxed text-mute sm:text-xl">
+          Monthly accounting, management reports, annual financial statements, and AI integrations for Xero and QuickBooks.
+        </p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a class="btn btn-primary" href="#book">Book a Call</a>
+          <a class="btn btn-ghost" href="#services">View services</a>
+        </div>
+        <p class="mt-8 text-sm font-medium text-[#7c7394]">
+          Monthly close <span class="px-1.5 text-[#c4b5fd]">/</span> Management insight <span class="px-1.5 text-[#c4b5fd]">/</span> Xero &amp; QuickBooks
+        </p>
+      </div>
+      <div class="order-1 flex min-w-0 justify-center lg:order-2">
+        <img src="logo.png?v=4" alt="Purple Hat, a friendly ghost in a purple fedora" class="mascot h-auto w-full max-w-[260px] sm:max-w-[340px] lg:max-w-[440px]" width="440" height="430">
+      </div>
+    </section>
+
+    <section id="about" class="scroll-mt-24 px-5 py-20 sm:px-8 md:py-28">
+      <div class="mx-auto max-w-page">
+        <div class="grid items-end gap-8 lg:grid-cols-12">
+          <div class="reveal lg:col-span-5">
+            <p class="pill mb-4">About</p>
+            <h2 class="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">About the practice</h2>
+          </div>
+          <div class="reveal lg:col-span-7" style="animation-delay: 0.1s">
+            <p class="font-display text-2xl font-bold leading-snug text-ink sm:text-3xl">
+              Books kept current. Reports leadership can use.
+            </p>
+            <p class="mt-5 text-lg leading-relaxed">
+              Purple Hat is an accounting practice for small and medium enterprises. We specialize in streamlining accounting record-keeping, producing monthly management reports, and preparing annual financial statements. Work performed by our accountants is reviewed weekly by a Chartered Accountant who is your point of contact. We use AI integrations with Xero and QuickBooks to optimize the accounting function.
+            </p>
+          </div>
+        </div>
+        <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <article class="card reveal p-6" style="animation-delay: 0.05s">
+            <p class="font-display text-sm font-extrabold text-plum">01</p>
+            <h3 class="mt-3 font-display text-xl font-extrabold text-ink">Timely close</h3>
+            <p class="mt-2 text-sm leading-relaxed">Accounting entries are posted daily and reviewed weekly by a Chartered Accountant. We aim to close the month within one week, with reports generated on completion.</p>
+          </article>
+          <article class="card reveal p-6" style="animation-delay: 0.12s">
+            <p class="font-display text-sm font-extrabold text-plum">02</p>
+            <h3 class="mt-3 font-display text-xl font-extrabold text-ink">Clear reports</h3>
+            <p class="mt-2 text-sm leading-relaxed">Performance, cash, and margin, written for the people running the business. Reports are tailored to your specific needs.</p>
+          </article>
+          <article class="card reveal p-6" style="animation-delay: 0.18s">
+            <p class="font-display text-sm font-extrabold text-plum">03</p>
+            <h3 class="mt-3 font-display text-xl font-extrabold text-ink">Checkable systems</h3>
+            <p class="mt-2 text-sm leading-relaxed">Xero and QuickBooks stay the system of record. Workflows leave a trail you can check.</p>
+          </article>
+          <article class="card reveal p-6" style="animation-delay: 0.24s">
+            <p class="font-display text-sm font-extrabold text-plum">04</p>
+            <h3 class="mt-3 font-display text-xl font-extrabold text-ink">One practice</h3>
+            <p class="mt-2 text-sm leading-relaxed">The same person closes the books and explains them.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="practice" class="scroll-mt-24 px-5 py-20 sm:px-8 md:py-28">
+      <div class="mx-auto max-w-page">
+        <div class="reveal max-w-3xl">
+          <p class="pill mb-4">What I Do</p>
+          <h2 class="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Keep. Reveal. Amplify.</h2>
+          <p class="mt-4 text-lg">Three parts of the work.</p>
+        </div>
+        <div class="mt-10 grid gap-4 md:grid-cols-3">
+          <article class="card reveal p-7" style="animation-delay: 0.05s">
+            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">01</p>
+            <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">KEEP</h3>
+            <p class="mt-1 text-sm font-semibold text-plum">Accurate books.</p>
+            <p class="mt-3 leading-relaxed">I code transactions, reconcile accounts, and close each month.</p>
+          </article>
+          <article class="card reveal p-7" style="animation-delay: 0.12s">
+            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">02</p>
+            <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">REVEAL</h3>
+            <p class="mt-1 text-sm font-semibold text-plum">Useful reports.</p>
+            <p class="mt-3 leading-relaxed">Management reports and financial statements that show what changed in cash and margin.</p>
+          </article>
+          <article class="card reveal p-7" style="animation-delay: 0.18s">
+            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">03</p>
+            <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">AMPLIFY</h3>
+            <p class="mt-1 text-sm font-semibold text-plum">Less retyping.</p>
+            <p class="mt-3 leading-relaxed">AI integrations for Xero and QuickBooks. A person still checks the numbers.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="scroll-mt-24 px-5 py-20 sm:px-8 md:py-28">
+      <div class="mx-auto max-w-page">
+        <div class="reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="pill mb-4">Services</p>
+            <h2 class="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Featured services</h2>
+          </div>
+          <p class="max-w-md text-mute md:text-right">Xero and QuickBooks stay the system of record.</p>
+        </div>
+        <div class="mt-10 grid gap-4 md:grid-cols-2">
+          <article id="monthly-accounting" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.05s">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Monthly</p>
+            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Monthly accounting</h3>
+            <p class="mt-3 leading-relaxed">Bank and balance-sheet reconciliations, coding, and a monthly close.</p>
+          </article>
+          <article id="management-reports" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.1s">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Monthly</p>
+            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Monthly management reports</h3>
+            <p class="mt-3 leading-relaxed">Performance, cash, margin, and the variances that need a decision.</p>
+          </article>
+          <article id="financial-statements" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.16s">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Periodic</p>
+            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Financial reporting &amp; statements</h3>
+            <p class="mt-3 leading-relaxed">Profit and loss, balance sheet, and cash flow for boards, lenders, and investors.</p>
+          </article>
+          <article id="ai-integrations" class="card relative reveal scroll-mt-28 border-[#c4b5fd] bg-[#f5f0ff] p-7" style="animation-delay: 0.22s">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Xero · QuickBooks</p>
+            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink"><a class="after:absolute after:inset-0 hover:text-plum" href="integrations.html">AI integrations</a></h3>
+            <p class="mt-3 leading-relaxed">Connect your website to Xero or QuickBooks. A person still checks the numbers.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="book" class="scroll-mt-24 px-5 pb-20 sm:px-8 md:pb-28">
+      <div class="mx-auto grid max-w-page items-center gap-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#6d28d9] to-[#4c1d95] px-7 py-12 text-white shadow-soft sm:px-12 lg:grid-cols-[1fr_220px] lg:py-14">
+        <div>
+          <p class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-[#ddd6fe]">Engagement</p>
+          <h2 class="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">Book a call.</h2>
+          <p class="mt-4 max-w-xl text-lg text-[#ede9fe]">Tell me how the books are kept and what you need each month.</p>
+          <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <a class="btn bg-white text-[#4c1d95] shadow-none hover:bg-[#f5f3ff]" href="mailto:hello@purplehat.co?subject=Book%20a%20call%20with%20Purple%20Hat">Book a Call</a>
+            <a class="font-semibold text-white underline decoration-white/40 underline-offset-4" href="mailto:hello@purplehat.co">hello@purplehat.co</a>
+          </div>
+        </div>
+        <img src="logo.png?v=4" alt="" class="mx-auto hidden max-h-48 w-auto lg:block" width="180" height="176">
+      </div>
+    </section>
+  </main>
+
+  <footer id="contact" class="scroll-mt-24 bg-[#2a1548] px-5 py-16 text-[#ddd6fe] sm:px-8">
+    <div class="mx-auto grid max-w-page gap-12 sm:grid-cols-2 lg:grid-cols-12">
+      <div class="lg:col-span-4">
+        <a href="#top" class="inline-flex items-center gap-2.5 text-white">
+          <img src="logo.png?v=4" alt="" class="h-12 w-12 object-contain" width="48" height="48">
+          <span class="font-display text-xl font-extrabold">Purple Hat</span>
+        </a>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed text-[#c4b5fd]">Accounting for businesses on Xero and QuickBooks.</p>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Services</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="#monthly-accounting">Monthly accounting</a></li>
+          <li><a class="hover:text-white" href="#management-reports">Monthly management reports</a></li>
+          <li><a class="hover:text-white" href="#financial-statements">Financial reporting &amp; statements</a></li>
+          <li><a class="hover:text-white" href="integrations.html">AI integrations</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Contact</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="mailto:hello@purplehat.co">hello@purplehat.co</a></li>
+          <li>Meetings by appointment</li>
+          <li><a class="hover:text-white" href="#book">Book a call</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Socials</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a class="hover:text-white" href="https://x.com/" target="_blank" rel="noopener noreferrer">X</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-[#a78bfa] sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 Purple Hat. All rights reserved.</p>
+      <a class="hover:text-white" href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <noscript>
+    <style>.reveal { opacity: 1 !important; transform: none !important; animation: none !important; }</style>
+  </noscript>
+  <script>
+    (function () {
+      const nav = document.getElementById("nav");
+      const toggle = document.getElementById("nav-toggle");
+      const panel = document.getElementById("mobile-nav");
+      const desktop = window.matchMedia("(min-width: 768px)");
+
+      function setScrolled() { nav.classList.toggle("is-scrolled", window.scrollY > 8); }
+      setScrolled();
+      window.addEventListener("scroll", setScrolled, { passive: true });
+
+      function closeMenu() {
+        panel.hidden = true;
+        panel.classList.add("hidden");
+        panel.classList.remove("flex");
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+        document.body.style.overflow = "";
+      }
+      function openMenu() {
+        panel.hidden = false;
+        panel.classList.remove("hidden");
+        panel.classList.add("flex");
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-label", "Close menu");
+        document.body.style.overflow = "hidden";
+      }
+      toggle.addEventListener("click", () => {
+        if (toggle.getAttribute("aria-expanded") === "true") closeMenu();
+        else openMenu();
+      });
+      panel.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+      desktop.addEventListener("change", (event) => { if (event.matches) closeMenu(); });
+
+      const integItem = document.querySelector(".nav-item");
+      const integTrigger = document.getElementById("integrations-trigger");
+      if (integItem && integTrigger) {
+        const setInteg = (open) => integTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+        integItem.addEventListener("mouseenter", () => setInteg(true));
+        integItem.addEventListener("mouseleave", () => setInteg(false));
+        integItem.addEventListener("focusin", () => setInteg(true));
+        integItem.addEventListener("focusout", (event) => {
+          if (!integItem.contains(event.relatedTarget)) setInteg(false);
+        });
+      }
+      const integToggle = document.getElementById("mobile-integrations-toggle");
+      const integPanel = document.getElementById("mobile-integrations-panel");
+      if (integToggle && integPanel) {
+        integToggle.addEventListener("click", () => {
+          const open = integToggle.getAttribute("aria-expanded") === "true";
+          integToggle.setAttribute("aria-expanded", open ? "false" : "true");
+          integToggle.classList.toggle("is-expanded", !open);
+          integPanel.hidden = open;
+          integPanel.classList.toggle("hidden", open);
+          integPanel.classList.toggle("flex", !open);
+        });
+      }
+
+      const links = [...document.querySelectorAll("a.nav-link")].filter((link) => (link.getAttribute("href") || "").startsWith("#"));
+      if ("IntersectionObserver" in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("in");
+            revealObserver.unobserve(entry.target);
+          });
+        }, { threshold: 0.14, rootMargin: "0px 0px -8% 0px" });
+        document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+        const sections = links.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+        const spy = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const id = "#" + entry.target.id;
+            links.forEach((link) => link.classList.toggle("is-active", link.getAttribute("href") === id));
+          });
+        }, { rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+        sections.forEach((section) => spy.observe(section));
+      } else {
+        document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+      }
+    })();
+  </script>
+</body>
+</html>

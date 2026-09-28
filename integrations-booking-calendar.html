@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking calendar — Purple Hat</title>
+  <meta name="description" content="A site booking becomes a reserved slot and a draft invoice in Xero. Sample form only. No payment.">
+  <meta name="theme-color" content="#f6f3ff">
+  <link rel="icon" href="logo.png?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: "#2a1548", mute: "#5c5470", plum: "#6d28d9" },
+          fontFamily: { display: ["Nunito", "sans-serif"], sans: ["Outfit", "sans-serif"] },
+          maxWidth: { page: "72rem" }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+    body {
+      margin: 0; overflow-x: clip; color: #4c4560; font-family: Outfit, sans-serif;
+      background:
+        radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
+        radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
+        #f7f4ff;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .font-display { font-family: Nunito, sans-serif; }
+    :focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; }
+    .skip { position: absolute; left: 1rem; top: -4rem; z-index: 80; background: #2a1548; color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px; }
+    .skip:focus { top: 1rem; }
+    #nav { background: rgba(247, 244, 255, 0.72); backdrop-filter: blur(16px); }
+    #nav.is-scrolled { background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(109,40,217,.08); box-shadow: 0 10px 30px rgba(76,29,149,.06); }
+    .nav-link { color: #4c4560; font-weight: 500; }
+    .nav-link:hover, .nav-link.is-active { color: #5b21b6; }
+    .nav-item { position: relative; }
+    .nav-item::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0.9rem; }
+    .nav-menu { display: none; position: absolute; top: calc(100% + 0.7rem); left: 50%; translate: -50% 0; min-width: 15rem; padding: 0.4rem; border-radius: 1rem; background: #fff; border: 1px solid rgba(109,40,217,.12); box-shadow: 0 16px 40px rgba(76,29,149,.12); z-index: 60; }
+    .nav-item:hover .nav-menu, .nav-item:focus-within .nav-menu { display: block; }
+    .nav-menu a { display: block; border-radius: 0.75rem; padding: 0.65rem 0.8rem; color: #2a1548; font-weight: 600; }
+    .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: #f5f0ff; color: #5b21b6; }
+    .chev { transition: transform 0.2s ease; }
+    .is-expanded .chev { transform: rotate(180deg); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px; font-family: Nunito, sans-serif; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease; }
+    .btn-primary { color: #fff; background: linear-gradient(180deg, #8b5cf6, #6d28d9); box-shadow: 0 10px 24px rgba(109,40,217,.28); }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-ghost { color: #4c1d95; background: #fff; border: 1px solid rgba(109,40,217,.18); }
+    .card { background: rgba(255,255,255,.9); border: 1px solid rgba(109,40,217,.08); box-shadow: 0 16px 40px rgba(76,29,149,.07); border-radius: 1.5rem; }
+    .pill { display: inline-flex; border-radius: 999px; background: #fff; color: #6d28d9; border: 1px solid rgba(109,40,217,.12); font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 600; color: #2a1548; }
+    .field input, .field select, .field textarea {
+      font: inherit; font-weight: 400; color: #2a1548; background: #fff;
+      border: 1px solid rgba(109,40,217,.2); border-radius: 0.9rem; min-height: 3rem; padding: 0.65rem 0.85rem;
+    }
+    .field textarea { min-height: 6.5rem; resize: vertical; }
+    .field input[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: #9f1239; }
+    .error-list { color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 1rem; padding: 0.8rem 1rem; }
+    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform .3s ease, top .3s ease, opacity .2s ease; }
+    .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
+    .is-open .line-1 { top: 21px; transform: rotate(45deg); }
+    .is-open .line-2 { opacity: 0; }
+    .is-open .line-3 { top: 21px; transform: rotate(-45deg); }
+    #mobile-nav { background: #f7f4ff; }
+    .step-no { font-family: Nunito, sans-serif; font-weight: 800; color: #6d28d9; }
+    @media (prefers-reduced-motion: reduce) { .btn-primary:hover { transform: none; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header id="nav" class="fixed inset-x-0 top-0 z-50">
+    <div class="mx-auto flex h-[4.5rem] w-full max-w-page items-center justify-between gap-4 px-5 sm:px-8">
+      <a href="index.html" class="flex min-w-0 items-center gap-2.5">
+        <img src="logo.png?v=4" alt="" class="h-11 w-11 object-contain" width="44" height="44">
+        <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
+      </a>
+      <nav class="hidden items-center gap-6 lg:gap-8 md:flex" aria-label="Primary">
+        <a class="nav-link" href="index.html#about">About</a>
+        <a class="nav-link" href="index.html#practice">What I Do</a>
+        <a class="nav-link" href="index.html#services">Services</a>
+        <div class="nav-item">
+          <a class="nav-link is-active inline-flex items-center gap-1" id="integrations-trigger" href="integrations.html" aria-haspopup="true" aria-expanded="false">
+            Integrations
+            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </a>
+          <div class="nav-menu" role="group" aria-label="Integrations">
+            <a href="integrations.html">Overview</a>
+            <a href="integrations-booking-calendar.html" aria-current="page">Booking calendar</a>
+          </div>
+        </div>
+        <a class="nav-link" href="index.html#contact">Contact</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm min-[360px]:inline-flex" href="index.html#book">Book a Call</a>
+        <button id="nav-toggle" class="relative h-11 w-11 md:hidden" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span class="line line-1"></span><span class="line line-2"></span><span class="line line-3"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div id="mobile-nav" class="fixed inset-x-0 bottom-0 top-[4.5rem] z-40 hidden flex-col md:hidden" hidden>
+    <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-6 py-8" aria-label="Mobile">
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#about">About</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#practice">What I Do</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#services">Services</a>
+      <div>
+        <div class="flex items-center">
+          <a class="flex-1 rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-plum" href="integrations.html">Integrations</a>
+          <button id="mobile-integrations-toggle" class="is-expanded flex h-11 w-11 items-center justify-center rounded-full text-ink" type="button" aria-expanded="true" aria-controls="mobile-integrations-panel" aria-label="Hide Integrations pages">
+            <svg class="chev" width="16" height="16" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div id="mobile-integrations-panel" class="flex flex-col pb-2 pl-4">
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations.html">Overview</a>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-plum" href="integrations-booking-calendar.html" aria-current="page">Booking calendar</a>
+        </div>
+      </div>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#contact">Contact</a>
+      <a class="btn btn-primary mt-6 w-full" href="index.html#book">Book a Call</a>
+    </nav>
+  </div>
+
+  <main id="main">
+    <section class="mx-auto w-full max-w-page px-5 pb-8 pt-32 sm:px-8 lg:pt-36">
+      <p class="pill mb-5">Example · Booking calendar</p>
+      <h1 class="max-w-4xl font-display text-[clamp(2.2rem,4.4vw,3.8rem)] font-extrabold leading-[1.08] tracking-tight text-ink">From the booking slot to the invoice.</h1>
+      <p class="mt-5 max-w-3xl text-lg leading-relaxed">The customer picks a time, name, email, and service. The booking is reserved. Xero is checked by email. A contact is matched or created. A draft invoice is raised with the booking ID, and the invoice email is queued. No retyping. No card payment.</p>
+      <p class="mt-4"><a class="font-semibold text-plum underline decoration-[#ddd6fe] underline-offset-4" href="integrations.html">Back to AI integrations overview</a></p>
+    </section>
+
+    <section class="px-5 py-10 sm:px-8" aria-labelledby="steps-heading">
+      <div class="mx-auto max-w-page">
+        <h2 id="steps-heading" class="font-display text-3xl font-extrabold tracking-tight text-ink">Ten steps</h2>
+        <ol class="mt-6 grid gap-3 sm:grid-cols-2">
+          <li class="card flex gap-3 p-4"><span class="step-no">01</span><span><strong class="text-ink">Slot.</strong> The customer chooses a date and time.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">02</span><span><strong class="text-ink">Details.</strong> Name, email, phone, and any note.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">03</span><span><strong class="text-ink">Service.</strong> A listed service, with its mapped price.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">04</span><span><strong class="text-ink">Reserve.</strong> The booking is held and given a reference.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">05</span><span><strong class="text-ink">Calendar invite.</strong> An invite is prepared for the customer’s email.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">06</span><span><strong class="text-ink">Xero API.</strong> The workflow calls Xero. QuickBooks works the same way.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">07</span><span><strong class="text-ink">Find the contact.</strong> Lookup by email.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">08</span><span><strong class="text-ink">Create the contact.</strong> Only if no contact matches that email.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">09</span><span><strong class="text-ink">Invoice.</strong> A draft invoice, on the mapped service item, with the booking ID on it.</span></li>
+          <li class="card flex gap-3 p-4"><span class="step-no">10</span><span><strong class="text-ink">Email the invoice.</strong> The invoice email is queued. This is not a card payment.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="px-5 py-6 sm:px-8" aria-labelledby="sides-heading">
+      <div class="mx-auto max-w-page">
+        <h2 id="sides-heading" class="sr-only">Customer view and Xero</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <article class="card p-7">
+            <h3 class="font-display text-2xl font-extrabold text-ink">What the customer sees</h3>
+            <ul class="mt-4 list-disc space-y-2 pl-5 leading-relaxed">
+              <li>Open times for the next 14 days, in SAST.</li>
+              <li>Name, email, phone, and service.</li>
+              <li>A confirmation, a booking reference, and a calendar invite.</li>
+              <li>An invoice by email. No card payment.</li>
+            </ul>
+          </article>
+          <article class="card p-7">
+            <h3 class="font-display text-2xl font-extrabold text-ink">What Xero does</h3>
+            <ul class="mt-4 list-disc space-y-2 pl-5 leading-relaxed">
+              <li>Looks up the contact by email.</li>
+              <li>Creates a contact only if none matches.</li>
+              <li>Drafts an invoice from the mapped service item.</li>
+              <li>Puts the booking ID on the invoice.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-5 py-10 sm:px-8" aria-labelledby="guard-heading">
+      <div class="mx-auto max-w-page">
+        <h2 id="guard-heading" class="font-display text-3xl font-extrabold tracking-tight text-ink">Guardrails</h2>
+        <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+          <li class="card p-5">Xero is the system of record. QuickBooks is available when that is the ledger.</li>
+          <li class="card p-5">Contacts are matched on email.</li>
+          <li class="card p-5">The invoice uses a mapped service item, not a typed amount.</li>
+          <li class="card p-5">The booking ID is written on the invoice.</li>
+          <li class="card p-5">If Xero fails after the slot is reserved, the booking is held and an exception is logged.</li>
+          <li class="card p-5">The customer never sees a raw API error.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="px-5 pb-20 pt-4 sm:px-8" aria-labelledby="demo-heading">
+      <div class="mx-auto grid max-w-page gap-8 lg:grid-cols-[1fr_0.9fr]">
+        <div>
+          <h2 id="demo-heading" class="font-display text-3xl font-extrabold tracking-tight text-ink">Sample booking</h2>
+          <p class="mt-3 leading-relaxed">This form does not call Xero. It shows a sample confirmation only. Times are the next 14 days, SAST. Prices are samples in ZAR. No payment.</p>
+          <form id="booking-form" class="card mt-6 grid gap-4 p-6 sm:p-7" novalidate>
+            <div id="form-errors" class="error-list hidden" role="alert" tabindex="-1"></div>
+            <label class="field">Date and time
+              <select id="slot" name="slot" required>
+                <option value="">Choose a time</option>
+              </select>
+            </label>
+            <label class="field">Service
+              <select id="service" name="service" required>
+                <option value="">Choose a service</option>
+                <option value="discovery">Discovery call — R 750</option>
+                <option value="onboarding">Monthly accounting onboarding — R 2 500</option>
+                <option value="scoping">Integration scoping session — R 1 800</option>
+              </select>
+            </label>
+            <label class="field">Name
+              <input id="name" name="name" type="text" autocomplete="name" required>
+            </label>
+            <label class="field">Email
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </label>
+            <label class="field">Phone
+              <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+            </label>
+            <label class="field">Notes <span class="font-normal text-mute">(optional)</span>
+              <textarea id="notes" name="notes"></textarea>
+            </label>
+            <label class="flex items-start gap-3 text-sm font-medium text-ink">
+              <input id="consent" name="consent" type="checkbox" class="mt-1 h-4 w-4" required>
+              <span>Email me the calendar invite and the invoice.</span>
+            </label>
+            <button class="btn btn-primary mt-2" type="submit">Reserve this time</button>
+          </form>
+        </div>
+        <div id="confirmation" class="card hidden h-fit p-6 sm:p-7" hidden role="status" aria-live="polite">
+          <p class="pill">Reserved</p>
+          <h3 class="mt-4 font-display text-2xl font-extrabold text-ink">Booked.</h3>
+          <p class="mt-2">Reference <strong id="ref" class="text-ink"></strong></p>
+          <p id="confirm-summary" class="mt-3 leading-relaxed"></p>
+          <h4 class="mt-6 font-display text-lg font-extrabold text-ink">Sample ledger trail</h4>
+          <ol id="trail" class="mt-3 space-y-3 text-sm"></ol>
+          <p class="mt-4 text-sm text-mute">Nothing was sent to Xero or by email. No payment was taken.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-[#2a1548] px-5 py-14 text-[#ddd6fe] sm:px-8">
+    <div class="mx-auto flex max-w-page flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <a href="index.html" class="inline-flex items-center gap-2 text-white">
+        <img src="logo.png?v=4" alt="" class="h-10 w-10 object-contain" width="40" height="40">
+        <span class="font-display text-lg font-extrabold">Purple Hat</span>
+      </a>
+      <p class="text-sm"><a class="hover:text-white" href="mailto:hello@purplehat.co">hello@purplehat.co</a> · Meetings by appointment</p>
+      <p class="text-xs text-[#a78bfa]">© 2026 Purple Hat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const nav = document.getElementById("nav");
+      const toggle = document.getElementById("nav-toggle");
+      const panel = document.getElementById("mobile-nav");
+      const desktop = window.matchMedia("(min-width: 768px)");
+      const onScroll = () => nav.classList.toggle("is-scrolled", window.scrollY > 8);
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      function closeMenu() {
+        panel.hidden = true; panel.classList.add("hidden"); panel.classList.remove("flex");
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+        document.body.style.overflow = "";
+      }
+      function openMenu() {
+        panel.hidden = false; panel.classList.remove("hidden"); panel.classList.add("flex");
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-label", "Close menu");
+        document.body.style.overflow = "hidden";
+      }
+      toggle.addEventListener("click", () => toggle.getAttribute("aria-expanded") === "true" ? closeMenu() : openMenu());
+      panel.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+      desktop.addEventListener("change", (event) => { if (event.matches) closeMenu(); });
+      const item = document.querySelector(".nav-item");
+      const trigger = document.getElementById("integrations-trigger");
+      const setOpen = (open) => trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      item.addEventListener("mouseenter", () => setOpen(true));
+      item.addEventListener("mouseleave", () => setOpen(false));
+      item.addEventListener("focusin", () => setOpen(true));
+      item.addEventListener("focusout", (event) => { if (!item.contains(event.relatedTarget)) setOpen(false); });
+      const integToggle = document.getElementById("mobile-integrations-toggle");
+      const integPanel = document.getElementById("mobile-integrations-panel");
+      integToggle.addEventListener("click", () => {
+        const open = integToggle.getAttribute("aria-expanded") === "true";
+        integToggle.setAttribute("aria-expanded", open ? "false" : "true");
+        integToggle.setAttribute("aria-label", open ? "Show Integrations pages" : "Hide Integrations pages");
+        integToggle.classList.toggle("is-expanded", !open);
+        integPanel.hidden = open;
+        integPanel.classList.toggle("hidden", open);
+        integPanel.classList.toggle("flex", !open);
+      });
+
+      const tz = "Africa/Johannesburg";
+      const services = {
+        discovery: { name: "Discovery call", price: "R 750" },
+        onboarding: { name: "Monthly accounting onboarding", price: "R 2 500" },
+        scoping: { name: "Integration scoping session", price: "R 1 800" }
+      };
+      const slotSelect = document.getElementById("slot");
+      const times = ["09:00", "11:00", "14:00"];
+      const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      const [yy, mm, dd] = todayKey.split("-").map(Number);
+      const start = new Date(Date.UTC(yy, mm - 1, dd));
+      for (let day = 0; day < 14; day++) {
+        const date = new Date(start.getTime() + day * 86400000);
+        const labelDate = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(date);
+        const iso = date.toISOString().slice(0, 10);
+        times.forEach((time) => {
+          const option = document.createElement("option");
+          option.value = iso + "T" + time;
+          option.textContent = labelDate + " · " + time + " SAST";
+          slotSelect.appendChild(option);
+        });
+      }
+
+      const form = document.getElementById("booking-form");
+      const errors = document.getElementById("form-errors");
+      const confirmation = document.getElementById("confirmation");
+
+      function setInvalid(id, invalid) {
+        const el = document.getElementById(id);
+        if (invalid) el.setAttribute("aria-invalid", "true");
+        else el.removeAttribute("aria-invalid");
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const messages = [];
+        const slot = slotSelect.value;
+        const serviceId = document.getElementById("service").value;
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const notes = document.getElementById("notes").value.trim();
+        const consent = document.getElementById("consent").checked;
+        setInvalid("slot", !slot);
+        setInvalid("service", !serviceId);
+        setInvalid("name", !name);
+        setInvalid("email", !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+        setInvalid("phone", phone.length < 6);
+        if (!slot) messages.push("Choose a date and time.");
+        if (!serviceId) messages.push("Choose a service.");
+        if (!name) messages.push("Enter your name.");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) messages.push("Enter a valid email.");
+        if (phone.length < 6) messages.push("Enter a phone number.");
+        if (!consent) messages.push("Confirm that we may email the invite and the invoice.");
+        if (messages.length) {
+          errors.classList.remove("hidden");
+          errors.innerHTML = "<ul class='list-disc pl-5'>" + messages.map((m) => "<li>" + m + "</li>").join("") + "</ul>";
+          errors.focus();
+          confirmation.hidden = true;
+          confirmation.classList.add("hidden");
+          return;
+        }
+        errors.classList.add("hidden");
+        errors.innerHTML = "";
+        const service = services[serviceId];
+        const ref = "PH-BK-" + String(1000 + Math.floor(Math.random() * 9000));
+        const slotLabel = slotSelect.options[slotSelect.selectedIndex].textContent;
+        document.getElementById("ref").textContent = ref;
+        document.getElementById("confirm-summary").textContent = name + " · " + slotLabel + " · " + service.name + " · " + service.price + (notes ? " · Note received." : ".");
+        const contactLine = "Created · " + email;
+        document.getElementById("trail").innerHTML = [
+          "<li class='card p-3'><span class='font-display font-extrabold text-plum'>Contact matched/created</span><br>" + contactLine + "</li>",
+          "<li class='card p-3'><span class='font-display font-extrabold text-plum'>Invoice</span><br>DRAFT · " + service.name + " · " + service.price + " · " + ref + "</li>",
+          "<li class='card p-3'><span class='font-display font-extrabold text-plum'>Email</span><br>Queued to " + email + "</li>"
+        ].join("");
+        confirmation.hidden = false;
+        confirmation.classList.remove("hidden");
+        confirmation.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    })();
+  </script>
+</body>
+</html>
