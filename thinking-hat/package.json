@@ -1,0 +1,8 @@
+{
+  "name": "thinking-hat",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.mjs",
+    "install:all": "npm install --prefix server && npm install --prefix client"
+  }
+}

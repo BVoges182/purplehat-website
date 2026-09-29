@@ -54,13 +54,41 @@
     .btn-ghost { color: #4c1d95; background: #fff; border: 1px solid rgba(109,40,217,.18); }
     .card { background: rgba(255,255,255,.9); border: 1px solid rgba(109,40,217,.08); box-shadow: 0 16px 40px rgba(76,29,149,.07); border-radius: 1.5rem; }
     .pill { display: inline-flex; border-radius: 999px; background: #fff; color: #6d28d9; border: 1px solid rgba(109,40,217,.12); font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
-    .field { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 600; color: #2a1548; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; font-weight: 600; color: #2a1548; }
     .field input, .field select, .field textarea {
+      width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;
       font: inherit; font-weight: 400; color: #2a1548; background: #fff;
       border: 1px solid rgba(109,40,217,.2); border-radius: 0.9rem; min-height: 3rem; padding: 0.65rem 0.85rem;
     }
     .field textarea { min-height: 6.5rem; resize: vertical; }
-    .field input[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: #9f1239; }
+    .field input[aria-invalid="true"], .field select[aria-invalid="true"], .cal[aria-invalid="true"] { border-color: #9f1239; }
+    .field input[type="hidden"] { display: none; }
+    .cal { min-width: 0; max-width: 100%; border: 1px solid rgba(109,40,217,.2); border-radius: 1rem; background: #fff; padding: 0.85rem; }
+    .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .cal-nav {
+      width: 2.25rem; height: 2.25rem; border-radius: 999px; border: 1px solid rgba(109,40,217,.16);
+      background: #fff; color: #4c1d95; font-family: Nunito, sans-serif; font-weight: 800; font-size: 1.2rem; line-height: 1;
+    }
+    .cal-nav:disabled { opacity: 0.35; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.2rem; margin-top: 0.65rem; }
+    .cal-dow { text-align: center; font-size: 0.72rem; font-weight: 700; color: #7c7394; padding: 0.15rem 0; }
+    .cal-day, .cal-pad {
+      aspect-ratio: 1; min-width: 0; border: 0; border-radius: 0.7rem; background: transparent;
+      font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.9rem; color: #2a1548;
+    }
+    .cal-day { cursor: pointer; }
+    .cal-day:hover:not(:disabled) { background: #f5f0ff; }
+    .cal-day:disabled { color: #d4d0e0; cursor: default; }
+    .cal-day.is-today:not(.is-selected) { box-shadow: inset 0 0 0 1.5px #c4b5fd; }
+    .cal-day.is-selected { background: #6d28d9; color: #fff; }
+    .time-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.85rem; }
+    .time-btn {
+      min-height: 2.5rem; padding: 0.35rem 0.9rem; border-radius: 999px;
+      border: 1px solid rgba(109,40,217,.2); background: #fff; color: #4c1d95;
+      font-family: Nunito, sans-serif; font-weight: 800;
+    }
+    .time-btn.is-selected { background: #6d28d9; color: #fff; border-color: #6d28d9; }
+    .cal-note { margin-top: 0.7rem; font-size: 0.8rem; font-weight: 500; color: #5c5470; }
     .error-list { color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 1rem; padding: 0.8rem 1rem; }
     .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform .3s ease, top .3s ease, opacity .2s ease; }
     .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
@@ -130,7 +158,7 @@
     <section class="mx-auto w-full max-w-page px-5 pb-8 pt-32 sm:px-8 lg:pt-36">
       <p class="pill mb-5">Example · Booking calendar</p>
       <h1 class="max-w-4xl font-display text-[clamp(2.2rem,4.4vw,3.8rem)] font-extrabold leading-[1.08] tracking-tight text-ink">From the booking slot to the invoice.</h1>
-      <p class="mt-5 max-w-3xl text-lg leading-relaxed">The customer picks a time, name, email, and service. The booking is reserved. Xero is checked by email. A contact is matched or created. A draft invoice is raised with the booking ID, and the invoice email is queued. No retyping. No card payment.</p>
+      <p class="mt-5 max-w-3xl text-lg leading-relaxed">The customer picks a time, name, email, and service. The booking is reserved. In Xero a contact is matched or created. A draft invoice is raised with the booking ID and emailed to the customer. No retyping.</p>
       <p class="mt-4"><a class="font-semibold text-plum underline decoration-[#ddd6fe] underline-offset-4" href="integrations.html">Back to AI integrations overview</a></p>
     </section>
 
@@ -193,23 +221,35 @@
     </section>
 
     <section class="px-5 pb-20 pt-4 sm:px-8" aria-labelledby="demo-heading">
-      <div class="mx-auto grid max-w-page gap-8 lg:grid-cols-[1fr_0.9fr]">
-        <div>
+      <div class="mx-auto grid min-w-0 max-w-page gap-8 lg:grid-cols-[1fr_0.9fr]">
+        <div class="min-w-0">
           <h2 id="demo-heading" class="font-display text-3xl font-extrabold tracking-tight text-ink">Sample booking</h2>
-          <p class="mt-3 leading-relaxed">This form does not call Xero. It shows a sample confirmation only. Times are the next 14 days, SAST. Prices are samples in ZAR. No payment.</p>
-          <form id="booking-form" class="card mt-6 grid gap-4 p-6 sm:p-7" novalidate>
+          <p class="mt-3 leading-relaxed">This form does not call Xero. It shows a sample confirmation only. Times are the next 14 days, SAST. Prices are samples in USD. No payment.</p>
+          <form id="booking-form" class="card mt-6 grid min-w-0 gap-4 p-6 sm:p-7" novalidate>
             <div id="form-errors" class="error-list hidden" role="alert" tabindex="-1"></div>
-            <label class="field">Date and time
-              <select id="slot" name="slot" required>
-                <option value="">Choose a time</option>
-              </select>
-            </label>
+            <div class="field" id="slot-field">
+              <span id="slot-label">Date and time</span>
+              <input id="slot" name="slot" type="hidden" value="">
+              <div id="calendar" class="cal" role="group" aria-labelledby="slot-label">
+                <div class="cal-head">
+                  <button class="cal-nav" id="cal-prev" type="button" aria-label="Previous month">‹</button>
+                  <p id="cal-title" class="font-display text-base font-extrabold text-ink"></p>
+                  <button class="cal-nav" id="cal-next" type="button" aria-label="Next month">›</button>
+                </div>
+                <div class="cal-grid" aria-hidden="true">
+                  <span class="cal-dow">Mon</span><span class="cal-dow">Tue</span><span class="cal-dow">Wed</span><span class="cal-dow">Thu</span><span class="cal-dow">Fri</span><span class="cal-dow">Sat</span><span class="cal-dow">Sun</span>
+                </div>
+                <div id="cal-days" class="cal-grid"></div>
+                <div id="times" class="time-row" role="group" aria-label="Times, SAST" hidden></div>
+                <p id="slot-summary" class="cal-note"></p>
+              </div>
+            </div>
             <label class="field">Service
               <select id="service" name="service" required>
                 <option value="">Choose a service</option>
-                <option value="discovery">Discovery call — R 750</option>
-                <option value="onboarding">Monthly accounting onboarding — R 2 500</option>
-                <option value="scoping">Integration scoping session — R 1 800</option>
+                <option value="discovery">Discovery call — $100</option>
+                <option value="onboarding">Monthly accounting onboarding — $250</option>
+                <option value="scoping">Integration scoping session — $350</option>
               </select>
             </label>
             <label class="field">Name
@@ -231,7 +271,7 @@
             <button class="btn btn-primary mt-2" type="submit">Reserve this time</button>
           </form>
         </div>
-        <div id="confirmation" class="card hidden h-fit p-6 sm:p-7" hidden role="status" aria-live="polite">
+        <div id="confirmation" class="card hidden h-fit min-w-0 p-6 sm:p-7" hidden role="status" aria-live="polite">
           <p class="pill">Reserved</p>
           <h3 class="mt-4 font-display text-2xl font-extrabold text-ink">Booked.</h3>
           <p class="mt-2">Reference <strong id="ref" class="text-ink"></strong></p>
@@ -250,7 +290,7 @@
         <img src="logo.png?v=4" alt="" class="h-10 w-10 object-contain" width="40" height="40">
         <span class="font-display text-lg font-extrabold">Purple Hat</span>
       </a>
-      <p class="text-sm"><a class="hover:text-white" href="mailto:hello@purplehat.co">hello@purplehat.co</a> · Meetings by appointment</p>
+      <p class="text-sm"><a class="hover:text-white" href="mailto:info@purplehat.fun">info@purplehat.fun</a> · Meetings by appointment</p>
       <p class="text-xs text-[#a78bfa]">© 2026 Purple Hat. All rights reserved.</p>
     </div>
   </footer>
@@ -303,33 +343,120 @@
 
       const tz = "Africa/Johannesburg";
       const services = {
-        discovery: { name: "Discovery call", price: "R 750" },
-        onboarding: { name: "Monthly accounting onboarding", price: "R 2 500" },
-        scoping: { name: "Integration scoping session", price: "R 1 800" }
+        discovery: { name: "Discovery call", price: "$100" },
+        onboarding: { name: "Monthly accounting onboarding", price: "$250" },
+        scoping: { name: "Integration scoping session", price: "$350" }
       };
-      const slotSelect = document.getElementById("slot");
       const times = ["09:00", "11:00", "14:00"];
       const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
       const [yy, mm, dd] = todayKey.split("-").map(Number);
       const start = new Date(Date.UTC(yy, mm - 1, dd));
+      const available = [];
       for (let day = 0; day < 14; day++) {
         const date = new Date(start.getTime() + day * 86400000);
-        const labelDate = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(date);
-        const iso = date.toISOString().slice(0, 10);
+        available.push(date.toISOString().slice(0, 10));
+      }
+      const openDays = new Set(available);
+      const slotInput = document.getElementById("slot");
+      const calendar = document.getElementById("calendar");
+      const title = document.getElementById("cal-title");
+      const daysGrid = document.getElementById("cal-days");
+      const timesBox = document.getElementById("times");
+      const summary = document.getElementById("slot-summary");
+      const lastParts = available[available.length - 1].split("-").map(Number);
+      const firstMonth = yy * 12 + (mm - 1);
+      const lastMonth = lastParts[0] * 12 + (lastParts[1] - 1);
+      let view = { y: yy, m: mm - 1 };
+      let selectedDate = "";
+      let selectedTime = "";
+
+      function formatSlot(value) {
+        const [iso, time] = value.split("T");
+        const [y, m, d] = iso.split("-").map(Number);
+        const labelDate = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }).format(new Date(Date.UTC(y, m - 1, d)));
+        return labelDate + " · " + time + " SAST";
+      }
+      function syncSlot() {
+        slotInput.value = selectedDate && selectedTime ? selectedDate + "T" + selectedTime : "";
+        if (slotInput.value) calendar.removeAttribute("aria-invalid");
+        summary.textContent = slotInput.value ? formatSlot(slotInput.value) : (selectedDate ? "Choose a time. Times are SAST." : "Choose a date, then a time. Times are SAST.");
+      }
+      function renderTimes() {
+        timesBox.innerHTML = "";
+        if (!selectedDate) {
+          timesBox.hidden = true;
+          return;
+        }
+        timesBox.hidden = false;
         times.forEach((time) => {
-          const option = document.createElement("option");
-          option.value = iso + "T" + time;
-          option.textContent = labelDate + " · " + time + " SAST";
-          slotSelect.appendChild(option);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "time-btn" + (time === selectedTime ? " is-selected" : "");
+          button.textContent = time;
+          button.setAttribute("aria-pressed", time === selectedTime ? "true" : "false");
+          button.addEventListener("click", () => {
+            selectedTime = time;
+            syncSlot();
+            renderTimes();
+          });
+          timesBox.appendChild(button);
         });
       }
+      function renderCalendar() {
+        title.textContent = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "long", year: "numeric" }).format(new Date(Date.UTC(view.y, view.m, 1)));
+        const viewKey = view.y * 12 + view.m;
+        document.getElementById("cal-prev").disabled = viewKey <= firstMonth;
+        document.getElementById("cal-next").disabled = viewKey >= lastMonth;
+        daysGrid.innerHTML = "";
+        const lead = (new Date(Date.UTC(view.y, view.m, 1)).getUTCDay() + 6) % 7;
+        const count = new Date(Date.UTC(view.y, view.m + 1, 0)).getUTCDate();
+        for (let i = 0; i < lead; i++) {
+          const pad = document.createElement("span");
+          pad.className = "cal-pad";
+          pad.setAttribute("aria-hidden", "true");
+          daysGrid.appendChild(pad);
+        }
+        for (let day = 1; day <= count; day++) {
+          const iso = view.y + "-" + String(view.m + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "cal-day";
+          button.textContent = String(day);
+          const open = openDays.has(iso);
+          button.disabled = !open;
+          if (iso === todayKey) button.classList.add("is-today");
+          if (iso === selectedDate) button.classList.add("is-selected");
+          button.setAttribute("aria-pressed", iso === selectedDate ? "true" : "false");
+          const longLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(Date.UTC(view.y, view.m, day)));
+          button.setAttribute("aria-label", open ? longLabel : longLabel + ", unavailable");
+          if (open) button.addEventListener("click", () => {
+            selectedDate = iso;
+            syncSlot();
+            renderCalendar();
+          });
+          daysGrid.appendChild(button);
+        }
+        renderTimes();
+        syncSlot();
+      }
+      document.getElementById("cal-prev").addEventListener("click", () => {
+        const date = new Date(Date.UTC(view.y, view.m - 1, 1));
+        view = { y: date.getUTCFullYear(), m: date.getUTCMonth() };
+        renderCalendar();
+      });
+      document.getElementById("cal-next").addEventListener("click", () => {
+        const date = new Date(Date.UTC(view.y, view.m + 1, 1));
+        view = { y: date.getUTCFullYear(), m: date.getUTCMonth() };
+        renderCalendar();
+      });
+      renderCalendar();
 
       const form = document.getElementById("booking-form");
       const errors = document.getElementById("form-errors");
       const confirmation = document.getElementById("confirmation");
 
       function setInvalid(id, invalid) {
-        const el = document.getElementById(id);
+        const el = id === "slot" ? calendar : document.getElementById(id);
         if (invalid) el.setAttribute("aria-invalid", "true");
         else el.removeAttribute("aria-invalid");
       }
@@ -337,7 +464,7 @@
       form.addEventListener("submit", (event) => {
         event.preventDefault();
         const messages = [];
-        const slot = slotSelect.value;
+        const slot = slotInput.value;
         const serviceId = document.getElementById("service").value;
         const name = document.getElementById("name").value.trim();
         const email = document.getElementById("email").value.trim();
@@ -367,7 +494,7 @@
         errors.innerHTML = "";
         const service = services[serviceId];
         const ref = "PH-BK-" + String(1000 + Math.floor(Math.random() * 9000));
-        const slotLabel = slotSelect.options[slotSelect.selectedIndex].textContent;
+        const slotLabel = formatSlot(slot);
         document.getElementById("ref").textContent = ref;
         document.getElementById("confirm-summary").textContent = name + " · " + slotLabel + " · " + service.name + " · " + service.price + (notes ? " · Note received." : ".");
         const contactLine = "Created · " + email;

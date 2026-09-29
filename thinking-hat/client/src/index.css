@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  color: #4c4560;
+  font-family: Outfit, sans-serif;
+  background:
+    radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
+    radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
+    radial-gradient(680px 420px at 50% 110%, rgba(221, 214, 254, 0.55), transparent 50%),
+    #f7f4ff;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-display {
+  font-family: Nunito, sans-serif;
+}
+
+::selection {
+  background: #ddd6fe;
+  color: #2a1548;
+}
+
+:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 3px;
+}
+
+.live-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+  animation: live-pulse 1.8s ease-out infinite;
+}
+
+@keyframes live-pulse {
+  70% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
+}
