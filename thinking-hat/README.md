@@ -20,6 +20,29 @@ The Purple Hat landing page button “Thinking Hat Login” opens the app login.
 
 The admin email and password are in `server/.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`). The password is applied to that admin account when the server starts. Change it in `.env` before you share the machine.
 
+## Deploy on Hostinger
+
+Use a Business or Cloud plan. In hPanel: **Websites → Add Website → Node.js web app → Import Git repository**. Choose this repo and branch `main`.
+
+| Setting | Value |
+| --- | --- |
+| Root directory | `/` (the folder that contains `index.html` and `thinking-hat`) |
+| Node.js version | 24 |
+| Framework | Express |
+| Entry file | `thinking-hat/server/src/index.js` |
+| Output directory | leave empty |
+
+Add these environment variables in hPanel. Do not commit `server/.env`.
+
+- `JWT_SECRET` — long random string
+- `ADMIN_EMAIL` — `admin@purplehat.fun`
+- `ADMIN_PASSWORD` — the live admin password
+- `DATA_DIR` — optional. Example: `/home/YOURUSER/thinking-hat-data`
+
+Hostinger sets `PORT`. The database and photos are stored in `DATA_DIR`, or in `thinking-hat-data` in the home directory when the app is running from a Hostinger build. That folder is outside the deploy, so a later push does not wipe clients or photos.
+
+The brochure and Thinking Hat are the same site. `/` is the brochure. `/login` is Thinking Hat. Pushing to `main` redeploys.
+
 ## Invite keys
 
 1. Sign in as admin.

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import cors from "cors";
 import express from "express";
@@ -817,11 +818,60 @@ app.use("/uploads", (req, res) => {
   res.status(404).json({ error: "Not found." });
 });
 
-const clientDist = path.resolve(uploadsDir, "../../client/dist");
+const serverDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const clientDist = path.join(serverDir, "..", "client", "dist");
+const siteRoot = [path.join(serverDir, "..", ".."), path.join(serverDir, "..", "site")].find((dir) =>
+  fs.existsSync(path.join(dir, "index.html")),
+);
+const marketingFiles = {
+  "/": "index.html",
+  "/index.html": "index.html",
+  "/integrations.html": "integrations.html",
+  "/integrations-booking-calendar.html": "integrations-booking-calendar.html",
+  "/logo.png": "logo.png",
+};
+
+function isAppPath(pathname) {
+  const name = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  return name === "/login"
+    || name === "/register"
+    || name === "/billing"
+    || name === "/request"
+    || name === "/business"
+    || name === "/reports"
+    || name === "/statements"
+    || name === "/admin"
+    || name.startsWith("/admin/");
+}
+
+if (siteRoot) {
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+    const fileName = marketingFiles[req.path];
+    if (!fileName) {
+      next();
+      return;
+    }
+    const filePath = path.join(siteRoot, fileName);
+    if (!fs.existsSync(filePath)) {
+      next();
+      return;
+    }
+    res.sendFile(filePath);
+  });
+}
+
 if (fs.existsSync(path.join(clientDist, "index.html"))) {
-  app.use(express.static(clientDist));
+  app.use(express.static(clientDist, { index: false, dotfiles: "deny" }));
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
+      next();
+      return;
+    }
+    if (!isAppPath(req.path)) {
       next();
       return;
     }
@@ -838,4 +888,5 @@ const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);
   console.log(`Admin email: ${admin.email}`);
+  console.log(`Data directory: ${path.dirname(uploadsDir)}`);
 });

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -9,8 +10,18 @@ import { DatabaseSync } from "node:sqlite";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
 
-export const uploadsDir = path.join(rootDir, "uploads");
-const dataDir = path.join(rootDir, "data");
+// Hostinger replaces the deploy folder on every build. Keep the database and
+// photos in DATA_DIR, or in the home directory when the app is running from hbuilds.
+function storageRoot() {
+  if (process.env.DATA_DIR) return path.resolve(process.env.DATA_DIR);
+  const hosted = rootDir.includes(`${path.sep}hbuilds${path.sep}`);
+  if (hosted) return path.join(os.homedir(), "thinking-hat-data");
+  return rootDir;
+}
+
+const storage = storageRoot();
+export const uploadsDir = path.join(storage, "uploads");
+const dataDir = path.join(storage, "data");
 fs.mkdirSync(uploadsDir, { recursive: true });
 fs.mkdirSync(dataDir, { recursive: true });
 
