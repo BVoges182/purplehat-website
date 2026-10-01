@@ -1,10 +1,31 @@
 {
   "name": "thinking-hat",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "node dev.mjs",
-    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client && node scripts/copy-site.mjs",
+    "build": "node scripts/build-client.mjs",
+    "postinstall": "node scripts/build-client.mjs",
     "start": "node server/src/index.js",
     "install:all": "npm install --prefix server && npm install --prefix client"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "postcss": "^8.4.49",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.0.7"
   }
 }

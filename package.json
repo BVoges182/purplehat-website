@@ -5,8 +5,8 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "node scripts/build-client.mjs",
-    "postinstall": "node scripts/build-client.mjs",
+    "build": "node thinking-hat/scripts/build-client.mjs",
+    "postinstall": "node thinking-hat/scripts/build-client.mjs",
     "start": "node thinking-hat/server/src/index.js"
   },
   "dependencies": {
