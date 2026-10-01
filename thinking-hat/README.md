@@ -30,6 +30,7 @@ Use a Business or Cloud plan. In hPanel: **Websites → Add Website → Node.js 
 | Node.js version | 24 |
 | Framework | Express |
 | Entry file | `thinking-hat/server/src/index.js` |
+| Build command | leave empty |
 | Output directory | leave empty |
 
 Add these environment variables in hPanel. Do not commit `server/.env`.
@@ -39,7 +40,7 @@ Add these environment variables in hPanel. Do not commit `server/.env`.
 - `ADMIN_PASSWORD` — the live admin password
 - `DATA_DIR` — optional. Example: `/home/YOURUSER/thinking-hat-data`
 
-Hostinger sets `PORT`. The database and photos are stored in `DATA_DIR`, or in `thinking-hat-data` in the home directory when the app is running from a Hostinger build. That folder is outside the deploy, so a later push does not wipe clients or photos.
+Hostinger sets `PORT`. Its install step runs the root `postinstall` script, which builds Thinking Hat. The database and photos are stored in `DATA_DIR`, or in `thinking-hat-data` in the home directory when the app is running from a Hostinger build. That folder is outside the deploy, so a later push does not wipe clients or photos.
 
 The brochure and Thinking Hat are the same site. `/` is the brochure. `/login` is Thinking Hat. Pushing to `main` redeploys.
 

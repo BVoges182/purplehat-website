@@ -9,6 +9,7 @@ import { DatabaseSync } from "node:sqlite";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
+dotenv.config({ path: path.join(rootDir, "..", "..", ".env") });
 
 // Hostinger replaces the deploy folder on every build. Keep the database and
 // photos in DATA_DIR, or in the home directory when the app is running from hbuilds.
