@@ -4,6 +4,8 @@ import Shell from "./components/Shell";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import ManagementReports from "./pages/ManagementReports";
+import FinancialStatements from "./pages/FinancialStatements";
 import Billing from "./pages/Billing";
 import RequestBuild from "./pages/RequestBuild";
 import Business from "./pages/Business";
@@ -44,6 +46,8 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<Home />} />
+          <Route path="reports" element={<ManagementReports />} />
+          <Route path="statements" element={<FinancialStatements />} />
           <Route path="billing" element={<Billing />} />
           <Route path="request" element={<RequestBuild />} />
           <Route path="business" element={<Business />} />

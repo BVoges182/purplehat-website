@@ -4,6 +4,8 @@ import { Avatar, Button } from "./ui";
 
 const clientLinks = [
   ["/", "Dashboard"],
+  ["/reports", "Management Reports"],
+  ["/statements", "Financial Statements"],
   ["/billing", "Billing"],
   ["/request", "Request Build"],
   ["/business", "Business"],
