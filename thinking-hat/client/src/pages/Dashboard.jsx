@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, Avatar, Card, PageIntro, money, monthLabel } from "../components/ui";
+import { reportFigure } from "../reportMoney";
 
 function age(iso) {
   if (!iso) return "waiting";
@@ -48,11 +49,12 @@ export default function Dashboard() {
 
   const stats = data ? [
     ["Cash", data.cash],
-    ["Revenue this month", data.revenue],
-    ["Expenses this month", data.expenses],
+    ["Revenue for the month", data.revenue],
+    ["Expenses for the month", data.expenses],
     ["Receivable", data.receivables],
   ] : [];
-  const max = data ? Math.max(1, ...data.months.flatMap((month) => [month.revenue, month.expenses])) : 1;
+  const plotted = data ? data.months.flatMap((month) => [month.revenue, month.expenses].filter((value) => typeof value === "number")) : [];
+  const max = plotted.length ? Math.max(1, ...plotted) : 1;
 
   return (
     <div>
@@ -76,7 +78,7 @@ export default function Dashboard() {
             {stats.map(([label, value]) => (
               <Card key={label}>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
-                <p className="mt-3 font-display text-2xl font-extrabold text-ink">{money(value)}</p>
+                <p className="mt-3 font-display text-2xl font-extrabold text-ink">{reportFigure(value, "money")}</p>
               </Card>
             ))}
           </div>
@@ -84,7 +86,7 @@ export default function Dashboard() {
             <Card>
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-extrabold text-ink">Six months</h2>
-                <p className="text-xs text-mute">Payable {money(data.payables)}</p>
+                <p className="text-xs text-mute">Payable {reportFigure(data.payables, "money")}</p>
               </div>
               <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
                 <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
@@ -94,8 +96,12 @@ export default function Dashboard() {
                 {data.months.map((month) => (
                   <div key={month.month} className="flex h-full flex-1 flex-col justify-end">
                     <div className="flex h-36 items-end gap-1">
-                      <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${money(month.revenue)}`} />
-                      <div className="flex-1 rounded-t-lg bg-[#c4b5fd]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${money(month.expenses)}`} />
+                      {typeof month.revenue === "number" ? (
+                        <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
+                      ) : <div className="flex-1" />}
+                      {typeof month.expenses === "number" ? (
+                        <div className="flex-1 rounded-t-lg bg-[#c4b5fd]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${reportFigure(month.expenses, "money")}`} />
+                      ) : <div className="flex-1" />}
                     </div>
                     <p className="mt-2 text-center text-xs text-mute">{monthLabel(month.month)}</p>
                   </div>

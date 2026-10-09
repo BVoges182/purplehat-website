@@ -18,6 +18,17 @@ import db, {
   transaction,
   uploadsDir,
 } from "./db.js";
+import {
+  deleteManagementReport,
+  listAllManagementReports,
+  listManagementReports,
+  dashboardFigures,
+  readManagementReport,
+  renderManagementReportPdf,
+  reportPdfFilename,
+  saveManagementReport,
+} from "./managementReports.js";
+import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
   console.error("Set JWT_SECRET in server/.env.");
@@ -106,7 +117,7 @@ function toCents(value) {
   return cents;
 }
 
-function readFinances(userId) {
+function readFinances(userId, { fromReports = false } = {}) {
   const row = db.prepare("SELECT * FROM finances WHERE user_id = ?").get(userId);
   const months = db.prepare(
     "SELECT month, revenue_cents, expenses_cents FROM finance_months WHERE user_id = ? ORDER BY month",
@@ -114,7 +125,7 @@ function readFinances(userId) {
   const events = db.prepare(
     "SELECT id, kind, description, amount_cents, occurred_at FROM ledger_events WHERE user_id = ? ORDER BY id DESC LIMIT 8",
   ).all(userId);
-  return {
+  const stored = {
     cash: row ? rands(row.cash_cents) : 0,
     revenue: row ? rands(row.revenue_cents) : 0,
     expenses: row ? rands(row.expenses_cents) : 0,
@@ -135,6 +146,80 @@ function readFinances(userId) {
       amount: rands(event.amount_cents),
       occurredAt: event.occurred_at,
     })),
+  };
+  if (!fromReports) return stored;
+  const dash = dashboardFigures(userId);
+  if (!dash.latest) {
+    return {
+      ...stored,
+      cash: null,
+      revenue: null,
+      expenses: null,
+      receivables: null,
+      payables: null,
+      source: "empty",
+      months: dash.chart,
+    };
+  }
+  return {
+    ...stored,
+    cash: dash.latest.cash,
+    revenue: dash.latest.revenue,
+    expenses: dash.latest.expenses,
+    receivables: dash.latest.receivables,
+    payables: dash.latest.payables,
+    source: "report",
+    months: dash.chart,
+  };
+}
+
+function reportFinances(userId) {
+  const { latest, months } = dashboardFigures(userId);
+  if (!latest) {
+    return {
+      cash: null,
+      revenue: null,
+      expenses: null,
+      receivables: null,
+      payables: null,
+      source: "empty",
+      months: [],
+    };
+  }
+  return {
+    cash: latest.cash,
+    revenue: latest.revenue,
+    expenses: latest.expenses,
+    receivables: latest.receivables,
+    payables: latest.payables,
+    source: "report",
+    month: latest.month,
+    months,
+  };
+}
+
+function adminFigures(userId) {
+  const reports = reportFinances(userId);
+  const stored = readFinances(userId);
+  const savedMonths = stored.source === "practice" ? stored.months : [];
+  const months = (reports.months || []).map((month) => {
+    const saved = savedMonths.find((item) => item.month === month.month);
+    const source = saved || month;
+    return {
+      month: month.month,
+      revenue: source.revenue ?? "",
+      expenses: source.expenses ?? "",
+    };
+  });
+  const headline = stored.source === "practice" ? stored : reports;
+  return {
+    cash: headline.cash ?? "",
+    revenue: headline.revenue ?? "",
+    expenses: headline.expenses ?? "",
+    receivables: headline.receivables ?? "",
+    payables: headline.payables ?? "",
+    source: stored.source === "practice" ? "practice" : reports.source,
+    months,
   };
 }
 
@@ -194,6 +279,30 @@ const upload = multer({
     callback(null, true);
   },
 });
+
+const workbookUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter(req, file, callback) {
+    const name = String(file.originalname || "").toLowerCase();
+    if (!name.endsWith(".xlsx")) {
+      callback(new Error("Upload an Excel .xlsx file."));
+      return;
+    }
+    callback(null, true);
+  },
+}).single("file");
+
+function acceptWorkbook(req, res, next) {
+  workbookUpload(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const message = error.code === "LIMIT_FILE_SIZE" ? "Use an Excel file under 8 MB." : (error.message || "Upload an Excel .xlsx file.");
+    res.status(400).json({ error: message });
+  });
+}
 
 function photoUpload(req, res, next) {
   upload.single("photo")(req, res, (error) => {
@@ -400,7 +509,24 @@ app.post("/api/me/photo", requireAuth, photoUpload, (req, res) => {
 });
 
 app.get("/api/me/finances", requireAuth, (req, res) => {
-  res.json(readFinances(req.user.id));
+  res.json(readFinances(req.user.id, { fromReports: true }));
+});
+
+app.get("/api/me/reports", requireAuth, (req, res) => {
+  res.json({ reports: listManagementReports(req.user.id) });
+});
+
+app.get("/api/me/reports/:month/pdf", requireAuth, (req, res) => {
+  sendManagementReportPdf(res, req.user, req.params.month);
+});
+
+app.get("/api/me/reports/:month", requireAuth, (req, res) => {
+  const report = readManagementReport(req.user.id, req.params.month);
+  if (!report) {
+    res.status(404).json({ error: "That report was not found." });
+    return;
+  }
+  res.json({ report, businessName: req.user.business_name });
 });
 
 app.get("/api/me/invoices", requireAuth, (req, res) => {
@@ -446,6 +572,83 @@ app.post("/api/me/requests", requireAuth, (req, res) => {
   res.status(201).json({ request: publicRequest(row) });
 });
 
+app.get("/api/admin/reports", requireAuth, requireAdmin, (req, res) => {
+  res.json({ reports: listAllManagementReports() });
+});
+
+app.post("/api/admin/reports", requireAuth, requireAdmin, acceptWorkbook, async (req, res) => {
+  const month = String(req.body.month || "");
+  const userId = Number(req.body.userId);
+  const replace = String(req.body.replace || "") === "1";
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    res.status(400).json({ error: "Choose a report month." });
+    return;
+  }
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  if (!user || user.role !== "client") {
+    res.status(400).json({ error: "Choose a client." });
+    return;
+  }
+  if (!req.file) {
+    res.status(400).json({ error: "Choose an Excel file." });
+    return;
+  }
+  const header = req.file.buffer.subarray(0, 2).toString("utf8");
+  if (header !== "PK") {
+    res.status(400).json({ error: "Upload an Excel .xlsx file." });
+    return;
+  }
+  let parsed;
+  try {
+    parsed = await parseManagementWorkbook(req.file.buffer);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read that Excel file." });
+    return;
+  }
+  const saved = saveManagementReport({
+    userId: user.id,
+    month,
+    entityName: parsed.entityName,
+    sections: parsed.sections,
+    replace,
+  });
+  if (saved.error) {
+    res.status(400).json({ error: saved.error });
+    return;
+  }
+  if (saved.exists && !replace) {
+    res.status(409).json({
+      error: `${user.business_name || user.name} already has a report for ${saved.title}. Replace it?`,
+      exists: true,
+    });
+    return;
+  }
+  res.status(saved.replaced ? 200 : 201).json({
+    replaced: Boolean(saved.replaced),
+    report: {
+      ...saved.report,
+      userId: Number(user.id),
+      businessName: user.business_name,
+      name: user.name,
+      email: user.email,
+    },
+  });
+});
+
+app.delete("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, res) => {
+  const user = db.prepare("SELECT id FROM users WHERE id = ?").get(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "That person was not found." });
+    return;
+  }
+  const removed = deleteManagementReport(user.id, req.params.month);
+  if (!removed) {
+    res.status(404).json({ error: "That report was not found." });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 app.get("/api/admin/users", requireAuth, requireAdmin, (req, res) => {
   const rows = db.prepare("SELECT * FROM users ORDER BY id DESC").all();
   res.json({ users: rows.map(publicUser) });
@@ -461,9 +664,33 @@ app.get("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
   res.json({
     user: publicUser(user),
     bootstrap: user.email === bootstrapEmail(),
-    finances: readFinances(user.id),
+    finances: adminFigures(user.id),
     invoices: invoices.map(publicInvoice),
+    reports: listManagementReports(user.id),
   });
+});
+
+app.get("/api/admin/users/:id/reports/:month/pdf", requireAuth, requireAdmin, (req, res) => {
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "That person was not found." });
+    return;
+  }
+  sendManagementReportPdf(res, user, req.params.month);
+});
+
+app.get("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, res) => {
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "That person was not found." });
+    return;
+  }
+  const report = readManagementReport(user.id, req.params.month);
+  if (!report) {
+    res.status(404).json({ error: "That report was not found." });
+    return;
+  }
+  res.json({ report, businessName: user.business_name });
 });
 
 app.patch("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
@@ -676,20 +903,41 @@ app.patch("/api/admin/invoices/:id", requireAuth, requireAdmin, (req, res) => {
     res.status(404).json({ error: "That invoice was not found." });
     return;
   }
+  const number = req.body.number === undefined ? row.number : clean(req.body.number, 40);
   const status = clean(req.body.status ?? row.status, 20);
   const description = clean(req.body.description ?? row.description, 160);
   const amount = req.body.amount === undefined ? Number(row.amount_cents) : toCents(req.body.amount);
-  if (!invoiceStatuses.has(status) || !description || amount === null || amount < 0) {
+  const issuedOn = req.body.issuedOn === undefined ? row.issued_on : clean(req.body.issuedOn, 10);
+  const dueOn = req.body.dueOn === undefined ? row.due_on : clean(req.body.dueOn, 10);
+  if (!number || !invoiceStatuses.has(status) || !description || amount === null || amount < 0) {
     res.status(400).json({ error: "Check the invoice details." });
     return;
   }
-  db.prepare("UPDATE invoices SET status = ?, description = ?, amount_cents = ? WHERE id = ?").run(
-    status,
-    description,
-    amount,
-    row.id,
-  );
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(issuedOn) || !/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) {
+    res.status(400).json({ error: "Enter valid dates." });
+    return;
+  }
+  const duplicate = db.prepare(
+    "SELECT id FROM invoices WHERE user_id = ? AND number = ? AND id != ?",
+  ).get(row.user_id, number, row.id);
+  if (duplicate) {
+    res.status(400).json({ error: "That invoice number is already used." });
+    return;
+  }
+  db.prepare(
+    "UPDATE invoices SET number = ?, status = ?, description = ?, amount_cents = ?, issued_on = ?, due_on = ? WHERE id = ?",
+  ).run(number, status, description, amount, issuedOn, dueOn, row.id);
   res.json({ invoice: publicInvoice(db.prepare("SELECT * FROM invoices WHERE id = ?").get(row.id)) });
+});
+
+app.delete("/api/admin/invoices/:id", requireAuth, requireAdmin, (req, res) => {
+  const row = db.prepare("SELECT id FROM invoices WHERE id = ?").get(req.params.id);
+  if (!row) {
+    res.status(404).json({ error: "That invoice was not found." });
+    return;
+  }
+  db.prepare("DELETE FROM invoices WHERE id = ?").run(row.id);
+  res.json({ ok: true });
 });
 
 app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
@@ -831,14 +1079,35 @@ const marketingFiles = {
   "/logo.png": "logo.png",
 };
 
+function sendManagementReportPdf(res, user, month) {
+  const report = readManagementReport(user.id, month);
+  if (!report) {
+    res.status(404).json({ error: "That report was not found." });
+    return;
+  }
+  renderManagementReportPdf(report, user)
+    .then((pdf) => {
+      const filename = reportPdfFilename(user.business_name, report.month);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.send(pdf);
+    })
+    .catch((error) => {
+      console.error(error);
+      if (!res.headersSent) res.status(500).json({ error: "Could not prepare the PDF." });
+    });
+}
+
 function isAppPath(pathname) {
   const name = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
   return name === "/login"
+    || name === "/dashboard"
     || name === "/register"
     || name === "/billing"
     || name === "/request"
     || name === "/business"
     || name === "/reports"
+    || name.startsWith("/reports/")
     || name === "/statements"
     || name === "/admin"
     || name.startsWith("/admin/");

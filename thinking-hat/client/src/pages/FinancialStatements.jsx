@@ -21,7 +21,7 @@ function Lines({ rows }) {
 
 export default function FinancialStatements() {
   const { data, error } = useFinances();
-  const months = data?.months || [];
+  const months = (data?.months || []).filter((month) => typeof month.revenue === "number" || typeof month.expenses === "number");
   const revenue = months.length ? months.reduce((sum, month) => sum + month.revenue, 0) : (data?.revenue || 0);
   const expenses = months.length ? months.reduce((sum, month) => sum + month.expenses, 0) : (data?.expenses || 0);
   const assets = data ? data.cash + data.receivables : 0;

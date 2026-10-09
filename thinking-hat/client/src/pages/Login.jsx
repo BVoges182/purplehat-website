@@ -13,7 +13,7 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const notice = location.state?.message || "";
 
-  if (ready && user) return <Navigate to={user.role === "admin" ? "/admin" : "/"} replace />;
+  if (ready && user) return <Navigate to={user.role === "admin" ? "/admin" : "/dashboard"} replace />;
 
   async function onSubmit(event) {
     event.preventDefault();
@@ -24,7 +24,7 @@ export default function Login() {
       const from = location.state?.from?.pathname || "";
       const next = signedIn.role === "admin"
         ? (from.startsWith("/admin") ? from : "/admin")
-        : (from && from !== "/login" && !from.startsWith("/admin") ? from : "/");
+        : (from && from !== "/login" && !from.startsWith("/admin") ? from : "/dashboard");
       navigate(next, { replace: true });
     } catch (err) {
       setError(err.message);

@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ManagementReports from "./pages/ManagementReports";
+import ReportDocument from "./pages/ReportDocument";
 import FinancialStatements from "./pages/FinancialStatements";
 import Billing from "./pages/Billing";
 import RequestBuild from "./pages/RequestBuild";
@@ -13,6 +14,7 @@ import AdminPeople from "./pages/AdminPeople";
 import AdminUser from "./pages/AdminUser";
 import AdminInvites from "./pages/AdminInvites";
 import AdminRequests from "./pages/AdminRequests";
+import AdminReports from "./pages/AdminReports";
 
 function Loading() {
   return <p className="grid min-h-screen place-items-center text-mute">Loading…</p>;
@@ -28,14 +30,14 @@ function RequireAuth() {
 
 function RequireAdmin() {
   const { user } = useAuth();
-  if (user.role !== "admin") return <Navigate to="/" replace />;
+  if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
   return <Outlet />;
 }
 
 function Home() {
   const { user } = useAuth();
   if (user.role === "admin") return <Navigate to="/admin" replace />;
-  return <Dashboard />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 export default function App() {
@@ -46,16 +48,20 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<Home />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="reports" element={<ManagementReports />} />
+          <Route path="reports/:month" element={<ReportDocument />} />
           <Route path="statements" element={<FinancialStatements />} />
           <Route path="billing" element={<Billing />} />
           <Route path="request" element={<RequestBuild />} />
           <Route path="business" element={<Business />} />
           <Route element={<RequireAdmin />}>
             <Route path="admin" element={<AdminPeople />} />
+            <Route path="admin/reports" element={<AdminReports />} />
             <Route path="admin/invites" element={<AdminInvites />} />
             <Route path="admin/requests" element={<AdminRequests />} />
             <Route path="admin/users/:id" element={<AdminUser />} />
+            <Route path="admin/users/:id/reports/:month" element={<ReportDocument />} />
           </Route>
         </Route>
       </Route>

@@ -1,4 +1,9 @@
-import { Alert, Card, PageIntro, money } from "../components/ui";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { api, downloadAuthorized } from "../api";
+import { useAuth } from "../auth";
+import { Alert, Button, Card, PageIntro, money } from "../components/ui";
+import { reportMonthLabel, reportPdfName } from "../reportMoney";
 import { monthHeading, resultOf, useFinances } from "../useFinances";
 
 function amountClass(value, strong) {
@@ -7,8 +12,35 @@ function amountClass(value, strong) {
 }
 
 export default function ManagementReports() {
+  const { user } = useAuth();
   const { data, error } = useFinances();
-  const months = data?.months || [];
+  const [reports, setReports] = useState([]);
+  const [reportError, setReportError] = useState("");
+  const [downloading, setDownloading] = useState("");
+
+  useEffect(() => {
+    let stop = false;
+    api.reports()
+      .then((payload) => { if (!stop) setReports(payload.reports || []); })
+      .catch((err) => { if (!stop) setReportError(err.message); });
+    return () => { stop = true; };
+  }, []);
+
+  async function download(report) {
+    setDownloading(report.month);
+    setReportError("");
+    try {
+      await downloadAuthorized(
+        `/api/me/reports/${report.month}/pdf`,
+        reportPdfName(user.businessName, report.month),
+      );
+    } catch (err) {
+      setReportError(err.message);
+    } finally {
+      setDownloading("");
+    }
+  }
+  const months = (data?.months || []).filter((month) => typeof month.revenue === "number" || typeof month.expenses === "number");
   const totals = months.reduce(
     (sum, month) => ({
       revenue: sum.revenue + month.revenue,
@@ -22,6 +54,23 @@ export default function ManagementReports() {
     <div>
       <PageIntro title="Management Reports" lede="Revenue, expenses, and the monthly result from the figures Purple Hat maintains." />
       {error ? <Alert>{error}</Alert> : null}
+      {reportError ? <div className="mb-4"><Alert>{reportError}</Alert></div> : null}
+      {reports.length > 0 ? (
+        <Card className="mb-4">
+          <h2 className="font-display text-xl font-extrabold text-ink">Reports</h2>
+          <ul className="mt-2">
+            {reports.map((report) => (
+              <li key={report.month} className="flex flex-col gap-3 border-t border-[rgba(109,40,217,0.08)] py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
+                <Link to={`/reports/${report.month}`} className="min-w-0">
+                  <p className="font-display text-lg font-extrabold text-ink">{reportMonthLabel(report.month)}</p>
+                  <p className="mt-1 text-sm text-mute">{report.periodLabel}</p>
+                </Link>
+                <Button type="button" variant="ghost" disabled={downloading === report.month} onClick={() => download(report)}>Download PDF</Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
       {!data && !error ? <p className="text-mute">Loading reports…</p> : null}
       {data ? (
         <div className="space-y-4">

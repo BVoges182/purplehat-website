@@ -120,6 +120,19 @@ CREATE TABLE IF NOT EXISTS build_requests (
   updated_at TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS management_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  month TEXT NOT NULL,
+  title TEXT NOT NULL,
+  period_label TEXT NOT NULL,
+  entity_name TEXT NOT NULL DEFAULT '',
+  content_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (user_id, month),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 `);
 
 export function nowIso() {

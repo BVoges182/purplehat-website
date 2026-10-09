@@ -1,9 +1,10 @@
 export const TOKEN_KEY = "thinkingHatToken";
 
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, data) {
     super(message);
     this.status = status;
+    this.data = data || null;
   }
 }
 
@@ -34,7 +35,7 @@ async function request(path, { method = "GET", body } = {}) {
   if (response.status === 401 && !path.startsWith("/api/auth/login") && !path.startsWith("/api/auth/register")) {
     onUnauthorized();
   }
-  if (!response.ok) throw new ApiError(data.error || "Something went wrong.", response.status);
+  if (!response.ok) throw new ApiError(data.error || "Something went wrong.", response.status, data);
   return data;
 }
 
@@ -44,6 +45,32 @@ function photoBody(file) {
   return body;
 }
 
+export async function downloadAuthorized(path, filename) {
+  const headers = {};
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) headers.Authorization = `Bearer ${token}`;
+  let response;
+  try {
+    response = await fetch(path, { headers });
+  } catch {
+    throw new ApiError("Cannot reach Thinking Hat. Start the server and try again.", 0);
+  }
+  if (response.status === 401) onUnauthorized();
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(data.error || "Could not download the report.", response.status);
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
 export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   register: (body) => request("/api/auth/register", { method: "POST", body }),
@@ -51,6 +78,19 @@ export const api = {
   updateMe: (body) => request("/api/me", { method: "PATCH", body }),
   uploadPhoto: (file) => request("/api/me/photo", { method: "POST", body: photoBody(file) }),
   finances: () => request("/api/me/finances"),
+  reports: () => request("/api/me/reports"),
+  report: (month) => request(`/api/me/reports/${month}`),
+  userReport: (id, month) => request(`/api/admin/users/${id}/reports/${month}`),
+  adminReports: () => request("/api/admin/reports"),
+  uploadReport: (userId, month, file, replace) => {
+    const body = new FormData();
+    body.append("userId", String(userId));
+    body.append("month", month);
+    body.append("file", file);
+    if (replace) body.append("replace", "1");
+    return request("/api/admin/reports", { method: "POST", body });
+  },
+  deleteReport: (userId, month) => request(`/api/admin/users/${userId}/reports/${month}`, { method: "DELETE" }),
   invoices: () => request("/api/me/invoices"),
   requests: () => request("/api/me/requests"),
   createRequest: (body) => request("/api/me/requests", { method: "POST", body }),
@@ -61,6 +101,7 @@ export const api = {
   saveFinances: (id, body) => request(`/api/admin/users/${id}/finances`, { method: "PUT", body }),
   addInvoice: (id, body) => request(`/api/admin/users/${id}/invoices`, { method: "POST", body }),
   updateInvoice: (id, body) => request(`/api/admin/invoices/${id}`, { method: "PATCH", body }),
+  deleteInvoice: (id) => request(`/api/admin/invoices/${id}`, { method: "DELETE" }),
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),
