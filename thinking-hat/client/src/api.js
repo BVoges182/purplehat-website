@@ -102,6 +102,7 @@ export const api = {
   addInvoice: (id, body) => request(`/api/admin/users/${id}/invoices`, { method: "POST", body }),
   updateInvoice: (id, body) => request(`/api/admin/invoices/${id}`, { method: "PATCH", body }),
   deleteInvoice: (id) => request(`/api/admin/invoices/${id}`, { method: "DELETE" }),
+  templates: () => request("/api/admin/templates"),
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),

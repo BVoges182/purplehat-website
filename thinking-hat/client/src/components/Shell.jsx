@@ -14,6 +14,7 @@ const clientLinks = [
 const adminLinks = [
   ["/admin", "People"],
   ["/admin/reports", "Management Reports"],
+  ["/admin/templates", "Client templates"],
   ["/admin/invites", "Invite keys"],
   ["/admin/requests", "Build requests"],
 ];

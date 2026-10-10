@@ -13,8 +13,10 @@ import db, {
   newInviteCode,
   nowIso,
   publicUser,
+  applyClientTemplate,
   seedAdmin,
   seedClientBooks,
+  seedWealthTechTemplate,
   transaction,
   uploadsDir,
 } from "./db.js";
@@ -396,6 +398,10 @@ app.post("/api/auth/register", rateLimit, (req, res) => {
     res.status(400).json({ error: "That email is already registered." });
     return;
   }
+  if (invite.template_id && !db.prepare("SELECT id FROM client_templates WHERE id = ?").get(invite.template_id)) {
+    res.status(400).json({ error: "That invite's template is no longer available." });
+    return;
+  }
 
   const status = invite.approve_on_use ? "active" : "pending";
   const ts = nowIso();
@@ -419,12 +425,17 @@ app.post("/api/auth/register", rateLimit, (req, res) => {
         const error = new Error("used");
         throw error;
       }
-      seedClientBooks(id);
+      if (invite.template_id) applyClientTemplate(id, invite.template_id);
+      else seedClientBooks(id);
       return id;
     });
   } catch (error) {
     if (error.message === "used") {
       res.status(400).json({ error: "That invite key has already been used." });
+      return;
+    }
+    if (error.message === "template") {
+      res.status(400).json({ error: "That invite's template is no longer available." });
       return;
     }
     if (String(error.message).includes("UNIQUE")) {
@@ -942,9 +953,11 @@ app.delete("/api/admin/invoices/:id", requireAuth, requireAdmin, (req, res) => {
 
 app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
   const rows = db.prepare(
-    `SELECT invites.*, users.name AS used_by_name, users.email AS used_by_email
+    `SELECT invites.*, users.name AS used_by_name, users.email AS used_by_email,
+            client_templates.name AS template_name
      FROM invites
      LEFT JOIN users ON users.id = invites.used_by
+     LEFT JOIN client_templates ON client_templates.id = invites.template_id
      ORDER BY invites.id DESC`,
   ).all();
   res.json({
@@ -960,7 +973,31 @@ app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
       usedAt: row.used_at,
       usedByName: row.used_by_name,
       usedByEmail: row.used_by_email,
+      templateId: row.template_id ? Number(row.template_id) : null,
+      templateName: row.template_name || null,
     })),
+  });
+});
+
+app.get("/api/admin/templates", requireAuth, requireAdmin, (req, res) => {
+  const templates = db.prepare("SELECT * FROM client_templates ORDER BY id").all();
+  res.json({
+    templates: templates.map((template) => {
+      const reports = db.prepare(
+        "SELECT month, title FROM client_template_reports WHERE template_id = ? ORDER BY month",
+      ).all(template.id);
+      const movements = db.prepare(
+        "SELECT description FROM client_template_events WHERE template_id = ? ORDER BY id",
+      ).all(template.id);
+      return {
+        id: Number(template.id),
+        name: template.name,
+        sourceBusiness: template.source_business,
+        createdAt: template.created_at,
+        reports: reports.map((report) => ({ month: report.month, title: report.title })),
+        movements: movements.map((event) => event.description),
+      };
+    }),
   });
 });
 
@@ -969,8 +1006,16 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
   const email = clean(req.body.email, 120).toLowerCase();
   const days = req.body.expiresInDays;
   const approveOnUse = req.body.approveOnUse === false ? 0 : 1;
+  const templateId = Number(req.body.templateId);
+  const template = Number.isInteger(templateId)
+    ? db.prepare("SELECT id, name FROM client_templates WHERE id = ?").get(templateId)
+    : null;
   if (!label) {
     res.status(400).json({ error: "Say who this key is for." });
+    return;
+  }
+  if (!template) {
+    res.status(400).json({ error: "Choose a client template." });
     return;
   }
   if (email && !isEmail(email)) {
@@ -989,9 +1034,9 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
   const code = newInviteCode();
   const ts = nowIso();
   const created = db.prepare(
-    `INSERT INTO invites (code_hash, code_hint, label, email, approve_on_use, status, expires_at, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`,
-  ).run(hashCode(code), codeHint(code), label, email || null, approveOnUse, expiresAt, req.user.id, ts);
+    `INSERT INTO invites (code_hash, code_hint, label, email, approve_on_use, status, expires_at, created_by, created_at, template_id)
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
+  ).run(hashCode(code), codeHint(code), label, email || null, approveOnUse, expiresAt, req.user.id, ts, template.id);
   res.status(201).json({
     code,
     invite: {
@@ -1003,6 +1048,8 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
       status: "active",
       expiresAt,
       createdAt: ts,
+      templateId: Number(template.id),
+      templateName: template.name,
     },
   });
 });
@@ -1153,6 +1200,7 @@ app.use("/api", (req, res) => {
 });
 
 const admin = seedAdmin();
+seedWealthTechTemplate();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

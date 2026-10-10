@@ -2,8 +2,26 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
+import { Donut } from "../components/ManagementReportView";
 import { Alert, Avatar, Card, PageIntro, money, monthLabel } from "../components/ui";
-import { reportFigure } from "../reportMoney";
+import { reportFigure, yearToDateContacts } from "../reportMoney";
+
+function contactSlices(section) {
+  return (section?.slices || []).filter((slice) => !/^other$/i.test(String(slice.label || "").trim()));
+}
+
+function ContactHighlight({ section }) {
+  const slices = contactSlices(section);
+  if (!slices.length) return null;
+  return (
+    <Card>
+      <h2 className="font-display text-xl font-extrabold text-ink">{section.title}</h2>
+      <div className="mt-4">
+        <Donut title={section.title} slices={slices} />
+      </div>
+    </Card>
+  );
+}
 
 function age(iso) {
   if (!iso) return "waiting";
@@ -18,6 +36,7 @@ function age(iso) {
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
+  const [highlights, setHighlights] = useState(null);
   const [error, setError] = useState("");
   const [live, setLive] = useState(true);
   const [tick, setTick] = useState(0);
@@ -45,6 +64,20 @@ export default function Dashboard() {
       clearInterval(poll);
       clearInterval(clock);
     };
+  }, []);
+
+  useEffect(() => {
+    let stop = false;
+    api.reports()
+      .then(async (payload) => {
+        const latest = payload.reports?.[0];
+        if (!latest) return null;
+        const detail = await api.report(latest.month);
+        return yearToDateContacts(detail.report?.sections);
+      })
+      .then((next) => { if (!stop) setHighlights(next); })
+      .catch(() => { if (!stop) setHighlights(null); });
+    return () => { stop = true; };
   }, []);
 
   const stats = data ? [
@@ -116,7 +149,7 @@ export default function Dashboard() {
                   <Link className="text-sm font-semibold text-plum" to="/business">Business photo and details</Link>
                 </div>
               </div>
-              <h3 className="mt-6 font-display text-sm font-extrabold uppercase tracking-[0.12em] text-mute">Recent movements</h3>
+              <h3 className="mt-6 font-display text-sm font-extrabold text-mute">Recent movements (Under development)</h3>
               <ul className="mt-3 space-y-3">
                 {data.events.length === 0 ? <li className="text-sm text-mute">No movements yet.</li> : null}
                 {data.events.map((event) => (
@@ -128,6 +161,12 @@ export default function Dashboard() {
               </ul>
             </Card>
           </div>
+          {highlights && (contactSlices(highlights.expenses).length || contactSlices(highlights.income).length) ? (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ContactHighlight section={highlights.expenses} />
+              <ContactHighlight section={highlights.income} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

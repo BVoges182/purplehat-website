@@ -132,7 +132,7 @@ function donutColour(slices, index) {
   return DONUT_COLOURS[(DONUT_COLOURS.length - 1 - rank + DONUT_COLOURS.length) % DONUT_COLOURS.length];
 }
 
-function Donut({ title, slices }) {
+export function Donut({ title, slices }) {
   const items = slices || [];
   const amounts = items.map((slice) => Math.abs(Number(slice.value) || 0));
   const total = amounts.reduce((sum, value) => sum + value, 0);

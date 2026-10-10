@@ -8,6 +8,8 @@ export default function AdminInvites() {
   const [email, setEmail] = useState("");
   const [expiresInDays, setExpiresInDays] = useState("14");
   const [approveOnUse, setApproveOnUse] = useState(true);
+  const [templates, setTemplates] = useState([]);
+  const [templateId, setTemplateId] = useState("");
   const [created, setCreated] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -15,8 +17,12 @@ export default function AdminInvites() {
 
   useEffect(() => {
     let stop = false;
-    api.invites()
-      .then((data) => { if (!stop) setInvites(data.invites); })
+    Promise.all([api.invites(), api.templates()])
+      .then(([inviteData, templateData]) => {
+        if (stop) return;
+        setInvites(inviteData.invites);
+        setTemplates(templateData.templates || []);
+      })
       .catch((err) => { if (!stop) setError(err.message); });
     return () => { stop = true; };
   }, []);
@@ -32,11 +38,13 @@ export default function AdminInvites() {
         email,
         expiresInDays: expiresInDays === "none" ? "" : Number(expiresInDays),
         approveOnUse,
+        templateId: Number(templateId),
       });
       setCreated(data);
       setInvites((current) => [data.invite, ...current]);
       setLabel("");
       setEmail("");
+      setTemplateId("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,6 +81,14 @@ export default function AdminInvites() {
             <Field label="Who is this for?">
               <input className={inputClass} value={label} onChange={(event) => setLabel(event.target.value)} required />
             </Field>
+            <Field label="Client template" hint="The new client receives this report pack and dashboard.">
+              <select className={inputClass} value={templateId} onChange={(event) => setTemplateId(event.target.value)} required>
+                <option value="">Choose a template</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+            </Field>
             <Field label="Lock to an email" hint="Optional. Registration must use this address.">
               <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
             </Field>
@@ -108,7 +124,7 @@ export default function AdminInvites() {
                   <p className="font-display text-lg font-extrabold text-ink">{invite.label}</p>
                   <p className="font-mono text-sm text-mute">{invite.codeHint}</p>
                   <p className="mt-1 text-xs text-mute">
-                    {invite.email || "Any email"} · {invite.approveOnUse ? "Signs in after register" : "Needs approval"}
+                    {invite.email || "Any email"} · {invite.templateName || "No template"} · {invite.approveOnUse ? "Signs in after register" : "Needs approval"}
                     {invite.expiresAt ? ` · Expires ${formatDate(invite.expiresAt)}` : ""}
                   </p>
                   {invite.usedByName ? <p className="mt-1 text-xs text-mute">Used by {invite.usedByName}</p> : null}

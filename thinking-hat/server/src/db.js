@@ -133,7 +133,43 @@ CREATE TABLE IF NOT EXISTS management_reports (
   UNIQUE (user_id, month),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS client_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_key TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  source_business TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS client_template_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_id INTEGER NOT NULL,
+  month TEXT NOT NULL,
+  title TEXT NOT NULL,
+  period_label TEXT NOT NULL,
+  entity_name TEXT NOT NULL DEFAULT '',
+  content_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (template_id, month),
+  FOREIGN KEY (template_id) REFERENCES client_templates(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS client_template_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  occurred_at TEXT NOT NULL,
+  FOREIGN KEY (template_id) REFERENCES client_templates(id) ON DELETE CASCADE
+);
 `);
+
+const inviteColumns = db.prepare("PRAGMA table_info(invites)").all();
+if (!inviteColumns.some((column) => column.name === "template_id")) {
+  db.exec("ALTER TABLE invites ADD COLUMN template_id INTEGER");
+}
 
 export function nowIso() {
   return new Date().toISOString();
@@ -200,6 +236,76 @@ export function seedAdmin() {
     ).run(bcrypt.hashSync(password, 10), ts, existing.id);
   }
   return { email, created: false };
+}
+
+export function seedWealthTechTemplate() {
+  const existing = db.prepare("SELECT id FROM client_templates WHERE template_key = ?").get("wealth-tech");
+  if (existing) return existing.id;
+  const user = db.prepare(
+    "SELECT id, business_name FROM users WHERE role = 'client' AND business_name LIKE '%WealthTech%' ORDER BY id LIMIT 1",
+  ).get();
+  if (!user) return null;
+  const reports = db.prepare(
+    "SELECT month, title, period_label, entity_name, content_json, created_at FROM management_reports WHERE user_id = ? ORDER BY month",
+  ).all(user.id);
+  if (!reports.length) return null;
+  const events = db.prepare(
+    "SELECT kind, description, amount_cents, occurred_at FROM ledger_events WHERE user_id = ? ORDER BY id",
+  ).all(user.id);
+  const ts = nowIso();
+  return transaction(() => {
+    const created = db.prepare(
+      "INSERT INTO client_templates (template_key, name, source_business, created_at) VALUES (?, ?, ?, ?)",
+    ).run("wealth-tech", user.business_name, user.business_name, ts);
+    const templateId = Number(created.lastInsertRowid);
+    const insertReport = db.prepare(
+      `INSERT INTO client_template_reports (template_id, month, title, period_label, entity_name, content_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    );
+    for (const report of reports) {
+      insertReport.run(templateId, report.month, report.title, report.period_label, report.entity_name, report.content_json, report.created_at);
+    }
+    const insertEvent = db.prepare(
+      `INSERT INTO client_template_events (template_id, kind, description, amount_cents, occurred_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    );
+    for (const event of events) {
+      insertEvent.run(templateId, event.kind, event.description, event.amount_cents, event.occurred_at);
+    }
+    return templateId;
+  });
+}
+
+export function applyClientTemplate(userId, templateId) {
+  const template = db.prepare("SELECT id FROM client_templates WHERE id = ?").get(templateId);
+  if (!template) {
+    const error = new Error("template");
+    throw error;
+  }
+  const ts = nowIso();
+  const reports = db.prepare(
+    "SELECT month, title, period_label, entity_name, content_json, created_at FROM client_template_reports WHERE template_id = ? ORDER BY month",
+  ).all(templateId);
+  const insertReport = db.prepare(
+    `INSERT INTO management_reports (user_id, month, title, period_label, entity_name, content_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  for (const report of reports) {
+    insertReport.run(userId, report.month, report.title, report.period_label, report.entity_name, report.content_json, report.created_at);
+  }
+  const events = db.prepare(
+    "SELECT kind, description, amount_cents, occurred_at FROM client_template_events WHERE template_id = ? ORDER BY id",
+  ).all(templateId);
+  const insertEvent = db.prepare(
+    "INSERT INTO ledger_events (user_id, kind, description, amount_cents, occurred_at) VALUES (?, ?, ?, ?, ?)",
+  );
+  for (const event of events) {
+    insertEvent.run(userId, event.kind, event.description, event.amount_cents, event.occurred_at);
+  }
+  db.prepare(
+    `INSERT INTO finances (user_id, cash_cents, revenue_cents, expenses_cents, receivables_cents, payables_cents, source, updated_at)
+     VALUES (?, 0, 0, 0, 0, 0, 'report', ?)`,
+  ).run(userId, ts);
 }
 
 export function seedClientBooks(userId) {

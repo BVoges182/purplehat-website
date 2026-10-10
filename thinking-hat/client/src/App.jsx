@@ -15,6 +15,7 @@ import AdminUser from "./pages/AdminUser";
 import AdminInvites from "./pages/AdminInvites";
 import AdminRequests from "./pages/AdminRequests";
 import AdminReports from "./pages/AdminReports";
+import AdminTemplates from "./pages/AdminTemplates";
 
 function Loading() {
   return <p className="grid min-h-screen place-items-center text-mute">Loading…</p>;
@@ -58,6 +59,7 @@ export default function App() {
           <Route element={<RequireAdmin />}>
             <Route path="admin" element={<AdminPeople />} />
             <Route path="admin/reports" element={<AdminReports />} />
+            <Route path="admin/templates" element={<AdminTemplates />} />
             <Route path="admin/invites" element={<AdminInvites />} />
             <Route path="admin/requests" element={<AdminRequests />} />
             <Route path="admin/users/:id" element={<AdminUser />} />
