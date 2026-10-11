@@ -11,11 +11,11 @@ function StatementLines({ rows }) {
       {rows.map((row) => (
         <div
           key={row.key}
-          className={`flex items-baseline justify-between gap-4 py-2.5 ${row.strong ? "border-t border-[rgba(109,40,217,0.16)]" : "border-t border-[rgba(109,40,217,0.06)] first:border-t-0"}`}
+          className={`flex items-baseline justify-between gap-4 px-2 py-2.5 ${row.strong ? "bg-neutral-100" : "border-t border-neutral-200 first:border-t-0"}`}
         >
-          <dt className={row.heading || row.strong ? "font-display font-extrabold text-ink" : "text-sm text-mute"}>{row.label}</dt>
+          <dt className={row.heading || row.strong ? "font-display font-extrabold text-neutral-950" : "text-sm text-neutral-950"} style={{ paddingLeft: row.indent ? "1.25rem" : undefined }}>{row.label}</dt>
           {row.heading ? null : (
-            <dd className={`shrink-0 tabular-nums ${row.strong ? "font-display text-lg font-extrabold" : "text-sm font-semibold"} ${typeof row.value === "number" && row.value < 0 ? "text-rose-700" : "text-ink"}`}>
+            <dd className={`shrink-0 tabular-nums text-neutral-950 ${row.strong ? "font-display font-extrabold" : "text-sm"}`}>
               {reportFigure(row.value, row.format)}
             </dd>
           )}

@@ -29,31 +29,23 @@ export function reportFigure(value, format) {
   if (value === null || value === undefined || value === "") return "—";
   const number = Number(value);
   if (!Number.isFinite(number)) return "—";
-  if (format === "percent") {
-    const pct = roundHalfAway(number * 100, 0);
-    const text = `${grouped(Math.abs(pct), 0)}%`;
+  if (format === "percent" || format === "percent2") {
+    const digits = format === "percent2" ? 2 : 0;
+    const pct = roundHalfAway(number * 100, digits);
+    const text = `${grouped(Math.abs(pct), digits)}%`;
     return pct < 0 ? `(${text})` : text;
+  }
+  if (format === "number" || format === "number2") {
+    const digits = format === "number2" ? 2 : 0;
+    const rounded = roundHalfAway(number, digits);
+    const text = grouped(Math.abs(rounded), digits);
+    return rounded < 0 ? `(${text})` : text;
   }
   const digits = format === "money2" ? 2 : 0;
   const rounded = roundHalfAway(number, digits);
   const text = grouped(Math.abs(rounded), digits);
   return rounded < 0 ? `(${text})` : text;
 }
-
-export const DONUT_COLOURS = [
-  "#c4b5fd",
-  "#b09afc",
-  "#a78bfa",
-  "#9674f8",
-  "#8b5cf6",
-  "#7c3aed",
-  "#6d28d9",
-  "#5b21b6",
-  "#4c1d95",
-  "#3c1778",
-  "#31135f",
-  "#2a1548",
-];
 
 export function reportMonthLabel(month) {
   const match = /^(\d{4})-(\d{2})$/.exec(String(month || ""));
@@ -68,6 +60,37 @@ export function reportMonthLabel(month) {
 export function isYearToDateTitle(title) {
   const text = String(title || "");
   return /year to date/i.test(text) || /[A-Za-z]+\s*[–—-]\s*[A-Za-z]+\s+\d{4}/.test(text);
+}
+
+export function yearToDateCash(sections) {
+  const summary = (sections || []).find((section) => /executive summary/i.test(String(section.title || "")));
+  const column = yearToDateColumn(summary?.columns);
+  if (!summary || column < 0) return null;
+  const groups = [];
+  let current = null;
+  for (const row of summary.rows || []) {
+    if (row.kind === "heading") {
+      const label = String(row.label || "").trim();
+      if (/^(cash|profitability)$/i.test(label)) {
+        current = { label, rows: [] };
+        groups.push(current);
+      } else {
+        current = null;
+      }
+      continue;
+    }
+    if (!current) continue;
+    const value = row.values?.[column];
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    current.rows.push({
+      label: String(row.label || ""),
+      value,
+      format: row.formats?.[column] || "money",
+      strong: row.kind === "total",
+    });
+  }
+  const filled = groups.filter((group) => group.rows.length);
+  return filled.length ? filled : null;
 }
 
 export function yearToDateContacts(sections) {
@@ -104,6 +127,12 @@ export function latestMonthColumn(columns, month) {
   });
 }
 
+function emphasizedTotal(row) {
+  if (row?.kind !== "total") return false;
+  const label = String(row.label || "").trim();
+  return !/^(warehouse equipment|retained earnings|members?'?\s*drawings)$/i.test(label);
+}
+
 function columnRows(section, columnIndex) {
   if (!section || columnIndex < 0) return { column: "", rows: [] };
   const rows = [];
@@ -116,12 +145,19 @@ function columnRows(section, columnIndex) {
     rows.push({
       key: `r-${index}`,
       label: String(row.label || ""),
+      indent: row.indent || 0,
       value: row.values?.[columnIndex] ?? null,
       format: row.formats?.[columnIndex] || "money",
-      strong: row.kind === "total",
+      strong: emphasizedTotal(row),
     });
   });
   return { column: String(section.columns?.[columnIndex] || ""), rows };
+}
+
+function cashFlowColumn(section, month) {
+  const yearToDate = yearToDateColumn(section?.columns);
+  if (yearToDate >= 0) return yearToDate;
+  return latestMonthColumn(section?.columns, month);
 }
 
 export function statementCards(report) {
@@ -133,8 +169,121 @@ export function statementCards(report) {
   return {
     profit: columnRows(profit, yearToDateColumn(profit?.columns)),
     position: columnRows(balance, latestMonthColumn(balance?.columns, month)),
-    cash: columnRows(cash, latestMonthColumn(cash?.columns, month)),
+    cash: columnRows(cash, cashFlowColumn(cash, month)),
   };
+}
+
+function columnIndex(columns, pattern) {
+  return (columns || []).findIndex((label) => pattern.test(String(label || "")));
+}
+
+function seriesValue(row, index) {
+  if (index < 0) return null;
+  const value = row?.values?.[index];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+export function ecommerceSeries(sections) {
+  const section = (sections || []).find((item) => item.presentation === "ecommerce");
+  if (!section?.rows?.length) return null;
+  const columns = section.columns || [];
+  const spend = columnIndex(columns, /ad spend/i);
+  const revenue = columnIndex(columns, /revenue/i);
+  const roas = columnIndex(columns, /^roas$/i);
+  const cpa = columnIndex(columns, /^cpa$/i);
+  const conversion = columnIndex(columns, /conversion/i);
+  const points = section.rows.map((row) => ({
+    month: row.month,
+    spend: seriesValue(row, spend),
+    revenue: seriesValue(row, revenue),
+    roas: seriesValue(row, roas),
+    cpa: seriesValue(row, cpa),
+    conversion: seriesValue(row, conversion),
+  })).filter((point) => point.month);
+  if (!points.some((point) => [point.spend, point.revenue, point.roas, point.cpa, point.conversion].some((value) => value !== null))) {
+    return null;
+  }
+  return points;
+}
+
+function average(values) {
+  const nums = values.filter((value) => typeof value === "number" && Number.isFinite(value));
+  if (!nums.length) return null;
+  return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+}
+
+function trendDirection(points, key) {
+  const values = points.map((point) => point[key]).filter((value) => typeof value === "number");
+  if (values.length < 2) return "steady";
+  const span = Math.max(1, Math.floor(values.length / 3));
+  const early = average(values.slice(0, span));
+  const late = average(values.slice(-span));
+  if (early === null || late === null || early === 0) return "steady";
+  const change = (late - early) / Math.abs(early);
+  if (change >= 0.02) return "up";
+  if (change <= -0.02) return "down";
+  return "steady";
+}
+
+const INSIGHT_MONTHS = {
+  jan: "January",
+  feb: "February",
+  mar: "March",
+  apr: "April",
+  may: "May",
+  jun: "June",
+  jul: "July",
+  aug: "August",
+  sep: "September",
+  oct: "October",
+  nov: "November",
+  dec: "December",
+};
+
+export function insightMonthName(label) {
+  const match = String(label || "").match(/[A-Za-z]+/);
+  if (!match) return "";
+  return INSIGHT_MONTHS[match[0].slice(0, 3).toLowerCase()] || match[0];
+}
+
+export function ecommerceInsight(points) {
+  if (!points?.length) return "";
+  const latest = points[points.length - 1];
+  const prior = points.length > 1 ? points[points.length - 2] : null;
+  const roasTrend = trendDirection(points, "roas");
+  const conversionTrend = trendDirection(points, "conversion");
+  const year = String(latest.month || "").match(/\d{4}/)?.[0] || "";
+  const through = year ? ` through ${year}` : "";
+  let lead;
+  if (roasTrend === "up" && conversionTrend === "up") {
+    lead = `Both ROAS and conversion rate show an upward trend${through}`;
+  } else if (roasTrend === "down" && conversionTrend === "down") {
+    lead = `Both ROAS and conversion rate eased${through}`;
+  } else if (roasTrend === "steady" && conversionTrend === "steady") {
+    lead = `ROAS and conversion rate held fairly steady${through}`;
+  } else {
+    const phrase = { up: "rising", down: "easing", steady: "holding steady" };
+    lead = `ROAS is ${phrase[roasTrend]} and conversion rate is ${phrase[conversionTrend]}${through}`;
+  }
+  const latestName = insightMonthName(latest.month);
+  if (
+    prior
+    && typeof latest.roas === "number"
+    && typeof prior.roas === "number"
+    && latest.roas < prior.roas
+    && roasTrend === "up"
+    && latestName
+  ) {
+    lead += `, with a softer ${latestName}`;
+  }
+  const sentences = [`${lead}.`];
+  if (prior && typeof latest.revenue === "number" && typeof prior.revenue === "number") {
+    const priorName = insightMonthName(prior.month) || "the prior month";
+    if (latest.revenue < prior.revenue) sentences.push(`Paid revenue is below ${priorName}.`);
+    else if (latest.revenue > prior.revenue) sentences.push(`Paid revenue is ahead of ${priorName}.`);
+    else sentences.push(`Paid revenue is level with ${priorName}.`);
+  }
+  return sentences.join(" ");
 }
 
 export function reportPdfName(businessName, month) {

@@ -103,6 +103,18 @@ export const api = {
   updateInvoice: (id, body) => request(`/api/admin/invoices/${id}`, { method: "PATCH", body }),
   deleteInvoice: (id) => request(`/api/admin/invoices/${id}`, { method: "DELETE" }),
   templates: () => request("/api/admin/templates"),
+  copyTemplate: (body) => request("/api/admin/templates/copy", { method: "POST", body }),
+  renameTemplate: (id, body) => request(`/api/admin/templates/${id}`, { method: "PATCH", body }),
+  deleteTemplate: (id) => request(`/api/admin/templates/${id}`, { method: "DELETE" }),
+  downloadTemplate: (id, format, filename) => downloadAuthorized(
+    `/api/admin/templates/${id}/file?format=${format === "csv" ? "csv" : "text"}`,
+    filename,
+  ),
+  uploadTemplate: (file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request("/api/admin/templates/upload", { method: "POST", body });
+  },
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),

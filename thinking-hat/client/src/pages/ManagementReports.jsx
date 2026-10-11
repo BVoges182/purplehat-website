@@ -11,6 +11,23 @@ function amountClass(value, strong) {
   return strong ? `font-display font-extrabold ${tone}` : `font-semibold ${tone}`;
 }
 
+function usesDollars(user) {
+  if (user?.reportTemplate === "purple-hat-demo") return true;
+  if (user?.reportTemplate === "wealth-tech") return false;
+  return /purple\s*hat\s*demo/i.test(String(user?.businessName || ""));
+}
+
+function wholeDollars(value) {
+  const number = Number(value);
+  const amount = Number.isFinite(number) ? number : 0;
+  const negative = amount < 0;
+  const body = new Intl.NumberFormat("en-ZA", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(Math.abs(amount)));
+  return `${negative ? "-" : ""}$ ${body}`;
+}
+
 export default function ManagementReports() {
   const { user } = useAuth();
   const { data, error } = useFinances();
@@ -49,6 +66,7 @@ export default function ManagementReports() {
     { revenue: 0, expenses: 0 },
   );
   const monthResult = data ? resultOf(data.revenue, data.expenses) : 0;
+  const figure = usesDollars(user) ? wholeDollars : money;
 
   return (
     <div>
@@ -86,7 +104,7 @@ export default function ManagementReports() {
             ].map(([label, value]) => (
               <Card key={label}>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
-                <p className={`mt-3 text-2xl ${amountClass(value, true)}`}>{money(value)}</p>
+                <p className={`mt-3 text-2xl ${amountClass(value, true)}`}>{figure(value)}</p>
               </Card>
             ))}
           </div>
@@ -111,9 +129,9 @@ export default function ManagementReports() {
                         return (
                           <tr key={month.month} className="border-t border-[rgba(109,40,217,0.08)]">
                             <td className="py-2.5 font-semibold text-ink">{monthHeading(month.month)}</td>
-                            <td className="py-2.5 text-right tabular-nums text-ink">{money(month.revenue)}</td>
-                            <td className="py-2.5 text-right tabular-nums text-ink">{money(month.expenses)}</td>
-                            <td className={`py-2.5 text-right tabular-nums ${amountClass(result)}`}>{money(result)}</td>
+                            <td className="py-2.5 text-right tabular-nums text-ink">{figure(month.revenue)}</td>
+                            <td className="py-2.5 text-right tabular-nums text-ink">{figure(month.expenses)}</td>
+                            <td className={`py-2.5 text-right tabular-nums ${amountClass(result)}`}>{figure(result)}</td>
                           </tr>
                         );
                       })}
@@ -121,9 +139,9 @@ export default function ManagementReports() {
                     <tfoot>
                       <tr className="border-t border-[rgba(109,40,217,0.16)] font-display font-extrabold text-ink">
                         <td className="pt-3">Total</td>
-                        <td className="pt-3 text-right tabular-nums">{money(totals.revenue)}</td>
-                        <td className="pt-3 text-right tabular-nums">{money(totals.expenses)}</td>
-                        <td className={`pt-3 text-right tabular-nums ${amountClass(resultOf(totals.revenue, totals.expenses), true)}`}>{money(resultOf(totals.revenue, totals.expenses))}</td>
+                        <td className="pt-3 text-right tabular-nums">{figure(totals.revenue)}</td>
+                        <td className="pt-3 text-right tabular-nums">{figure(totals.expenses)}</td>
+                        <td className={`pt-3 text-right tabular-nums ${amountClass(resultOf(totals.revenue, totals.expenses), true)}`}>{figure(resultOf(totals.revenue, totals.expenses))}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -135,9 +153,9 @@ export default function ManagementReports() {
                       <li key={month.month} className="rounded-2xl bg-[#f5f0ff] px-4 py-3">
                         <p className="font-display font-extrabold text-ink">{monthHeading(month.month)}</p>
                         <dl className="mt-2 space-y-1 text-sm">
-                          <div className="flex justify-between gap-3"><dt className="text-mute">Revenue</dt><dd className="tabular-nums text-ink">{money(month.revenue)}</dd></div>
-                          <div className="flex justify-between gap-3"><dt className="text-mute">Expenses</dt><dd className="tabular-nums text-ink">{money(month.expenses)}</dd></div>
-                          <div className="flex justify-between gap-3"><dt className="text-mute">Result</dt><dd className={`tabular-nums ${amountClass(result)}`}>{money(result)}</dd></div>
+                          <div className="flex justify-between gap-3"><dt className="text-mute">Revenue</dt><dd className="tabular-nums text-ink">{figure(month.revenue)}</dd></div>
+                          <div className="flex justify-between gap-3"><dt className="text-mute">Expenses</dt><dd className="tabular-nums text-ink">{figure(month.expenses)}</dd></div>
+                          <div className="flex justify-between gap-3"><dt className="text-mute">Result</dt><dd className={`tabular-nums ${amountClass(result)}`}>{figure(result)}</dd></div>
                         </dl>
                       </li>
                     );

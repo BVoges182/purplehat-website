@@ -14,12 +14,23 @@ import db, {
   nowIso,
   publicUser,
   applyClientTemplate,
+  copyClientTemplate,
+  deleteClientTemplate,
+  linkClientsToTemplates,
+  purpleHatDemoBusiness,
+  renameClientTemplate,
   seedAdmin,
   seedClientBooks,
+  seedEmptyBooks,
+  saveTemplateDocument,
+  seedPurpleHatDemoTemplate,
   seedWealthTechTemplate,
+  shortenWealthTechTemplateName,
+  templateDocument,
   transaction,
   uploadsDir,
 } from "./db.js";
+import { parseTemplateFile, templateCsv, templateDownloadName, templateText } from "./templateFile.js";
 import {
   deleteManagementReport,
   listAllManagementReports,
@@ -31,6 +42,7 @@ import {
   saveManagementReport,
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
+import { mailConfigured, sendInviteKeyEmail } from "./mail.js";
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
   console.error("Set JWT_SECRET in server/.env.");
@@ -425,8 +437,19 @@ app.post("/api/auth/register", rateLimit, (req, res) => {
         const error = new Error("used");
         throw error;
       }
-      if (invite.template_id) applyClientTemplate(id, invite.template_id);
-      else seedClientBooks(id);
+      if (invite.new_template) {
+        db.prepare("UPDATE users SET needs_template = 1 WHERE id = ?").run(id);
+        seedEmptyBooks(id);
+        if (purpleHatDemoBusiness(businessName)) {
+          db.prepare("UPDATE users SET report_template = 'purple-hat-demo' WHERE id = ?").run(id);
+        }
+      } else if (invite.template_id) applyClientTemplate(id, invite.template_id);
+      else {
+        seedClientBooks(id);
+        if (purpleHatDemoBusiness(businessName)) {
+          db.prepare("UPDATE users SET report_template = 'purple-hat-demo' WHERE id = ?").run(id);
+        }
+      }
       return id;
     });
   } catch (error) {
@@ -537,7 +560,11 @@ app.get("/api/me/reports/:month", requireAuth, (req, res) => {
     res.status(404).json({ error: "That report was not found." });
     return;
   }
-  res.json({ report, businessName: req.user.business_name });
+  res.json({
+    report,
+    businessName: req.user.business_name,
+    reportTemplate: req.user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+  });
 });
 
 app.get("/api/me/invoices", requireAuth, (req, res) => {
@@ -701,7 +728,11 @@ app.get("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, 
     res.status(404).json({ error: "That report was not found." });
     return;
   }
-  res.json({ report, businessName: user.business_name });
+  res.json({
+    report,
+    businessName: user.business_name,
+    reportTemplate: user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+  });
 });
 
 app.patch("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
@@ -974,52 +1005,158 @@ app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
       usedByName: row.used_by_name,
       usedByEmail: row.used_by_email,
       templateId: row.template_id ? Number(row.template_id) : null,
-      templateName: row.template_name || null,
+      templateName: row.new_template ? "New client template" : (row.template_name || (row.template_id ? "Removed template" : null)),
+      newTemplate: Boolean(row.new_template),
     })),
   });
 });
 
+function publicTemplate(template) {
+  const reports = db.prepare(
+    "SELECT month, title FROM client_template_reports WHERE template_id = ? ORDER BY month",
+  ).all(template.id);
+  const movements = db.prepare(
+    "SELECT description FROM client_template_events WHERE template_id = ? ORDER BY id",
+  ).all(template.id);
+  const copiedFrom = template.copied_from_id
+    ? db.prepare("SELECT name FROM client_templates WHERE id = ?").get(template.copied_from_id)
+    : null;
+  return {
+    id: Number(template.id),
+    key: template.template_key,
+    name: template.name,
+    sourceBusiness: template.source_business,
+    reportTemplate: template.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    copiedFromName: copiedFrom?.name || null,
+    createdAt: template.created_at,
+    reports: reports.map((report) => ({ month: report.month, title: report.title })),
+    movements: movements.map((event) => event.description),
+  };
+}
+
 app.get("/api/admin/templates", requireAuth, requireAdmin, (req, res) => {
   const templates = db.prepare("SELECT * FROM client_templates ORDER BY id").all();
-  res.json({
-    templates: templates.map((template) => {
-      const reports = db.prepare(
-        "SELECT month, title FROM client_template_reports WHERE template_id = ? ORDER BY month",
-      ).all(template.id);
-      const movements = db.prepare(
-        "SELECT description FROM client_template_events WHERE template_id = ? ORDER BY id",
-      ).all(template.id);
-      return {
-        id: Number(template.id),
-        name: template.name,
-        sourceBusiness: template.source_business,
-        createdAt: template.created_at,
-        reports: reports.map((report) => ({ month: report.month, title: report.title })),
-        movements: movements.map((event) => event.description),
-      };
-    }),
-  });
+  res.json({ templates: templates.map(publicTemplate) });
 });
 
-app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
+const templateFileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+}).single("file");
+
+function acceptTemplateFile(req, res, next) {
+  templateFileUpload(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const message = error.code === "LIMIT_FILE_SIZE" ? "Use a CSV or text file under 8 MB." : (error.message || "Choose a CSV or text file.");
+    res.status(400).json({ error: message });
+  });
+}
+
+app.get("/api/admin/templates/:id/file", requireAuth, requireAdmin, (req, res) => {
+  const format = req.query.format === "csv" ? "csv" : "text";
+  let document;
+  try {
+    document = templateDocument(Number(req.params.id));
+  } catch {
+    res.status(500).json({ error: "That template could not be saved as a file." });
+    return;
+  }
+  if (!document) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  const filename = templateDownloadName(document.template.name, format);
+  const body = format === "csv" ? `\uFEFF${templateCsv(document)}` : templateText(document);
+  res.setHeader("Content-Type", format === "csv" ? "text/csv; charset=utf-8" : "text/plain; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(body);
+});
+
+app.post("/api/admin/templates/upload", requireAuth, requireAdmin, acceptTemplateFile, (req, res) => {
+  const name = String(req.file?.originalname || "").toLowerCase();
+  if (!req.file) {
+    res.status(400).json({ error: "Choose a CSV or text file." });
+    return;
+  }
+  if (!name.endsWith(".csv") && !name.endsWith(".txt") && !name.endsWith(".json")) {
+    res.status(400).json({ error: "Upload a CSV or text file." });
+    return;
+  }
+  const parsed = parseTemplateFile(req.file.buffer.toString("utf8"), req.file.originalname);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  const saved = saveTemplateDocument(parsed.document);
+  if (saved.error) {
+    res.status(400).json({ error: saved.error });
+    return;
+  }
+  const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(saved.id);
+  res.status(201).json({ template: publicTemplate(template), clientsUpdated: saved.clientsUpdated });
+});
+
+app.post("/api/admin/templates/copy", requireAuth, requireAdmin, (req, res) => {
+  const result = copyClientTemplate(Number(req.body.sourceId), clean(req.body.name, 120));
+  if (result.error) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(result.id);
+  res.status(201).json({ template: publicTemplate(template) });
+});
+
+app.delete("/api/admin/templates/:id", requireAuth, requireAdmin, (req, res) => {
+  const result = deleteClientTemplate(Number(req.params.id));
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ deleted: true, id: result.id, name: result.name });
+});
+
+app.patch("/api/admin/templates/:id", requireAuth, requireAdmin, (req, res) => {
+  const result = renameClientTemplate(Number(req.params.id), clean(req.body.name, 120));
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(result.id);
+  res.json({ template: publicTemplate(template) });
+});
+
+app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {
   const label = clean(req.body.label, 80);
   const email = clean(req.body.email, 120).toLowerCase();
   const days = req.body.expiresInDays;
   const approveOnUse = req.body.approveOnUse === false ? 0 : 1;
+  const newTemplate = req.body.templateId === "new";
   const templateId = Number(req.body.templateId);
-  const template = Number.isInteger(templateId)
+  const template = !newTemplate && Number.isInteger(templateId)
     ? db.prepare("SELECT id, name FROM client_templates WHERE id = ?").get(templateId)
     : null;
   if (!label) {
     res.status(400).json({ error: "Say who this key is for." });
     return;
   }
-  if (!template) {
+  if (!newTemplate && !template) {
     res.status(400).json({ error: "Choose a client template." });
     return;
   }
+  const sendEmail = req.body.sendEmail === true;
   if (email && !isEmail(email)) {
     res.status(400).json({ error: "Enter a valid email, or leave it blank." });
+    return;
+  }
+  if (sendEmail && !email) {
+    res.status(400).json({ error: "Enter the email address to send the key to." });
+    return;
+  }
+  if (sendEmail && !mailConfigured()) {
+    res.status(400).json({ error: "Email sending is not set up yet. The key was not created." });
     return;
   }
   let expiresAt = null;
@@ -1034,11 +1171,35 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
   const code = newInviteCode();
   const ts = nowIso();
   const created = db.prepare(
-    `INSERT INTO invites (code_hash, code_hint, label, email, approve_on_use, status, expires_at, created_by, created_at, template_id)
-     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`,
-  ).run(hashCode(code), codeHint(code), label, email || null, approveOnUse, expiresAt, req.user.id, ts, template.id);
+    `INSERT INTO invites (code_hash, code_hint, label, email, approve_on_use, status, expires_at, created_by, created_at, template_id, new_template)
+     VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?)`,
+  ).run(
+    hashCode(code),
+    codeHint(code),
+    label,
+    email || null,
+    approveOnUse,
+    expiresAt,
+    req.user.id,
+    ts,
+    newTemplate ? null : template.id,
+    newTemplate ? 1 : 0,
+  );
+  let emailSent = false;
+  let emailError = "";
+  if (sendEmail) {
+    try {
+      await sendInviteKeyEmail({ to: email, code, label, expiresInDays: expiresAt ? Number(days) : null });
+      emailSent = true;
+    } catch (error) {
+      console.error("Invite email failed.", error instanceof Error ? error.message : error);
+      emailError = "The key was created, but the email could not be sent.";
+    }
+  }
   res.status(201).json({
     code,
+    emailSent,
+    emailError,
     invite: {
       id: Number(created.lastInsertRowid),
       label,
@@ -1048,8 +1209,9 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
       status: "active",
       expiresAt,
       createdAt: ts,
-      templateId: Number(template.id),
-      templateName: template.name,
+      templateId: newTemplate ? null : Number(template.id),
+      templateName: newTemplate ? "New client template" : template.name,
+      newTemplate,
     },
   });
 });
@@ -1201,6 +1363,9 @@ app.use("/api", (req, res) => {
 
 const admin = seedAdmin();
 seedWealthTechTemplate();
+seedPurpleHatDemoTemplate();
+shortenWealthTechTemplateName();
+linkClientsToTemplates();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

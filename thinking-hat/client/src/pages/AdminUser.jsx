@@ -240,7 +240,7 @@ export default function AdminUser() {
   return (
     <div className="space-y-4">
       <Link className="text-sm font-semibold text-plum" to="/admin">Back to people</Link>
-      <PageIntro title={record.user.name} lede={`${record.user.businessName || "No business name"} · ${record.user.email}`}>
+      <PageIntro title={record.user.name} lede={`${record.user.businessName || "No business name"} · ${record.user.email}${record.user.needsTemplate ? " · New template to build" : ""}`}>
         <div className="flex gap-2">
           <Badge status={record.user.role} />
           <Badge status={record.user.status} />

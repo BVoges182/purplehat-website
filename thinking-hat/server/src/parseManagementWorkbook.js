@@ -120,7 +120,7 @@ function readCourtLease(sheet) {
 
 function valueFormat(cell, modern) {
   const fmt = String(cell.numFmt || "");
-  if (fmt.includes("%")) return "percent";
+  if (fmt.includes("%")) return /0\.0+%/.test(fmt) ? "percent2" : "percent";
   if (!modern) return undefined;
   if (/0\.0/.test(fmt)) return "money2";
   return "money";
@@ -321,7 +321,7 @@ function describeContact(heading) {
 
 function contactSortKey(section) {
   const title = section.title.toLowerCase();
-  const period = /year to date/.test(title) || /april\s*[–—-]/.test(title);
+  const period = /year to date/.test(title) || /[a-z]+\s*[–—-]\s*[a-z]+\s+\d{4}/.test(title);
   return (title.includes("expense") ? 0 : 2) + (period ? 1 : 0);
 }
 
@@ -408,15 +408,184 @@ function readContactBlocks(sheet, symbol) {
   return blocks.sort((a, b) => contactSortKey(a) - contactSortKey(b));
 }
 
-function chooseLabelColumn(sheet, startRow, firstValueCol) {
-  let first = 0;
-  let second = 0;
-  const last = startRow + 40;
+function columnHasLabels(sheet, startRow, col) {
+  const last = Math.min(sheet.rowCount || startRow, startRow + 80);
   for (let rowNumber = startRow; rowNumber <= last; rowNumber += 1) {
-    if (cellText(sheet.getRow(rowNumber), 1)) first += 1;
-    if (firstValueCol > 2 && cellText(sheet.getRow(rowNumber), 2)) second += 1;
+    const text = cellText(sheet.getRow(rowNumber), col);
+    if (text && !isCurrencyToken(text)) return true;
   }
-  return second > first ? 2 : 1;
+  return false;
+}
+
+function statementLabel(row, nested) {
+  const first = cellText(row, 1);
+  const second = cellText(row, 2);
+  if (nested && second && !first) return { label: second, indent: 1 };
+  if (first && !isCurrencyToken(first)) {
+    return { label: first, indent: Number(row.getCell(1).alignment?.indent) || 0 };
+  }
+  if (second && !isCurrencyToken(second)) return { label: second, indent: 0 };
+  return { label: "", indent: 0 };
+}
+
+function findEcommerce(workbook) {
+  return workbook.worksheets.find((sheet) => /e-?\s*commerce/i.test(sheet.name)) || null;
+}
+
+function ecommerceFormat(label, cell) {
+  const name = String(label || "").toLowerCase();
+  const fmt = String(cell?.numFmt || "");
+  if (fmt.includes("%") || /ctr|conversion/.test(name)) return "percent2";
+  if (/^roas$/.test(name)) return "number2";
+  if (/\bcpc\b|\bcpa\b/.test(name)) return "money2";
+  if (/spend|revenue/.test(name)) return "money";
+  const value = numberOf(cell);
+  if (typeof value === "number" && !Number.isInteger(value)) return "number2";
+  return "number";
+}
+
+function findEcommerceHeader(sheet) {
+  const last = Math.min(sheet.rowCount || 1, 12);
+  for (let rowNumber = 1; rowNumber <= last; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    const first = headerLabel(row.getCell(1)) || cellText(row, 1);
+    if (!/^month$/i.test(first)) continue;
+    const columns = [];
+    for (let col = 1; col <= Math.min(sheet.columnCount || 1, 16); col += 1) {
+      const label = headerLabel(row.getCell(col)) || cellText(row, col);
+      if (!label) break;
+      columns.push({ col, label });
+    }
+    if (columns.length >= 2) return { headerRow: rowNumber, columns };
+  }
+  return null;
+}
+
+function readEcommerce(sheet) {
+  const header = findEcommerceHeader(sheet);
+  if (!header) throw new Error("The e-commerce sheet does not match the expected layout.");
+  const { columns } = header;
+  const rows = [];
+  const notes = [];
+  const last = Math.min(sheet.rowCount || 1, 80);
+  for (let rowNumber = header.headerRow + 1; rowNumber <= last; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    const month = headerLabel(row.getCell(columns[0].col)) || cellText(row, columns[0].col);
+    const metrics = columns.slice(1);
+    const values = metrics.map(({ col }) => numberOf(row.getCell(col)));
+    const hasNumber = values.some((value) => value !== null);
+    if (!month && !hasNumber) continue;
+    if (!hasNumber) {
+      if (month && !/^notes$/i.test(month)) notes.push(month);
+      continue;
+    }
+    rows.push({
+      month,
+      values,
+      formats: metrics.map(({ col, label }) => ecommerceFormat(label, row.getCell(col))),
+    });
+  }
+  if (!rows.length) throw new Error("The e-commerce sheet did not contain any figures.");
+  return {
+    title: "E-commerce report",
+    presentation: "ecommerce",
+    note: "",
+    notes,
+    columns: columns.slice(1).map((column) => column.label),
+    rows,
+  };
+}
+
+function agingBucketLabel(label) {
+  return String(label || "").trim();
+}
+
+function findAgingSheet(workbook, kind) {
+  return workbook.worksheets.find((sheet) => {
+    const name = sheet.name.toLowerCase();
+    return /aging/.test(name) && (kind === "receivable" ? /receivable/.test(name) : /payable/.test(name));
+  }) || null;
+}
+
+function findAgingHeader(sheet) {
+  const last = Math.min(sheet.rowCount || 1, 12);
+  for (let rowNumber = 1; rowNumber <= last; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    let contactCol = 0;
+    const columns = [];
+    for (let col = 1; col <= Math.min(sheet.columnCount || 1, 10); col += 1) {
+      const label = cellText(row, col);
+      if (/^contact$/i.test(label)) contactCol = col;
+      else if (contactCol && label) columns.push({ col, label: agingBucketLabel(label) });
+    }
+    if (contactCol && columns.length >= 2) return { headerRow: rowNumber, contactCol, columns };
+  }
+  return null;
+}
+
+function completeAgingTotal(rows, width) {
+  const lines = rows.filter((row) => row.kind === "line");
+  let total = [...rows].reverse().find((row) => row.kind === "total");
+  if (!total) {
+    total = { kind: "total", label: "Total", values: [], formats: [] };
+    rows.push(total);
+  }
+  total.values = Array.from({ length: width }, (_, index) => {
+    const given = total.values?.[index];
+    if (typeof given === "number") return given;
+    return lines.reduce((sum, row) => sum + (typeof row.values?.[index] === "number" ? row.values[index] : 0), 0);
+  });
+  total.formats = Array(width).fill("money");
+}
+
+function readAging(sheet) {
+  const header = findAgingHeader(sheet);
+  if (!header) throw new Error(`The ${sheet.name} sheet does not match the expected layout.`);
+  const lines = [];
+  for (let rowNumber = 1; rowNumber < header.headerRow; rowNumber += 1) {
+    const text = cellText(sheet.getRow(rowNumber), 1);
+    if (text) lines.push(text);
+  }
+  const rows = [];
+  let blanks = 0;
+  for (let rowNumber = header.headerRow + 1; rowNumber <= header.headerRow + 80; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    const label = cellText(row, header.contactCol);
+    const values = header.columns.map(({ col }) => numberOf(row.getCell(col)));
+    const hasNumber = values.some((value) => value !== null);
+    if (!label && !hasNumber) {
+      blanks += 1;
+      if (blanks > 2 && rows.length) break;
+      continue;
+    }
+    blanks = 0;
+    if (!label) continue;
+    rows.push({
+      kind: /^total\b/i.test(label) ? "total" : "line",
+      label,
+      values,
+      formats: header.columns.map(() => "money"),
+    });
+  }
+  if (!rows.some((row) => row.kind === "line" && row.values.some((value) => typeof value === "number"))) {
+    throw new Error(`The ${sheet.name} sheet did not contain any figures.`);
+  }
+  completeAgingTotal(rows, header.columns.length);
+  return {
+    title: lines[0] || sheet.name,
+    note: lines.slice(1).join(" · "),
+    presentation: "aging",
+    labelHeader: "Contact",
+    columns: header.columns.map((column) => column.label),
+    rows,
+  };
+}
+
+function agingSections(workbook) {
+  return ["receivable", "payable"].flatMap((kind) => {
+    const sheet = findAgingSheet(workbook, kind);
+    return sheet ? [readAging(sheet)] : [];
+  });
 }
 
 function readModernStatement(sheet, title) {
@@ -428,13 +597,16 @@ function readModernStatement(sheet, title) {
   const period = lines.length >= 3 ? lines[2] : (lines[1] || "");
   const note = [entityName, period].filter(Boolean).join(" · ");
   const dataStart = units ? header.headerRow + 2 : header.headerRow + 1;
-  const labelCol = chooseLabelColumn(sheet, dataStart, header.columns[0].col);
+  const nested = columnHasLabels(sheet, dataStart, 1) && columnHasLabels(sheet, dataStart, 2);
   const rows = [];
+  if (units) {
+    const intro = statementLabel(sheet.getRow(header.headerRow + 1), nested);
+    if (intro.label) rows.push({ kind: "heading", label: intro.label, indent: intro.indent });
+  }
   let blanks = 0;
   for (let rowNumber = dataStart; rowNumber <= dataStart + 80; rowNumber += 1) {
     const row = sheet.getRow(rowNumber);
-    let label = cellText(row, labelCol);
-    if (!label && labelCol === 2) label = cellText(row, 1);
+    const { label, indent } = statementLabel(row, nested);
     const values = header.columns.map(({ col }) => numberOf(row.getCell(col)));
     const formats = header.columns.map(({ col }) => valueFormat(row.getCell(col), true));
     const hasNumber = values.some((value) => value !== null);
@@ -443,11 +615,12 @@ function readModernStatement(sheet, title) {
       if (blanks > 2) break;
       continue;
     }
+    if (!label && values.every((value) => value === null || value === 0)) continue;
     blanks = 0;
-    const bold = cellBold(row.getCell(labelCol)) || header.columns.some(({ col }) => cellBold(row.getCell(col)));
-    if (!hasNumber) rows.push({ kind: "heading", label });
-    else if (!label || bold || isTotal(label)) rows.push({ kind: "total", label, values, formats });
-    else rows.push({ kind: "line", label, values, formats });
+    const bold = cellBold(row.getCell(1)) || cellBold(row.getCell(2)) || header.columns.some(({ col }) => cellBold(row.getCell(col)));
+    if (!hasNumber) rows.push({ kind: "heading", label, indent });
+    else if (!label || bold || isTotal(label)) rows.push({ kind: "total", label, indent, values, formats });
+    else rows.push({ kind: "line", label, indent, values, formats });
   }
   if (!rows.some((row) => row.values?.some((value) => typeof value === "number"))) {
     throw new Error(`The ${title} sheet did not contain any figures.`);
@@ -486,6 +659,8 @@ export async function parseManagementWorkbook(buffer) {
   const quarterlySection = quarterly ? readQuarterlyProfit(quarterly) : null;
   const court = findCourtLease(workbook);
   const courtSection = court ? readCourtLease(court) : null;
+  const ecommerceSheet = findEcommerce(workbook);
+  const ecommerceSection = ecommerceSheet ? readEcommerce(ecommerceSheet) : null;
   if (usesLegacyExecutive(executive)) {
     const executiveSection = readExecutive(executive);
     const sections = [
@@ -495,6 +670,8 @@ export async function parseManagementWorkbook(buffer) {
       ...(courtSection ? [courtSection] : []),
       readStatement(balance, "Balance sheet", 2, [3, 4, 5]),
       readStatement(cash, "Statement of cash flows", 1, [2, 3, 4]),
+      ...agingSections(workbook),
+      ...(ecommerceSection ? [ecommerceSection] : []),
     ].map(({ entityName, ...section }) => section);
     const entityName = executiveSection.entityName || "";
     return { entityName, sections };
@@ -512,6 +689,8 @@ export async function parseManagementWorkbook(buffer) {
     ...(courtSection ? [courtSection] : []),
     balanceSection,
     cashSection,
+    ...agingSections(workbook),
+    ...(ecommerceSection ? [ecommerceSection] : []),
   ].map(({ entityName, ...section }) => section);
   const entityName = summary.entityName || profitSection.entityName || "";
   return { entityName, sections };

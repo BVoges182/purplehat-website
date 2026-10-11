@@ -22,6 +22,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.6",
     "pdfkit": "0.17.2",
     "postcss": "^8.4.49",
     "react": "^18.3.1",

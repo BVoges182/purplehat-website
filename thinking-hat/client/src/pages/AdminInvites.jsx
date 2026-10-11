@@ -8,6 +8,7 @@ export default function AdminInvites() {
   const [email, setEmail] = useState("");
   const [expiresInDays, setExpiresInDays] = useState("14");
   const [approveOnUse, setApproveOnUse] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [templateId, setTemplateId] = useState("");
   const [created, setCreated] = useState(null);
@@ -38,9 +39,11 @@ export default function AdminInvites() {
         email,
         expiresInDays: expiresInDays === "none" ? "" : Number(expiresInDays),
         approveOnUse,
-        templateId: Number(templateId),
+        sendEmail,
+        templateId: templateId === "new" ? "new" : Number(templateId),
       });
       setCreated(data);
+      if (data.emailError) setError(data.emailError);
       setInvites((current) => [data.invite, ...current]);
       setLabel("");
       setEmail("");
@@ -81,17 +84,22 @@ export default function AdminInvites() {
             <Field label="Who is this for?">
               <input className={inputClass} value={label} onChange={(event) => setLabel(event.target.value)} required />
             </Field>
-            <Field label="Client template" hint="The new client receives this report pack and dashboard.">
+            <Field label="Client template" hint={templateId === "new" ? "No saved pack is copied. This marks the client as needing a new template." : "The new client starts from this template. Later changes to that client stay on their own books."}>
               <select className={inputClass} value={templateId} onChange={(event) => setTemplateId(event.target.value)} required>
                 <option value="">Choose a template</option>
+                <option value="new">New client template</option>
                 {templates.map((template) => (
                   <option key={template.id} value={template.id}>{template.name}</option>
                 ))}
               </select>
             </Field>
-            <Field label="Lock to an email" hint="Optional. Registration must use this address.">
-              <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Field label="Lock to an email" hint={sendEmail ? "The key is emailed here, and registration must use this address." : "Optional. Registration must use this address."}>
+              <input className={inputClass} type="email" value={email} onChange={(event) => setEmail(event.target.value)} required={sendEmail} />
             </Field>
+            <label className="flex items-start gap-3 text-sm text-ink">
+              <input className="mt-1" type="checkbox" checked={sendEmail} onChange={(event) => setSendEmail(event.target.checked)} />
+              <span>Send email key</span>
+            </label>
             <Field label="Expires">
               <select className={inputClass} value={expiresInDays} onChange={(event) => setExpiresInDays(event.target.value)}>
                 <option value="7">7 days</option>
@@ -109,7 +117,7 @@ export default function AdminInvites() {
           </form>
           {created ? (
             <div className="mt-5 rounded-3xl bg-[#f5f0ff] p-4">
-              <p className="text-sm font-semibold text-ink">Email this key. It is shown once.</p>
+              <p className="text-sm font-semibold text-ink">{created.emailSent ? `Emailed to ${created.invite.email}. The key is shown once.` : "Email this key. It is shown once."}</p>
               <p className="mt-2 font-mono text-2xl font-bold tracking-wide text-plum">{created.code}</p>
               <Button className="mt-3" variant="ghost" type="button" onClick={copy}>{copied ? "Copied" : "Copy key"}</Button>
             </div>
