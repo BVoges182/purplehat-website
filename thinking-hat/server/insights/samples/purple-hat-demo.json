@@ -1,0 +1,44 @@
+{
+  "updated": "2026-10-18",
+  "client": "PurpleHat Demo, LLC",
+  "title": "Andy Murray's insights",
+  "headline": "December closed with cash in the bank and receivables mostly current.",
+  "findings": [
+    {
+      "title": "Revenue held through December",
+      "detail": "Revenue for the month was $86,700. Year to date revenue is $712,800, with online product sales still the largest line.",
+      "source_url": "https://purplehat.fun"
+    },
+    {
+      "title": "Most receivables are current",
+      "detail": "Aged receivables total $12,500. $10,600 is current, $1,700 is 30 days, and only $200 is 60 days. Nothing is sitting in the 90 day bucket.",
+      "source_url": "https://purplehat.fun"
+    },
+    {
+      "title": "Payables are smaller than receivables",
+      "detail": "Aged payables total $8,400, of which $7,100 is current and $1,300 is 30 days. There is no older payable balance.",
+      "source_url": "https://purplehat.fun"
+    },
+    {
+      "title": "December still produced a surplus",
+      "detail": "Cash received was $88,400 against cash spent of $73,140 and member drawings of $1,500. The month's cash surplus was $13,760, and the closing bank balance was $71,970.",
+      "source_url": "https://purplehat.fun"
+    },
+    {
+      "title": "Paid ads still return more than they cost",
+      "detail": "December ROAS was 4.97 on $7,000 of ad spend, with paid revenue of $34,800. The rate is a little softer than November.",
+      "source_url": "https://purplehat.fun"
+    },
+    {
+      "title": "The result for the month is positive",
+      "detail": "Net income for December was $7,760 after operating expenses of $22,180. Gross profit was $29,940.",
+      "source_url": "https://purplehat.fun"
+    }
+  ],
+  "actions": [
+    "Ask Northwind Buyers and Harbour & Co about the $1,700 that is already 30 days old.",
+    "Keep the 60 day receivable of $200 on the weekly chase list.",
+    "Review December ad spend before the next campaign, since ROAS eased against November."
+  ],
+  "joke": "December closed in surplus. The books did the work; the donut just took the credit."
+}

@@ -225,6 +225,7 @@ export function describeClient(client, templates = []) {
     yearEndLabel: yearEndLabel(client.yearEnd || client.year_end),
     period: client.period,
     periodLabel: periodLabel(client.period),
+    grokBotId: client.grokBotId == null ? null : Number(client.grokBotId),
     templates,
   };
 }

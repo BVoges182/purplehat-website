@@ -141,6 +141,10 @@ export default function AdminTemplateBuilder() {
   const [usageLoading, setUsageLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [confirmClient, setConfirmClient] = useState(false);
+  const [botsOpen, setBotsOpen] = useState(false);
+  const [botForm, setBotForm] = useState({ id: null, name: "", fileId: "" });
+  const [botError, setBotError] = useState("");
+  const [botToRemove, setBotToRemove] = useState(null);
   const fileRef = useRef(null);
 
   const requested = searchParams.get("client") || "";
@@ -165,6 +169,7 @@ export default function AdminTemplateBuilder() {
   }, [toast]);
 
   const clients = catalog?.clients || [];
+  const bots = catalog?.bots || [];
   const options = catalog?.options;
   const selectedId = preferredClientId(clients, requested);
   const selected = clients.find((client) => String(client.id) === selectedId) || null;
@@ -348,6 +353,66 @@ export default function AdminTemplateBuilder() {
     }
   }
 
+  function botName(client) {
+    return bots.find((bot) => bot.id === client.grokBotId)?.name || "";
+  }
+
+  function openBots() {
+    setBotForm({ id: null, name: "", fileId: "" });
+    setBotError("");
+    setBotToRemove(null);
+    setBotsOpen(true);
+  }
+
+  async function onAssignBot(value) {
+    if (!selected) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.assignBuilderBot(selected.id, value ? Number(value) : null);
+      await refresh();
+      setToast(value ? "Grok bot assigned" : "No Grok bot assigned");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onSaveBot(event) {
+    event.preventDefault();
+    setBusy(true);
+    setBotError("");
+    try {
+      if (botForm.id) await api.updateGrokBot(botForm.id, { name: botForm.name, fileId: botForm.fileId });
+      else await api.createGrokBot({ name: botForm.name, fileId: botForm.fileId });
+      await refresh();
+      setBotForm({ id: null, name: "", fileId: "" });
+      setToast(botForm.id ? "Bot updated" : "Bot added");
+    } catch (err) {
+      setBotError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRemoveBot() {
+    if (!botToRemove) return;
+    setBusy(true);
+    setBotError("");
+    try {
+      await api.deleteGrokBot(botToRemove.id);
+      await refresh();
+      if (botForm.id === botToRemove.id) setBotForm({ id: null, name: "", fileId: "" });
+      setBotToRemove(null);
+      setToast("Bot removed");
+    } catch (err) {
+      setBotError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onImport(event) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -414,6 +479,7 @@ export default function AdminTemplateBuilder() {
                     aria-current={on ? "true" : undefined}
                   >
                     <span className="block font-semibold text-ink">{client.name}</span>
+                    <span className="mt-1 block text-xs text-mute">{botName(client) || "No Grok bot"}</span>
                     <span className="mt-2 inline-flex"><FrameworkBadge label={client.frameworkLabel} /></span>
                   </button>
                 </li>
@@ -449,6 +515,24 @@ export default function AdminTemplateBuilder() {
                   <p className="mt-2 text-sm text-mute">
                     {selected.currency} · Year end {selected.yearEndLabel} · {selected.periodLabel}
                   </p>
+                  <div className="mt-4 max-w-md">
+                    <Field label="Grok bot assigned" hint="One bot for this client, or none. The dashboard uses that bot's name and file.">
+                      <select
+                        className={inputClass}
+                        value={selected.grokBotId ? String(selected.grokBotId) : ""}
+                        disabled={!canManage || busy}
+                        onChange={(event) => onAssignBot(event.target.value)}
+                      >
+                        <option value="">None</option>
+                        {bots.map((bot) => <option key={bot.id} value={String(bot.id)}>{bot.name}</option>)}
+                      </select>
+                    </Field>
+                    {canManage ? (
+                      <button type="button" className="mt-3 text-sm font-semibold text-plum" onClick={openBots}>
+                        Add, edit, or remove bots
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={openTemplateForm} disabled={busy}>+ New template</Button>
@@ -699,6 +783,63 @@ export default function AdminTemplateBuilder() {
               <Button type="submit" disabled={busy || !copySource}>Copy template</Button>
             </div>
           </form>
+        </Modal>
+      ) : null}
+      {botsOpen ? (
+        <Modal title="Grok bots" lede="Each bot has a name and the Google Drive file that holds its weekly JSON." onClose={() => setBotsOpen(false)}>
+          <form className="space-y-4" onSubmit={onSaveBot}>
+            <Field label="Name">
+              <input className={inputClass} value={botForm.name} onChange={(event) => setBotForm({ ...botForm, name: event.target.value })} required />
+            </Field>
+            <Field label="Insights file ID" hint="Google Drive file ID for this bot's weekly JSON.">
+              <input className={inputClass} value={botForm.fileId} spellCheck={false} onChange={(event) => setBotForm({ ...botForm, fileId: event.target.value })} required />
+            </Field>
+            {botError ? <Alert>{botError}</Alert> : null}
+            <div className="flex flex-wrap justify-end gap-2">
+              {botForm.id ? (
+                <Button type="button" variant="ghost" onClick={() => setBotForm({ id: null, name: "", fileId: "" })}>Cancel edit</Button>
+              ) : null}
+              <Button type="submit" disabled={busy}>{botForm.id ? "Save bot" : "Add bot"}</Button>
+            </div>
+          </form>
+          <ul className="mt-5 space-y-3">
+            {bots.length === 0 ? <li className="text-sm text-mute">No bots yet.</li> : null}
+            {bots.map((bot) => (
+              <li key={bot.id} className="rounded-2xl border border-[rgba(109,40,217,0.1)] px-3 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">{bot.name}</p>
+                    <p className="mt-1 break-all text-xs text-mute">{bot.fileId}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-plum"
+                      onClick={() => {
+                        setBotToRemove(null);
+                        setBotError("");
+                        setBotForm({ id: bot.id, name: bot.name, fileId: bot.fileId });
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button type="button" className="text-sm font-semibold text-rose-700" onClick={() => { setBotError(""); setBotToRemove(bot); }}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                {botToRemove?.id === bot.id ? (
+                  <div className="mt-3 rounded-2xl bg-rose-50 px-3 py-3">
+                    <p className="text-sm text-rose-800">Remove {bot.name}? Clients using this bot will have none assigned.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button type="button" variant="ghost" onClick={() => setBotToRemove(null)}>Keep</Button>
+                      <button type="button" className={deleteActionClass} disabled={busy} onClick={onRemoveBot}>Remove bot</button>
+                    </div>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </Modal>
       ) : null}
       <Toast message={toast} />

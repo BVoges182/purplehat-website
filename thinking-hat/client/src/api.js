@@ -78,6 +78,7 @@ export const api = {
   updateMe: (body) => request("/api/me", { method: "PATCH", body }),
   uploadPhoto: (file) => request("/api/me/photo", { method: "POST", body: photoBody(file) }),
   finances: () => request("/api/me/finances"),
+  insights: () => request("/api/me/insights"),
   reports: () => request("/api/me/reports"),
   report: (month) => request(`/api/me/reports/${month}`),
   userReport: (id, month) => request(`/api/admin/users/${id}/reports/${month}`),
@@ -117,6 +118,13 @@ export const api = {
     return request("/api/admin/templates/upload", { method: "POST", body });
   },
   templateBuilder: () => request("/api/admin/template-builder"),
+  createGrokBot: (body) => request("/api/admin/grok-bots", { method: "POST", body }),
+  updateGrokBot: (id, body) => request(`/api/admin/grok-bots/${id}`, { method: "PATCH", body }),
+  deleteGrokBot: (id) => request(`/api/admin/grok-bots/${id}`, { method: "DELETE" }),
+  assignBuilderBot: (clientId, botId) => request(
+    `/api/admin/template-builder/clients/${clientId}/bot`,
+    { method: "PATCH", body: { botId } },
+  ),
   templateBuilderTemplate: (clientId, templateId) => request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}`),
   createBuilderClient: (body) => request("/api/admin/template-builder/clients", { method: "POST", body }),
   deleteBuilderClient: (clientId) => request(`/api/admin/template-builder/clients/${clientId}`, { method: "DELETE" }),

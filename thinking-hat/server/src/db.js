@@ -20,6 +20,7 @@ import {
   validateClient,
 } from "./templateBuilder.js";
 import { applySectionAction, normalizeEditorSections, sectionTypeChoices } from "./templateSections.js";
+import { grokBotInput, insightsFileLabel } from "./insights.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
@@ -203,6 +204,9 @@ if (!userColumns.some((column) => column.name === "report_template")) {
 if (!userColumns.some((column) => column.name === "template_id")) {
   db.exec("ALTER TABLE users ADD COLUMN template_id INTEGER");
 }
+if (!userColumns.some((column) => column.name === "insights_source")) {
+  db.exec("ALTER TABLE users ADD COLUMN insights_source TEXT NOT NULL DEFAULT ''");
+}
 const templateColumns = db.prepare("PRAGMA table_info(client_templates)").all();
 if (!templateColumns.some((column) => column.name === "report_template")) {
   db.exec("ALTER TABLE client_templates ADD COLUMN report_template TEXT NOT NULL DEFAULT 'wealth-tech'");
@@ -255,6 +259,19 @@ CREATE TABLE IF NOT EXISTS builder_clients (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 `);
+db.exec(`
+CREATE TABLE IF NOT EXISTS grok_bots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  insights_source TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+`);
+const builderClientColumns = db.prepare("PRAGMA table_info(builder_clients)").all();
+if (!builderClientColumns.some((column) => column.name === "grok_bot_id")) {
+  db.exec("ALTER TABLE builder_clients ADD COLUMN grok_bot_id INTEGER");
+}
 db.exec(`
 CREATE TABLE IF NOT EXISTS app_flags (
   name TEXT PRIMARY KEY,
@@ -890,6 +907,7 @@ function clientRecord(row) {
     currency: row.currency,
     yearEnd: row.year_end,
     period: row.period,
+    grokBotId: row.grok_bot_id ? Number(row.grok_bot_id) : null,
   };
 }
 
@@ -1035,7 +1053,103 @@ export function builderCatalog() {
   }
   return {
     clients: clients.map((client) => describeClient(clientRecord(client), grouped.get(Number(client.id)) || [])),
+    bots: listGrokBots(),
   };
+}
+
+function presentGrokBot(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    fileId: insightsFileLabel(row.insights_source),
+  };
+}
+
+export function listGrokBots() {
+  return db.prepare("SELECT * FROM grok_bots ORDER BY name COLLATE NOCASE, id").all().map(presentGrokBot);
+}
+
+export function assignedGrokBot(userId) {
+  const row = db.prepare(
+    `SELECT grok_bots.name AS name, grok_bots.insights_source AS insights_source
+     FROM builder_clients
+     JOIN grok_bots ON grok_bots.id = builder_clients.grok_bot_id
+     WHERE builder_clients.user_id = ?`,
+  ).get(userId);
+  if (!row) return null;
+  return { name: row.name, source: row.insights_source };
+}
+
+export function createGrokBot(input) {
+  const checked = grokBotInput(input);
+  if (checked.error) return checked;
+  if (db.prepare("SELECT id FROM grok_bots WHERE name = ? COLLATE NOCASE").get(checked.value.name)) {
+    return { error: "A bot already has that name." };
+  }
+  const ts = nowIso();
+  const created = db.prepare(
+    "INSERT INTO grok_bots (name, insights_source, created_at, updated_at) VALUES (?, ?, ?, ?)",
+  ).run(checked.value.name, checked.value.insightsSource, ts, ts);
+  return { bot: presentGrokBot(db.prepare("SELECT * FROM grok_bots WHERE id = ?").get(created.lastInsertRowid)) };
+}
+
+export function updateGrokBot(id, input) {
+  const bot = db.prepare("SELECT * FROM grok_bots WHERE id = ?").get(id);
+  if (!bot) return { error: "That bot was not found." };
+  const checked = grokBotInput(input);
+  if (checked.error) return checked;
+  const taken = db.prepare("SELECT id FROM grok_bots WHERE name = ? COLLATE NOCASE AND id != ?").get(checked.value.name, bot.id);
+  if (taken) return { error: "A bot already has that name." };
+  const ts = nowIso();
+  db.prepare("UPDATE grok_bots SET name = ?, insights_source = ?, updated_at = ? WHERE id = ?").run(
+    checked.value.name,
+    checked.value.insightsSource,
+    ts,
+    bot.id,
+  );
+  return { bot: presentGrokBot(db.prepare("SELECT * FROM grok_bots WHERE id = ?").get(bot.id)) };
+}
+
+export function deleteGrokBot(id) {
+  const bot = db.prepare("SELECT * FROM grok_bots WHERE id = ?").get(id);
+  if (!bot) return { error: "That bot was not found." };
+  const ts = nowIso();
+  db.prepare("UPDATE builder_clients SET grok_bot_id = NULL, updated_at = ? WHERE grok_bot_id = ?").run(ts, bot.id);
+  db.prepare("DELETE FROM grok_bots WHERE id = ?").run(bot.id);
+  return { id: Number(bot.id), name: bot.name };
+}
+
+export function assignBuilderClientBot(clientId, botId) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  if (!client) return { error: "That client was not found." };
+  const id = botId == null || botId === "" ? null : Number(botId);
+  if (id != null && (!Number.isInteger(id) || id <= 0)) return { error: "Choose a Grok bot." };
+  if (id != null && !db.prepare("SELECT id FROM grok_bots WHERE id = ?").get(id)) {
+    return { error: "That bot was not found." };
+  }
+  const ts = nowIso();
+  db.prepare("UPDATE builder_clients SET grok_bot_id = ?, updated_at = ? WHERE id = ?").run(id, ts, client.id);
+  if (client.user_id) db.prepare("UPDATE users SET insights_source = '' WHERE id = ?").run(client.user_id);
+  return { clientId: Number(client.id), grokBotId: id };
+}
+
+export function seedAndyMurrayBot() {
+  if (flagValue("grok-bot-andy-assigned")) return;
+  const ts = nowIso();
+  let bot = db.prepare("SELECT * FROM grok_bots WHERE name = ? COLLATE NOCASE").get("Andy Murray");
+  if (!bot) {
+    const created = db.prepare(
+      "INSERT INTO grok_bots (name, insights_source, created_at, updated_at) VALUES (?, ?, ?, ?)",
+    ).run("Andy Murray", "drive:1i8mJ2vnpwpK8Z0m0XUjwkF6ecfDkUWDO", ts, ts);
+    bot = db.prepare("SELECT * FROM grok_bots WHERE id = ?").get(created.lastInsertRowid);
+  }
+  const demo = db.prepare("SELECT * FROM builder_clients").all().find((client) => purpleHatDemoBusiness(client.name));
+  if (!demo) return;
+  if (!demo.grok_bot_id) {
+    db.prepare("UPDATE builder_clients SET grok_bot_id = ?, updated_at = ? WHERE id = ?").run(bot.id, ts, demo.id);
+  }
+  if (demo.user_id) db.prepare("UPDATE users SET insights_source = '' WHERE id = ?").run(demo.user_id);
+  setFlag("grok-bot-andy-assigned", "1");
 }
 
 function loadBuilderTemplateRow(clientId, templateId) {

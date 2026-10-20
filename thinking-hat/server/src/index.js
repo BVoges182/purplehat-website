@@ -35,7 +35,13 @@ import db, {
   renameBuilderTemplate,
   replaceBuilderSections,
   saveTemplateDocument,
+  seedAndyMurrayBot,
   seedBuilderCatalog,
+  assignBuilderClientBot,
+  assignedGrokBot,
+  createGrokBot,
+  deleteGrokBot,
+  updateGrokBot,
   seedPurpleHatDemoTemplate,
   seedWealthTechTemplate,
   shortenWealthTechTemplateName,
@@ -57,6 +63,7 @@ import {
   saveManagementReport,
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
+import { insightLoader } from "./insights.js";
 import { sendSmtpMail } from "./mail.js";
 import {
   buildInviteMessage,
@@ -610,6 +617,21 @@ app.get("/api/me/finances", requireAuth, (req, res) => {
   res.json(readFinances(req.user.id, { fromReports: true }));
 });
 
+app.get("/api/me/insights", requireAuth, async (req, res) => {
+  try {
+    const bot = assignedGrokBot(req.user.id);
+    const result = await insightLoader.load({
+      id: req.user.id,
+      bot_name: bot?.name || "",
+      bot_source: bot?.source || "",
+    });
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.json({ configured: false, botName: null, insights: null });
+  }
+});
+
 app.get("/api/me/reports", requireAuth, (req, res) => {
   res.json({
     reports: listManagementReports(req.user.id),
@@ -798,7 +820,10 @@ function inviteForUser(user, rows) {
 }
 
 function userWithInvite(user, rows) {
-  return { ...publicUser(user), invite: inviteForUser(user, rows) };
+  return {
+    ...publicUser(user),
+    invite: inviteForUser(user, rows),
+  };
 }
 
 async function emailTheInvite({ to, code, label, expiresAt, origin, approveOnUse }) {
@@ -1280,6 +1305,43 @@ app.get("/api/admin/template-builder", requireAuth, requireAdmin, (req, res) => 
   res.json({ ...builderCatalog(), options: builderOptions() });
 });
 
+app.post("/api/admin/grok-bots", requireAuth, requireAdmin, (req, res) => {
+  const result = createGrokBot(req.body || {});
+  if (result.error) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.patch("/api/admin/grok-bots/:id", requireAuth, requireAdmin, (req, res) => {
+  const result = updateGrokBot(Number(req.params.id), req.body || {});
+  if (result.error) {
+    res.status(result.error === "That bot was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.delete("/api/admin/grok-bots/:id", requireAuth, requireAdmin, (req, res) => {
+  const result = deleteGrokBot(Number(req.params.id));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.patch("/api/admin/template-builder/clients/:clientId/bot", requireAuth, requireAdmin, (req, res) => {
+  const result = assignBuilderClientBot(Number(req.params.clientId), req.body?.botId);
+  if (result.error) {
+    const missing = result.error === "That client was not found." || result.error === "That bot was not found.";
+    res.status(missing ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
 app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
   const view = builderTemplateView(Number(req.params.clientId), Number(req.params.templateId));
   if (!view) {
@@ -1718,6 +1780,7 @@ seedPurpleHatDemoTemplate();
 shortenWealthTechTemplateName();
 linkClientsToTemplates();
 seedBuilderCatalog();
+seedAndyMurrayBot();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

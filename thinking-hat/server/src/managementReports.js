@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
@@ -6,6 +7,25 @@ import db, { nowIso } from "./db.js";
 import { arrangeReportSections } from "./templateSections.js";
 
 const fontDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fonts");
+const logoPath = [
+  path.join(fontDir, "..", "..", "..", "logo.png"),
+  path.join(fontDir, "..", "..", "site", "logo.png"),
+].find((file) => fs.existsSync(file)) || "";
+
+const MARGIN_X = 42;
+const PAGE_FOOTER = 72;
+const BRAND = {
+  ink: "#1a1a1a",
+  mute: "#4a4a4a",
+  body: "#2b2b2b",
+  header: "#f2f2f2",
+  band: "#f5f5f5",
+  rule: "#1a1a1a",
+  line: "#d9d9d9",
+};
+const AGING_TILES = ["#e8e8e8", "#f0f0f0", "#f5f5f5", "#fafafa"];
+const AGING_TILE_HEIGHT = 54;
+const AGING_TILE_GAP = 8;
 
 function roundHalfAway(value, digits) {
   const factor = 10 ** digits;
@@ -291,7 +311,7 @@ export function renderManagementReportPdf(report, user) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
-      margins: { top: 36, bottom: 16, left: 40, right: 40 },
+      margins: { top: 36, bottom: 28, left: MARGIN_X, right: MARGIN_X },
       bufferPages: true,
       info: {
         Title: report.periodLabel,
@@ -310,13 +330,7 @@ export function renderManagementReportPdf(report, user) {
       const range = doc.bufferedPageRange();
       for (let page = range.start; page < range.start + range.count; page += 1) {
         doc.switchToPage(page);
-        const label = `${page - range.start + 1} / ${range.count}`;
-        doc.font("Outfit").fontSize(8).fillColor("#6b6b6b");
-        doc.text(label, 40, doc.page.height - 34, {
-          width: doc.page.width - 80,
-          align: "right",
-          lineBreak: false,
-        });
+        drawFooter(doc, businessName, page - range.start + 1, range.count);
       }
       doc.end();
     } catch (error) {
@@ -325,13 +339,8 @@ export function renderManagementReportPdf(report, user) {
   });
 }
 
-const PAGE_FOOTER = 56;
-
 const STATEMENT_STYLES = [
-  { fontSize: 8, rowPad: 6, minRow: 14, headingRow: 18, headerFont: 7.5, titleSize: 14, noteSize: 9, headerBand: 28, unitOffset: 10 },
-  { fontSize: 7.5, rowPad: 4, minRow: 12, headingRow: 15, headerFont: 7, titleSize: 13, noteSize: 8, headerBand: 24, unitOffset: 9 },
-  { fontSize: 7, rowPad: 3, minRow: 11, headingRow: 14, headerFont: 6.5, titleSize: 12, noteSize: 8, headerBand: 22, unitOffset: 8 },
-  { fontSize: 6.5, rowPad: 2, minRow: 10, headingRow: 13, headerFont: 6, titleSize: 12, noteSize: 7.5, headerBand: 20, unitOffset: 7 },
+  { fontSize: 9, rowPad: 8, minRow: 18, headingRow: 20, headerFont: 7.5, titleSize: 15, noteSize: 9, headerBand: 30, unitOffset: 12 },
 ];
 
 function pageLimit(doc) {
@@ -362,6 +371,62 @@ function sectionNote(section) {
 function labelColumnWidth(section, width) {
   const columns = section.columns || [];
   return Math.min(230, width * (columns.length > 3 ? 0.36 : 0.42));
+}
+
+function headerText(value) {
+  return String(value || "").toUpperCase();
+}
+
+function agingTileItems(section) {
+  const columns = section.columns || [];
+  const total = [...(section.rows || [])].reverse().find((row) => row.kind === "total");
+  return columns
+    .map((label, index) => ({
+      label,
+      value: total?.values?.[index],
+      format: total?.formats?.[index] || "money",
+    }))
+    .filter((tile) => !/^total$/i.test(String(tile.label || "")));
+}
+
+function agingBlockHeight(count) {
+  if (!count) return 0;
+  const columns = Math.min(4, count);
+  const rows = Math.ceil(count / columns);
+  return rows * AGING_TILE_HEIGHT + (rows - 1) * AGING_TILE_GAP + 16;
+}
+
+function headerHeightFor(doc, section, style, labelWidth, valueWidth) {
+  const columns = section.columns || [];
+  const units = section.units || [];
+  doc.font("Outfit-SemiBold").fontSize(style.headerFont);
+  let textHeight = style.headerFont + 2;
+  const sample = (text, columnWidth) => {
+    const height = doc.heightOfString(headerText(text), { width: Math.max(12, columnWidth) });
+    if (height > textHeight) textHeight = height;
+  };
+  if (section.labelHeader) sample(section.labelHeader, labelWidth - 12);
+  columns.forEach((column) => sample(column, valueWidth - 10));
+  const unitExtra = units.some(Boolean) ? 11 : 0;
+  return Math.max(24, Math.ceil(textHeight + unitExtra + 10));
+}
+
+function fillRect(doc, x, y, w, h, color) {
+  if (w <= 0 || h <= 0) return;
+  doc.save();
+  doc.rect(x, y, w, h).fill(color);
+  doc.restore();
+}
+
+function hline(doc, x, y, w, color, weight) {
+  if (w <= 0) return;
+  doc.save();
+  doc.strokeColor(color).lineWidth(weight).moveTo(x, y).lineTo(x + w, y).stroke();
+  doc.restore();
+}
+
+function coverPeriod(report) {
+  return String(report?.periodLabel || report?.title || "").replace(/^Management report\s*·\s*/i, "").trim();
 }
 
 function contactFrame(width) {
@@ -476,10 +541,11 @@ function prepareContact(doc, section, width, style) {
 }
 
 function measureRow(doc, row, labelWidth, style) {
-  if (row.kind === "heading") return style.headingRow;
+  const indent = (row.indent || 0) * 12;
   doc.font(row.kind === "heading" || emphasizedRow(row) ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize);
-  const textHeight = doc.heightOfString(row.label || "", { width: Math.max(10, labelWidth - 8) });
-  return Math.max(style.minRow, textHeight + style.rowPad);
+  const textHeight = doc.heightOfString(row.label || "", { width: Math.max(10, labelWidth - 10 - indent) });
+  const min = row.kind === "heading" ? style.headingRow : style.minRow;
+  return Math.max(min, textHeight + style.rowPad);
 }
 
 function measureChrome(doc, section, width, style) {
@@ -495,8 +561,11 @@ function measureChrome(doc, section, width, style) {
 
 function measureStatementBody(doc, section, width, style) {
   const labelWidth = labelColumnWidth(section, width);
-  let height = style.headerBand + 2;
+  const columns = section.columns || [];
+  const valueWidth = columns.length ? (width - labelWidth) / columns.length : width;
+  let height = headerHeightFor(doc, section, style, labelWidth, valueWidth);
   for (const row of section.rows || []) height += measureRow(doc, row, labelWidth, style);
+  if (section.presentation === "aging") height += agingBlockHeight(agingTileItems(section).length);
   return height;
 }
 
@@ -546,34 +615,43 @@ function measureSection(doc, section, width, style) {
   return measureChrome(doc, section, width, style) + body;
 }
 
-function styleFor(doc, section, width, y) {
-  const styles = ownsPage(section) ? STATEMENT_STYLES : [STATEMENT_STYLES[0]];
-  let chosen = styles[styles.length - 1];
-  for (const style of styles) {
-    chosen = style;
-    if (measureSection(doc, section, width, style) <= pageLimit(doc) - y) break;
+function styleFor() {
+  return STATEMENT_STYLES[0];
+}
+
+function sectionLead(doc, section, width, style) {
+  const chrome = measureChrome(doc, section, width, style);
+  if (section.presentation === "contacts") {
+    return chrome + Math.min(measureContactsBody(doc, section, width, style), style.headerBand + style.minRow * 6);
   }
-  return chosen;
+  if (section.presentation === "ecommerce") return chrome + 96;
+  const full = measureStatementBody(doc, section, width, style);
+  const labelWidth = labelColumnWidth(section, width);
+  const columns = section.columns || [];
+  const valueWidth = columns.length ? (width - labelWidth) / columns.length : width;
+  const opening = headerHeightFor(doc, section, style, labelWidth, valueWidth) + style.minRow * 3;
+  const tiles = section.presentation === "aging" ? agingBlockHeight(agingTileItems(section).length) : 0;
+  return chrome + Math.min(full, opening + tiles);
 }
 
 function paintSection(doc, section, y, left, width, style) {
-  const demoContact = doc.reportTemplate === "purple-hat-demo" && section.presentation === "contacts";
-  doc.font("Nunito-ExtraBold").fontSize(style.titleSize).fillColor(demoContact ? "#2a1548" : "#1c1c1c");
+  doc.font("Nunito-ExtraBold").fontSize(style.titleSize).fillColor(BRAND.ink);
   doc.text(displayTitle(section), left, y, { width });
   y = doc.y + 6;
   const note = sectionNote(section);
   if (note) {
-    doc.font("Outfit").fontSize(style.noteSize).fillColor("#6b6b6b");
+    doc.font("Outfit").fontSize(style.noteSize).fillColor(BRAND.mute);
     doc.text(note, left, y, { width });
     y = doc.y + 8;
   }
   if (section.presentation === "contacts") return drawContacts(doc, section, y, left, width, style);
   if (section.presentation === "ecommerce") return drawEcommerce(doc, section, y, left, width, style);
+  if (section.presentation === "aging") return drawAging(doc, section, y, left, width, style);
   return drawTable(doc, section, y, left, width, style);
 }
 
 function bannerHeight(continued) {
-  return (continued ? 58 : 108) + 16;
+  return continued ? 92 : 168;
 }
 
 function groupHeight(doc, sections, width, style, gapSize) {
@@ -585,10 +663,11 @@ function groupedContact(section, demo) {
 }
 
 function drawReport(doc, report, businessName) {
-  const left = 40;
-  const width = doc.page.width - 80;
+  const left = MARGIN_X;
+  const width = doc.page.width - MARGIN_X * 2;
+  doc.reportChrome = { report, businessName };
   let y = drawBanner(doc, report, businessName, false);
-  let contentStart = y;
+  doc.contentFloor = y;
   const demo = doc.reportTemplate === "purple-hat-demo";
   const ordered = report.customOrder ? (report.sections || []) : cashFlowFollowsBalance(report.sections);
   const sections = ordered.filter((section) => (
@@ -613,14 +692,14 @@ function drawReport(doc, report, businessName) {
   const freshPage = () => {
     doc.addPage();
     y = drawBanner(doc, report, businessName, true);
-    contentStart = y;
+    doc.contentFloor = y;
   };
 
   sections.forEach((section, index) => {
     const following = groupedContact(section, demo);
     const aging = section.presentation === "aging";
-    if (ownsPage(section) && y > contentStart + 4) freshPage();
-    if (aging && sections[index - 1]?.presentation !== "aging" && y > contentStart + 4) freshPage();
+    if (ownsPage(section) && y > doc.contentFloor + 4) freshPage();
+    if (aging && sections[index - 1]?.presentation !== "aging" && y > doc.contentFloor + 4) freshPage();
     if (following && !contactGroupOpen) {
       freshPage();
       contactGroupOpen = true;
@@ -639,90 +718,251 @@ function drawReport(doc, report, businessName) {
       }
     }
     const gapSize = following ? 10 : 16;
-    if (y > contentStart + 4) y += gapSize;
+    const gap = y > doc.contentFloor + 4 ? gapSize : 0;
+    const entire = measureSection(doc, section, width, style);
+    const pageRoom = pageLimit(doc) - doc.contentFloor;
+    const needsBreak = y + gap + entire > pageLimit(doc) && y > doc.contentFloor + 4;
+    if (section.presentation === "contacts" && entire + 8 <= pageRoom && needsBreak) {
+      freshPage();
+    } else if (needsBreak && y + gap + sectionLead(doc, section, width, style) > pageLimit(doc)) {
+      freshPage();
+    }
+    if (y > doc.contentFloor + 4) y += gapSize;
     y = paintSection(doc, section, y, left, width, style);
   });
 }
 
-function drawBanner(doc, report, businessName, continued) {
-  const band = continued ? 58 : 108;
-  doc.save();
-  doc.rect(0, 0, doc.page.width, band).fill("#f4f4f4");
-  doc.restore();
-  doc.font("Nunito-ExtraBold").fontSize(continued ? 9 : 11).fillColor("#1c1c1c");
-  doc.text("Purple Hat", 40, continued ? 14 : 22, { lineBreak: false });
-  doc.font("Outfit").fontSize(8).fillColor("#5c5c5c");
-  doc.text("Thinking Hat", 40, continued ? 26 : 36, { lineBreak: false });
-  doc.font("Nunito-ExtraBold").fontSize(continued ? 10 : 13).fillColor("#1c1c1c");
-  doc.text(report.periodLabel, 40, continued ? 38 : 66, {
-    width: doc.page.width - 80,
-    lineBreak: false,
-  });
-  if (!continued) {
-    doc.font("Outfit-SemiBold").fontSize(9).fillColor("#3a3a3a");
-    doc.text(businessName, 40, 84, { width: doc.page.width - 80, lineBreak: false });
+function drawLogo(doc, x, y, size) {
+  if (!logoPath) return;
+  try {
+    doc.image(logoPath, x, y, { fit: [size, size] });
+  } catch {
+    // A missing logo should not stop the report.
   }
-  return band + 16;
+}
+
+function drawFooter(doc, businessName, pageNumber, pageCount) {
+  const left = MARGIN_X;
+  const width = doc.page.width - MARGIN_X * 2;
+  const y = doc.page.height - 46;
+  hline(doc, left, y - 10, width, BRAND.line, 0.7);
+  doc.font("Outfit-SemiBold").fontSize(8).fillColor(BRAND.ink);
+  doc.text("Purple Hat", left, y, { lineBreak: false });
+  const brandWidth = doc.widthOfString("Purple Hat");
+  doc.font("Outfit").fontSize(8).fillColor(BRAND.mute);
+  const name = String(businessName || "").trim();
+  doc.text(name ? `·  ${name}` : "·  Thinking Hat", left + brandWidth + 4, y, {
+    width: width - brandWidth - 70,
+    height: 11,
+    lineBreak: false,
+    ellipsis: true,
+  });
+  doc.text(`${pageNumber}  /  ${pageCount}`, left, y, { width, align: "right", lineBreak: false });
+}
+
+function drawBanner(doc, report, businessName, continued) {
+  const left = MARGIN_X;
+  const inner = doc.page.width - MARGIN_X * 2;
+  if (continued) {
+    const top = 36;
+    drawLogo(doc, left, top, 26);
+    doc.font("Nunito-ExtraBold").fontSize(11).fillColor(BRAND.ink);
+    doc.text(businessName, left + 34, top + 2, { width: inner - 168, height: 16, lineBreak: false, ellipsis: true });
+    doc.font("Outfit").fontSize(8.5).fillColor(BRAND.mute);
+    doc.text(report.title || coverPeriod(report), left, top + 4, { width: inner, align: "right", lineBreak: false });
+    const rule = top + 34;
+    hline(doc, left, rule, inner, BRAND.line, 0.8);
+    return rule + 16;
+  }
+
+  const top = 36;
+  doc.font("Nunito-ExtraBold").fontSize(22);
+  const nameHeight = Math.max(26, doc.heightOfString(businessName || "", { width: inner }));
+  const entity = String(report.entityName || "").trim();
+  const showEntity = entity && entity.toLowerCase() !== String(businessName || "").trim().toLowerCase();
+  const period = coverPeriod(report);
+  doc.font("Outfit").fontSize(10);
+  const periodHeight = period ? doc.heightOfString(period, { width: inner }) : 0;
+  drawLogo(doc, left, top, 48);
+  doc.font("Outfit-SemiBold").fontSize(8).fillColor(BRAND.ink);
+  doc.text("PURPLE HAT", left + 58, top + 8, { characterSpacing: 1.4, lineBreak: false });
+  doc.font("Outfit").fontSize(8.5).fillColor(BRAND.mute);
+  doc.text("Thinking Hat", left + 58, top + 22, { lineBreak: false });
+  doc.font("Outfit-SemiBold").fontSize(8).fillColor(BRAND.ink);
+  doc.text("MANAGEMENT REPORT", left, top + 12, { width: inner, align: "right", characterSpacing: 1.15, lineBreak: false });
+
+  let y = top + 48 + 14;
+  doc.font("Nunito-ExtraBold").fontSize(22).fillColor(BRAND.ink);
+  doc.text(businessName || "", left, y, { width: inner });
+  y = doc.y + 2;
+  if (showEntity) {
+    doc.font("Outfit").fontSize(9).fillColor(BRAND.mute);
+    doc.text(entity, left, y, { width: inner, lineBreak: false });
+    y = doc.y + 3;
+  }
+  if (period) {
+    doc.font("Outfit").fontSize(10).fillColor(BRAND.body);
+    doc.text(period, left, y, { width: inner });
+    y = doc.y;
+  }
+  const rule = Math.max(y + 12, top + 48 + 14 + nameHeight + (showEntity ? 16 : 0) + (period ? periodHeight + 4 : 0));
+  hline(doc, left, rule, inner, BRAND.rule, 1);
+  return rule + 16;
+}
+
+function beginContinuedPage(doc) {
+  const chrome = doc.reportChrome || { report: {}, businessName: "" };
+  doc.addPage();
+  const y = drawBanner(doc, chrome.report, chrome.businessName, true);
+  doc.contentFloor = y;
+  return y;
+}
+
+function drawRunningTitle(doc, section, y, left, width) {
+  doc.font("Nunito-ExtraBold").fontSize(12).fillColor(BRAND.ink);
+  doc.text(displayTitle(section), left, y, { width: width - 84, height: 16, lineBreak: false, ellipsis: true });
+  doc.font("Outfit").fontSize(8).fillColor(BRAND.mute);
+  doc.text("Continued", left, y + 2, { width, align: "right", lineBreak: false });
+  return y + 20;
+}
+
+function drawStatementHeader(doc, section, y, left, width, style) {
+  const columns = section.columns || [];
+  const labelWidth = labelColumnWidth(section, width);
+  const valueWidth = columns.length ? (width - labelWidth) / columns.length : width;
+  const units = section.units || [];
+  const headerHeight = headerHeightFor(doc, section, style, labelWidth, valueWidth);
+  fillRect(doc, left, y, width, headerHeight, BRAND.header);
+  hline(doc, left, y + headerHeight - 0.6, width, BRAND.line, 0.9);
+  const topPad = 6;
+  if (section.labelHeader) {
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.text(headerText(section.labelHeader), left + 6, y + topPad, {
+      width: labelWidth - 12,
+      height: headerHeight - topPad - 4,
+    });
+  }
+  columns.forEach((column, index) => {
+    const x = left + labelWidth + valueWidth * index;
+    const unit = units[index];
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.text(headerText(column), x + 3, y + topPad, {
+      width: valueWidth - 8,
+      align: "right",
+      height: headerHeight - topPad - (unit ? 14 : 4),
+    });
+    if (unit) {
+      doc.font("Outfit").fontSize(7).fillColor(BRAND.ink);
+      doc.text(unit, x + 3, y + headerHeight - 13, { width: valueWidth - 8, align: "right", lineBreak: false });
+    }
+  });
+  return { bottom: y + headerHeight, labelWidth, valueWidth };
+}
+
+function paintStatementRow(doc, row, y, left, width, labelWidth, valueWidth, columns, style, emphasized, rule) {
+  const rowHeight = measureRow(doc, row, labelWidth, style);
+  const heading = row.kind === "heading";
+  if (!heading && rule.stripe % 2 === 0) fillRect(doc, left, y, width, rowHeight, BRAND.band);
+  if (emphasized) hline(doc, left, y + 0.7, width, BRAND.rule, 1.15);
+  const indent = (row.indent || 0) * 12;
+  const labelInner = Math.max(10, labelWidth - 10 - indent);
+  doc.font(heading || emphasized ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
+  const labelHeight = doc.heightOfString(row.label || "", { width: labelInner });
+  const labelTop = y + Math.max(2, (rowHeight - labelHeight) / 2);
+  doc.text(row.label || "", left + 6 + indent, labelTop, {
+    width: labelInner,
+    height: Math.max(style.fontSize + 1, rowHeight - 4),
+    lineGap: 0,
+  });
+  if (!heading) {
+    columns.forEach((_, index) => {
+      const text = reportFigure((row.values || [])[index], row.formats?.[index]);
+      doc.font(emphasized ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize);
+      doc.fillColor(text === "—" ? BRAND.mute : BRAND.ink);
+      const valueTop = y + Math.max(2, (rowHeight - style.fontSize) / 2);
+      doc.text(text, left + labelWidth + valueWidth * index + 2, valueTop, {
+        width: valueWidth - 8,
+        align: "right",
+        lineBreak: false,
+        lineGap: 0,
+      });
+    });
+  }
+  if (rule.line) hline(doc, left, y + 0.55, width, BRAND.line, 0.45);
+  return y + rowHeight;
 }
 
 function drawTable(doc, section, startY, left, width, style) {
   const columns = section.columns || [];
-  const labelWidth = labelColumnWidth(section, width);
-  const valueWidth = columns.length ? (width - labelWidth) / columns.length : width;
   let y = startY;
-  const units = section.units || [];
-  const headerHeight = units.some(Boolean) ? style.headerBand : Math.max(16, style.headerFont + 8);
-  doc.save();
-  doc.rect(left, y - 3, width, headerHeight).fill("#f3f3f3");
-  doc.restore();
-  doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor("#5c5c5c");
-  if (section.labelHeader) {
-    doc.text(section.labelHeader, left + 4, y, { width: labelWidth - 8, lineBreak: false });
-  }
-  columns.forEach((column, index) => {
-    const x = left + labelWidth + valueWidth * index;
-    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor("#5c5c5c");
-    const headerWidth = doc.widthOfString(column);
-    doc.text(column, x, y, {
-      width: valueWidth - 4,
-      align: "right",
-      lineBreak: false,
+  let stripe = 0;
+  let rowsOnPage = 0;
+  let header = drawStatementHeader(doc, section, y, left, width, style);
+  y = header.bottom;
+  const rows = section.rows || [];
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const next = rows[index + 1];
+    const rowHeight = measureRow(doc, row, header.labelWidth, style);
+    const nextHeight = next ? measureRow(doc, next, header.labelWidth, style) : 0;
+    const chrome = (doc.contentFloor || 0) + 28;
+    const holdNext = Boolean(next) && rowHeight + nextHeight <= pageLimit(doc) - chrome && (row.kind === "heading" || emphasizedRow(next));
+    const needed = holdNext ? rowHeight + nextHeight : rowHeight;
+    const freshRoom = pageLimit(doc) - chrome - 8;
+    if (y + needed > pageLimit(doc) && needed <= freshRoom && y > (doc.contentFloor || 0) + 8) {
+      y = beginContinuedPage(doc);
+      y = drawRunningTitle(doc, section, y, left, width);
+      header = drawStatementHeader(doc, section, y, left, width, style);
+      y = header.bottom;
+      stripe = 0;
+      rowsOnPage = 0;
+    }
+    const emphasized = emphasizedRow(row);
+    y = paintStatementRow(doc, row, y, left, width, header.labelWidth, header.valueWidth, columns, style, emphasized, {
+      stripe,
+      line: rowsOnPage > 0 && !emphasized && !(next && emphasizedRow(next)),
     });
-    if (units[index]) {
-      doc.fillColor("#3a3a3a");
-      const symbolWidth = doc.widthOfString(units[index]);
-      const textRight = x + valueWidth - 4;
-      doc.text(units[index], textRight - (headerWidth + symbolWidth) / 2, y + style.unitOffset, { lineBreak: false });
-    }
-  });
-  y += headerHeight + 2;
-
-  for (const row of section.rows || []) {
-    const rowHeight = measureRow(doc, row, labelWidth, style);
-    if (emphasizedRow(row)) {
-      doc.save();
-      doc.rect(left, y - 2, width, rowHeight).fill("#f3f3f3");
-      doc.restore();
-    }
-    const indent = (row.indent || 0) * 14;
-    doc.font(row.kind === "heading" || emphasizedRow(row) ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize).fillColor("#1c1c1c");
-    doc.text(row.label || "", left + 4 + indent, y, { width: Math.max(10, labelWidth - 8 - indent) });
-    if (row.kind !== "heading") {
-      columns.forEach((_, index) => {
-        const value = (row.values || [])[index];
-        const text = reportFigure(value, row.formats?.[index]);
-        doc.font(emphasizedRow(row) ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize);
-        doc.fillColor(text === "—" ? "#6b6b6b" : "#1c1c1c");
-        doc.text(text, left + labelWidth + valueWidth * index, y, {
-          width: valueWidth - 4,
-          align: "right",
-          lineBreak: false,
-        });
-      });
-    }
-    y += rowHeight;
+    rowsOnPage += 1;
+    if (row.kind !== "heading") stripe += 1;
   }
   return y;
+}
+
+function drawAgingTiles(doc, section, y, left, width) {
+  const tiles = agingTileItems(section);
+  if (!tiles.length) return y;
+  const columns = Math.min(4, tiles.length);
+  tiles.forEach((tile, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const tileWidth = (width - AGING_TILE_GAP * (columns - 1)) / columns;
+    const x = left + column * (tileWidth + AGING_TILE_GAP);
+    const top = y + row * (AGING_TILE_HEIGHT + AGING_TILE_GAP);
+    doc.save();
+    doc.roundedRect(x, top, tileWidth, AGING_TILE_HEIGHT, 10).fill(AGING_TILES[index % AGING_TILES.length]);
+    doc.restore();
+    doc.font("Outfit-SemiBold").fontSize(7.5).fillColor(BRAND.mute);
+    doc.text(headerText(tile.label), x + 10, top + 9, {
+      width: tileWidth - 20,
+      characterSpacing: 0.45,
+      lineBreak: false,
+    });
+    const valueText = reportFigure(tile.value, tile.format || "money");
+    let valueSize = 14;
+    doc.font("Nunito-ExtraBold");
+    while (valueSize > 9 && doc.fontSize(valueSize).widthOfString(valueText) > tileWidth - 20) valueSize -= 0.5;
+    doc.fontSize(valueSize).fillColor(BRAND.ink);
+    doc.text(valueText, x + 10, top + 26, {
+      width: tileWidth - 20,
+      lineBreak: false,
+    });
+  });
+  return y + agingBlockHeight(tiles.length);
+}
+
+function drawAging(doc, section, startY, left, width, style) {
+  const y = drawAgingTiles(doc, section, startY, left, width);
+  return drawTable(doc, section, y, left, width, style);
 }
 
 const OVERVIEW_PURPLE = "#6d28d9";
@@ -1045,55 +1285,84 @@ function drawEcommerce(doc, section, startY, left, width, style) {
     })
     .filter(Boolean);
   let y = startY;
-  const boxWidth = (width - 16) / 3;
+  const boxGap = 8;
+  const boxWidth = (width - boxGap * 2) / 3;
+  const boxHeight = 42;
   highlights.forEach((item, index) => {
     const column = index % 3;
     const row = Math.floor(index / 3);
-    const x = left + column * (boxWidth + 8);
-    const top = y + row * 36;
+    const x = left + column * (boxWidth + boxGap);
+    const top = y + row * (boxHeight + boxGap);
     doc.save();
-    doc.roundedRect(x, top, boxWidth, 30, 6).fill("#f3f3f3");
+    doc.roundedRect(x, top, boxWidth, boxHeight, 10).fill(AGING_TILES[index % AGING_TILES.length]);
     doc.restore();
-    doc.font("Outfit-SemiBold").fontSize(7).fillColor("#5c5c5c");
-    doc.text(item.label, x + 8, top + 4, { width: boxWidth - 16, lineBreak: false });
-    doc.font("Nunito-ExtraBold").fontSize(11).fillColor("#1c1c1c");
-    doc.text(item.text, x + 8, top + 15, { width: boxWidth - 16, lineBreak: false });
+    doc.font("Outfit-SemiBold").fontSize(7).fillColor(BRAND.mute);
+    doc.text(headerText(item.label), x + 10, top + 7, { width: boxWidth - 20, lineBreak: false });
+    doc.font("Nunito-ExtraBold").fontSize(12).fillColor(BRAND.ink);
+    doc.text(item.text, x + 10, top + 21, { width: boxWidth - 20, lineBreak: false });
   });
-  y += Math.ceil(highlights.length / 3) * 36 + 8;
+  if (highlights.length) y += Math.ceil(highlights.length / 3) * (boxHeight + boxGap) + 6;
   if (latest?.month) {
-    doc.font("Outfit").fontSize(8).fillColor("#6b6b6b");
+    doc.font("Outfit").fontSize(8).fillColor(BRAND.mute);
     doc.text(latest.month, left, y, { width, lineBreak: false });
     y += 16;
   }
   const indexes = ecommerceColumns(section);
   const labels = ["Month", ...indexes.map((index) => section.columns[index])];
-  const colWidth = width / labels.length;
-  doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor("#5c5c5c");
-  labels.forEach((label, index) => {
-    doc.text(label, left + colWidth * index, y, {
-      width: colWidth - 4,
-      align: index === 0 ? "left" : "right",
-      lineBreak: false,
+  const colWidth = width / Math.max(1, labels.length);
+  const drawEcomHeader = (headerY) => {
+    const headerHeight = 22;
+    fillRect(doc, left, headerY, width, headerHeight, BRAND.header);
+    hline(doc, left, headerY + headerHeight - 0.6, width, BRAND.line, 0.9);
+    labels.forEach((label, index) => {
+      let size = style.headerFont;
+      doc.font("Outfit-SemiBold");
+      while (size > 6 && doc.fontSize(size).widthOfString(headerText(label)) > colWidth - 8) size -= 0.25;
+      doc.fontSize(size).fillColor(BRAND.mute);
+      doc.text(headerText(label), left + colWidth * index + 3, headerY + 6, {
+        width: colWidth - 6,
+        align: index === 0 ? "left" : "right",
+        lineBreak: false,
+      });
     });
-  });
-  y += style.minRow + 4;
+    return headerY + headerHeight;
+  };
+  y = drawEcomHeader(y);
+  let stripe = 0;
   rows.forEach((row) => {
-    doc.font("Outfit").fontSize(style.fontSize).fillColor("#1c1c1c");
-    doc.text(row.month || "", left, y, { width: colWidth - 4, lineBreak: false });
-    indexes.forEach((valueIndex, index) => {
-      doc.text(reportFigure(row.values?.[valueIndex], row.formats?.[valueIndex]), left + colWidth * (index + 1), y, {
-        width: colWidth - 4,
+    const rowHeight = style.minRow;
+    const freshRoom = pageLimit(doc) - (doc.contentFloor || 0) - 48;
+    if (y + rowHeight > pageLimit(doc) && rowHeight <= freshRoom && y > (doc.contentFloor || 0) + 8) {
+      y = beginContinuedPage(doc);
+      y = drawRunningTitle(doc, section, y, left, width);
+      y = drawEcomHeader(y);
+      stripe = 0;
+    }
+    if (stripe % 2 === 0) fillRect(doc, left, y, width, rowHeight, BRAND.band);
+    stripe += 1;
+    const textY = y + Math.max(2, (rowHeight - style.fontSize) / 2);
+    doc.font("Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
+    doc.text(row.month || "", left + 4, textY, { width: colWidth - 8, lineBreak: false });
+    indexes.forEach((valueIndex, column) => {
+      doc.font("Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
+      doc.text(reportFigure(row.values?.[valueIndex], row.formats?.[valueIndex]), left + colWidth * (column + 1) + 2, textY, {
+        width: colWidth - 8,
         align: "right",
         lineBreak: false,
       });
     });
-    y += style.minRow;
+    if (stripe > 1) hline(doc, left, y + 0.55, width, BRAND.line, 0.4);
+    y += rowHeight;
   });
   const notes = section.notes || [];
   if (notes.length) {
     y += 8;
-    doc.font("Outfit").fontSize(8).fillColor("#6b6b6b");
+    doc.font("Outfit").fontSize(8).fillColor(BRAND.mute);
     notes.forEach((note) => {
+      if (y + 14 > pageLimit(doc)) {
+        y = beginContinuedPage(doc);
+        doc.font("Outfit").fontSize(8).fillColor(BRAND.mute);
+      }
       doc.text(note, left, y, { width });
       y = doc.y + 2;
     });
@@ -1282,10 +1551,11 @@ function drawDemoContacts(doc, section, startY, left, width) {
   lines.forEach((row, index) => {
     const colour = demoDonutColour(lines.length, index);
     const textY = y + (rowHeight - fontSize) / 2 - 1;
-    doc.font("Outfit").fontSize(fontSize).fillColor("#5c5470");
+    if (index % 2 === 0) fillRect(doc, left, y, listWidth, rowHeight, BRAND.band);
+    doc.font("Outfit").fontSize(fontSize).fillColor(BRAND.mute);
     doc.text(String(index + 1), left, textY, { width: numberWidth, lineBreak: false });
     doc.circle(left + numberWidth + 6, y + rowHeight / 2, 3.1).fill(colour);
-    doc.font("Outfit").fontSize(fontSize).fillColor("#2a1548");
+    doc.font("Outfit").fontSize(fontSize).fillColor(BRAND.ink);
     doc.text(row.label || "", nameX, textY, { width: nameWidth, lineBreak: false });
     doc.text(reportFigure(row.value, "money"), left + listWidth - amountWidth, textY, {
       width: amountWidth,
@@ -1293,14 +1563,16 @@ function drawDemoContacts(doc, section, startY, left, width) {
       lineBreak: false,
     });
     doc.save();
-    doc.strokeColor("#efe8ff").lineWidth(0.7);
+    doc.strokeColor(BRAND.line).lineWidth(0.7);
     doc.moveTo(left, y + rowHeight - 0.6).lineTo(left + listWidth, y + rowHeight - 0.6).stroke();
     doc.restore();
     y += rowHeight;
   });
   if (total) {
+    if (lines.length % 2 === 0) fillRect(doc, left, y, listWidth, totalHeight, BRAND.band);
+    hline(doc, left, y + 0.7, listWidth, BRAND.rule, 1.15);
     const textY = y + (totalHeight - fontSize - 1) / 2;
-    doc.font("Nunito-ExtraBold").fontSize(fontSize + 1).fillColor("#2a1548");
+    doc.font("Nunito-ExtraBold").fontSize(fontSize + 1).fillColor(BRAND.ink);
     doc.text(total.label || "Total", nameX, textY, { width: nameWidth, lineBreak: false });
     doc.text(reportFigure(total.value, "money"), left + listWidth - amountWidth, textY, {
       width: amountWidth,
@@ -1329,59 +1601,84 @@ function drawContacts(doc, section, startY, left, width, style) {
   const layout = prepareContact(doc, section, width, style);
   const { frame, rows, slices } = layout;
   const chartLeft = left + frame.tableWidth + frame.gap;
-  let y = startY;
-  doc.save();
-  doc.rect(left, y - 3, frame.tableWidth, style.headerBand).fill("#f3f3f3");
-  doc.restore();
-  doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor("#5c5c5c");
-  doc.text("Contact", left + 4, y, { width: frame.contactWidth - 8, lineBreak: false });
-  const amountHeader = section.amountHeader || "Amount";
-  doc.font("Outfit-SemiBold").fontSize(style.headerFont);
-  const headerWidth = doc.widthOfString(amountHeader);
-  doc.text(amountHeader, left + frame.contactWidth, y, {
-    width: frame.amountWidth - 4,
-    align: "right",
-    lineBreak: false,
-  });
-  doc.fillColor("#3a3a3a");
-  const symbol = section.currency || "£";
-  const symbolWidth = doc.widthOfString(symbol);
-  const textRight = left + frame.contactWidth + frame.amountWidth - 4;
-  doc.text(symbol, textRight - (headerWidth + symbolWidth) / 2, y + style.unitOffset, { lineBreak: false });
-  y += style.headerBand + 2;
-
-  rows.forEach((row, index) => {
-    const rowHeight = layout.heights[index];
-    if (row.kind === "total") {
-      doc.save();
-      doc.rect(left, y - 2, frame.tableWidth, rowHeight).fill("#f3f3f3");
-      doc.restore();
-    }
-    doc.fillColor("#1c1c1c").font(row.kind === "total" ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize);
-    doc.text(row.label || "", left + 4, y, { width: frame.contactWidth - 8 });
-    const text = reportFigure(row.value, "money");
-    doc.fillColor("#1c1c1c").font(row.kind === "total" ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize);
-    doc.text(text, left + frame.contactWidth, y, {
-      width: frame.amountWidth - 4,
+  const drawContactHeader = (headerY) => {
+    fillRect(doc, left, headerY, frame.tableWidth, style.headerBand, BRAND.header);
+    hline(doc, left, headerY + style.headerBand - 0.6, frame.tableWidth, BRAND.line, 0.9);
+    const textY = headerY + 6;
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.text("CONTACT", left + 6, textY, { width: frame.contactWidth - 10, lineBreak: false });
+    const amountHeader = section.amountHeader || "Amount";
+    doc.text(headerText(amountHeader), left + frame.contactWidth, textY, {
+      width: frame.amountWidth - 6,
       align: "right",
       lineBreak: false,
     });
+    const symbol = section.currency || "";
+    if (symbol) {
+      doc.font("Outfit").fontSize(7).fillColor(BRAND.ink);
+      doc.text(symbol, left + frame.contactWidth, headerY + style.headerBand - 13, {
+        width: frame.amountWidth - 6,
+        align: "right",
+        lineBreak: false,
+      });
+    }
+    return headerY + style.headerBand;
+  };
+  let y = drawContactHeader(startY);
+  let stripe = 0;
+  const rangeBefore = doc.bufferedPageRange();
+  const firstPage = rangeBefore.start + rangeBefore.count - 1;
+
+  rows.forEach((row, index) => {
+    const rowHeight = layout.heights[index];
+    const next = rows[index + 1];
+    const nextHeight = next ? layout.heights[index + 1] : 0;
+    const needed = next && row.kind !== "total" && next.kind === "total" ? rowHeight + nextHeight : rowHeight;
+    const freshRoom = pageLimit(doc) - (doc.contentFloor || 0) - 48;
+    if (y + needed > pageLimit(doc) && needed <= freshRoom && y > (doc.contentFloor || 0) + 8) {
+      y = beginContinuedPage(doc);
+      y = drawRunningTitle(doc, section, y, left, width);
+      y = drawContactHeader(y);
+      stripe = 0;
+    }
+    const total = row.kind === "total";
+    if (stripe % 2 === 0) fillRect(doc, left, y, frame.tableWidth, rowHeight, BRAND.band);
+    if (total) hline(doc, left, y + 0.7, frame.tableWidth, BRAND.rule, 1.15);
+    doc.font(total ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
+    const labelHeight = doc.heightOfString(row.label || "", { width: frame.contactWidth - 12 });
+    const textY = y + Math.max(2, (rowHeight - labelHeight) / 2);
+    doc.text(row.label || "", left + 6, textY, { width: frame.contactWidth - 12, height: rowHeight - 4, lineGap: 0 });
+    doc.font(total ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
+    doc.text(reportFigure(row.value, "money"), left + frame.contactWidth, y + Math.max(2, (rowHeight - style.fontSize) / 2), {
+      width: frame.amountWidth - 6,
+      align: "right",
+      lineBreak: false,
+    });
+    if (!total && stripe > 0) hline(doc, left, y + 0.55, frame.tableWidth, BRAND.line, 0.4);
+    stripe += 1;
     y += rowHeight;
   });
 
   if (section.chart === false) return y;
+  const rangeAfter = doc.bufferedPageRange();
+  const lastPage = rangeAfter.start + rangeAfter.count - 1;
+  if (lastPage !== firstPage) doc.switchToPage(firstPage);
   const cx = chartLeft + frame.chartWidth / 2;
-  const cy = startY + layout.radius;
-  drawDonut(doc, slices, cx, cy, layout.radius);
-  let legendY = startY + layout.legendStart;
-  slices.forEach((slice, index) => {
-    const colour = donutColour(slices, index, doc);
-    doc.save();
-    doc.roundedRect(chartLeft, legendY + 1, 7, 7, 2).fill(colour);
-    doc.restore();
-    doc.fillColor(colour).font("Outfit").fontSize(style.fontSize);
-    doc.text(slice.label || "", chartLeft + 12, legendY, { width: layout.legendWidth });
-    legendY += layout.legend[index];
-  });
-  return Math.max(y, legendY);
+  const cy = startY + Math.max(layout.radius, 8);
+  if (cy + layout.radius <= pageLimit(doc)) {
+    drawDonut(doc, slices, cx, cy, layout.radius);
+    let legendY = startY + layout.legendStart;
+    slices.forEach((slice, index) => {
+      if (legendY + layout.legend[index] > pageLimit(doc)) return;
+      const colour = donutColour(slices, index, doc);
+      doc.save();
+      doc.roundedRect(chartLeft, legendY + 1, 7, 7, 2).fill(colour);
+      doc.restore();
+      doc.fillColor(colour).font("Outfit").fontSize(style.fontSize);
+      doc.text(slice.label || "", chartLeft + 12, legendY, { width: layout.legendWidth, height: layout.legend[index] });
+      legendY += layout.legend[index];
+    });
+  }
+  if (lastPage !== firstPage) doc.switchToPage(lastPage);
+  return y;
 }

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { ClassicDonut, ContactDonutCard, Statement } from "../components/ManagementReportView";
 import { Alert, Avatar, Card, PageIntro, money, monthLabel } from "../components/ui";
 import AgingSummary from "../components/AgingSummary";
+import AndysInsights from "../components/AndysInsights";
 import EcommercePerformance from "../components/EcommercePerformance";
 import { ecommerceSeries, reportFigure, yearToDateContacts } from "../reportMoney";
 
@@ -103,24 +104,28 @@ function ProfileCard({ user, events }) {
   );
 }
 
-function MonthChart({ months, max }) {
-  return (
-    <div className="mt-6 flex h-44 items-end gap-2">
-      {months.map((month) => (
-        <div key={month.month} className="flex h-full flex-1 flex-col justify-end">
-          <div className="flex h-36 items-end gap-1">
-            {typeof month.revenue === "number" ? (
-              <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
-            ) : <div className="flex-1" />}
-            {typeof month.expenses === "number" ? (
-              <div className="flex-1 rounded-t-lg bg-[#c4b5fd]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${reportFigure(month.expenses, "money")}`} />
-            ) : <div className="flex-1" />}
-          </div>
-          <p className="mt-2 text-center text-xs text-mute">{monthLabel(month.month)}</p>
-        </div>
-      ))}
+function MonthChart({ months, max, fill = false }) {
+  const plot = months.map((month) => (
+    <div key={month.month} className="flex h-full min-w-0 flex-1 flex-col justify-end">
+      <div className={fill ? "flex h-[calc(100%-1.75rem)] items-end gap-1" : "flex h-36 items-end gap-1"}>
+        {typeof month.revenue === "number" ? (
+          <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
+        ) : <div className="flex-1" />}
+        {typeof month.expenses === "number" ? (
+          <div className="flex-1 rounded-t-lg bg-[#c4b5fd]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${reportFigure(month.expenses, "money")}`} />
+        ) : <div className="flex-1" />}
+      </div>
+      <p className="mt-2 truncate text-center text-xs text-mute">{monthLabel(month.month)}</p>
     </div>
-  );
+  ));
+  if (fill) {
+    return (
+      <div className="relative mt-4 min-h-40 flex-1 pb-4">
+        <div className="absolute inset-x-0 top-0 bottom-4 flex items-end gap-2">{plot}</div>
+      </div>
+    );
+  }
+  return <div className="mt-6 flex h-44 items-end gap-2">{plot}</div>;
 }
 
 function chartMax(data) {
@@ -185,7 +190,7 @@ function ClassicDashboard({ user }) {
               </div>
               <MonthChart months={data.months} max={chartMax(data)} />
             </Card>
-            <ProfileCard user={user} events={data.events} />
+            <AndysInsights fallback={<ProfileCard user={user} events={data.events} />} />
           </div>
           {highlights && (contactSlices(highlights.expenses).length || contactSlices(highlights.income).length) ? (
             <div className="grid gap-4 lg:grid-cols-2">
@@ -203,12 +208,51 @@ function executiveSummary(sections) {
   return (sections || []).find((section) => /executive summary/i.test(String(section.title || ""))) || null;
 }
 
+function useLockedRevenueHeight(revenueRef, insightsRef, active) {
+  const lockedHeight = useRef(0);
+
+  useLayoutEffect(() => {
+    const revenue = revenueRef.current;
+    const insights = insightsRef.current;
+    if (!active || !revenue || !insights) return undefined;
+
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    // Opening the brief grows the insights card. Keep the revenue card at the collapsed height.
+    const sync = () => {
+      if (!desktopQuery.matches) {
+        revenue.style.height = "";
+        lockedHeight.current = 0;
+        return;
+      }
+      const expanded = Boolean(insights.querySelector("[aria-expanded='true']"));
+      if (!expanded) {
+        const next = insights.offsetHeight;
+        if (next) lockedHeight.current = next;
+      }
+      revenue.style.height = lockedHeight.current ? `${lockedHeight.current}px` : "";
+    };
+
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(insights);
+    desktopQuery.addEventListener("change", sync);
+    return () => {
+      observer.disconnect();
+      desktopQuery.removeEventListener("change", sync);
+      revenue.style.height = "";
+    };
+  }, [active, revenueRef, insightsRef]);
+}
+
 function DemoDashboard({ user }) {
   const { data, error, live, tick } = useLiveFinances();
   const [highlights, setHighlights] = useState(null);
   const [commerce, setCommerce] = useState(null);
   const [summary, setSummary] = useState(null);
   const [aging, setAging] = useState([]);
+  const revenueRef = useRef(null);
+  const insightsRef = useRef(null);
+  useLockedRevenueHeight(revenueRef, insightsRef, Boolean(data));
 
   useEffect(() => {
     let stop = false;
@@ -271,16 +315,20 @@ function DemoDashboard({ user }) {
             ))}
           </div>
           {summary ? <Statement section={summary} /> : null}
-          <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
-            <Card>
-              <h2 className="font-display text-xl font-extrabold text-ink">Six months</h2>
-              <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
-              </div>
-              <MonthChart months={data.months} max={chartMax(data)} />
-            </Card>
-            <ProfileCard user={user} events={data.events} />
+          <div className="grid items-start gap-4 lg:grid-cols-[2fr_3fr]">
+            <div ref={revenueRef}>
+              <Card className="flex h-full flex-col">
+                <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
+                <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
+                  <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
+                  <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
+                </div>
+                <MonthChart fill months={data.months} max={chartMax(data) * 1.15} />
+              </Card>
+            </div>
+            <div ref={insightsRef}>
+              <AndysInsights always />
+            </div>
           </div>
           {commerce ? <EcommercePerformance points={commerce} /> : null}
           {aging.length ? (
