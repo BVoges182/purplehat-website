@@ -43,7 +43,20 @@ import {
   saveManagementReport,
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
-import { mailConfigured, sendInviteKeyEmail } from "./mail.js";
+import { sendSmtpMail } from "./mail.js";
+import {
+  buildInviteMessage,
+  deliverInviteEmail,
+  displayInviteStatus,
+  duplicateSendError,
+  pickUserInvite,
+  inviteLink,
+  isInviteEmail,
+  publicMailStatus,
+  readMailConfig,
+  recordDelivery,
+  resendBlock,
+} from "./inviteEmail.js";
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
   console.error("Set JWT_SECRET in server/.env.");
@@ -77,7 +90,17 @@ function clean(value, max) {
 }
 
 function isEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 120;
+  return isInviteEmail(value);
+}
+
+function requestOrigin(req) {
+  const configured = String(process.env.APP_URL || "").trim().replace(/\/$/, "");
+  if (configured) return configured;
+  const host = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim().toLowerCase();
+  const proto = String(req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return `${proto}://${host}`;
+  if (host.endsWith("purplehat.fun")) return `https://${host}`;
+  return "https://purplehat.fun";
 }
 
 function sign(user) {
@@ -688,9 +711,79 @@ app.delete("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (re
   res.json({ ok: true });
 });
 
+function inviteRows() {
+  return db.prepare(
+    `SELECT invites.*, users.name AS used_by_name, users.email AS used_by_email,
+            client_templates.name AS template_name
+     FROM invites
+     LEFT JOIN users ON users.id = invites.used_by
+     LEFT JOIN client_templates ON client_templates.id = invites.template_id
+     ORDER BY invites.id DESC`,
+  ).all();
+}
+
+function loadInvite(id) {
+  return inviteRows().find((row) => Number(row.id) === Number(id)) || null;
+}
+
+function publicInvite(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    label: row.label,
+    email: row.email,
+    codeHint: row.code_hint,
+    approveOnUse: Boolean(row.approve_on_use),
+    status: row.status,
+    inviteStatus: displayInviteStatus(row),
+    expiresAt: row.expires_at,
+    createdAt: row.created_at,
+    usedAt: row.used_at,
+    emailSentAt: row.email_sent_at || null,
+    emailError: row.email_error || "",
+    usedByName: row.used_by_name,
+    usedByEmail: row.used_by_email,
+    templateId: row.template_id ? Number(row.template_id) : null,
+    templateName: row.new_template ? "New client template" : (row.template_name || (row.template_id ? "Removed template" : null)),
+    newTemplate: Boolean(row.new_template),
+  };
+}
+
+function inviteForUser(user, rows) {
+  return publicInvite(pickUserInvite(user, rows));
+}
+
+function userWithInvite(user, rows) {
+  return { ...publicUser(user), invite: inviteForUser(user, rows) };
+}
+
+async function emailTheInvite({ to, code, label, expiresAt, origin, approveOnUse }) {
+  const config = readMailConfig();
+  const message = buildInviteMessage({
+    code,
+    label,
+    email: to,
+    expiresAt,
+    origin,
+    approveOnUse: Boolean(approveOnUse),
+  });
+  return deliverInviteEmail({ to, message, config, sendSmtp: sendSmtpMail });
+}
+
+function storeInviteDelivery(id, delivery) {
+  const recorded = recordDelivery(delivery);
+  if (recorded.emailSent) {
+    db.prepare("UPDATE invites SET email_sent_at = ?, email_error = '' WHERE id = ?").run(nowIso(), id);
+  } else {
+    db.prepare("UPDATE invites SET email_sent_at = NULL, email_error = ? WHERE id = ?").run(recorded.emailError.slice(0, 300), id);
+  }
+  return recorded;
+}
+
 app.get("/api/admin/users", requireAuth, requireAdmin, (req, res) => {
   const rows = db.prepare("SELECT * FROM users ORDER BY id DESC").all();
-  res.json({ users: rows.map(publicUser) });
+  const invites = inviteRows();
+  res.json({ users: rows.map((row) => userWithInvite(row, invites)) });
 });
 
 app.get("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
@@ -700,8 +793,10 @@ app.get("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
     return;
   }
   const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY issued_on DESC, id DESC").all(user.id);
+  const invites = inviteRows();
   res.json({
-    user: publicUser(user),
+    user: userWithInvite(user, invites),
+    invite: inviteForUser(user, invites),
     bootstrap: isProtectedAdmin(user.email),
     finances: adminFigures(user.id),
     invoices: invoices.map(publicInvoice),
@@ -1021,33 +1116,12 @@ app.delete("/api/admin/invoices/:id", requireAuth, requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/admin/mail", requireAuth, requireAdmin, (req, res) => {
+  res.json(publicMailStatus(readMailConfig()));
+});
+
 app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
-  const rows = db.prepare(
-    `SELECT invites.*, users.name AS used_by_name, users.email AS used_by_email,
-            client_templates.name AS template_name
-     FROM invites
-     LEFT JOIN users ON users.id = invites.used_by
-     LEFT JOIN client_templates ON client_templates.id = invites.template_id
-     ORDER BY invites.id DESC`,
-  ).all();
-  res.json({
-    invites: rows.map((row) => ({
-      id: Number(row.id),
-      label: row.label,
-      email: row.email,
-      codeHint: row.code_hint,
-      approveOnUse: Boolean(row.approve_on_use),
-      status: row.status,
-      expiresAt: row.expires_at,
-      createdAt: row.created_at,
-      usedAt: row.used_at,
-      usedByName: row.used_by_name,
-      usedByEmail: row.used_by_email,
-      templateId: row.template_id ? Number(row.template_id) : null,
-      templateName: row.new_template ? "New client template" : (row.template_name || (row.template_id ? "Removed template" : null)),
-      newTemplate: Boolean(row.new_template),
-    })),
-  });
+  res.json({ invites: inviteRows().map(publicInvite) });
 });
 
 function publicTemplate(template) {
@@ -1194,9 +1268,12 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {
     res.status(400).json({ error: "Enter the email address to send the key to." });
     return;
   }
-  if (sendEmail && !mailConfigured()) {
-    res.status(400).json({ error: "Email sending is not set up yet. The key was not created." });
-    return;
+  if (sendEmail) {
+    const duplicate = duplicateSendError(inviteRows(), email);
+    if (duplicate) {
+      res.status(409).json({ error: duplicate });
+      return;
+    }
   }
   let expiresAt = null;
   if (days !== "" && days !== null && days !== undefined) {
@@ -1224,34 +1301,59 @@ app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {
     newTemplate ? null : template.id,
     newTemplate ? 1 : 0,
   );
+  const id = Number(created.lastInsertRowid);
   let emailSent = false;
   let emailError = "";
   if (sendEmail) {
-    try {
-      await sendInviteKeyEmail({ to: email, code, label, expiresInDays: expiresAt ? Number(days) : null });
-      emailSent = true;
-    } catch (error) {
-      console.error("Invite email failed.", error instanceof Error ? error.message : error);
-      emailError = "The key was created, but the email could not be sent.";
-    }
+    const delivery = await emailTheInvite({
+      to: email,
+      code,
+      label,
+      expiresAt,
+      origin: requestOrigin(req),
+      approveOnUse,
+    });
+    const recorded = storeInviteDelivery(id, delivery);
+    emailSent = recorded.emailSent;
+    emailError = recorded.emailError;
   }
   res.status(201).json({
     code,
+    inviteLink: inviteLink(requestOrigin(req), code),
     emailSent,
     emailError,
-    invite: {
-      id: Number(created.lastInsertRowid),
-      label,
-      email: email || null,
-      codeHint: codeHint(code),
-      approveOnUse: Boolean(approveOnUse),
-      status: "active",
-      expiresAt,
-      createdAt: ts,
-      templateId: newTemplate ? null : Number(template.id),
-      templateName: newTemplate ? "New client template" : template.name,
-      newTemplate,
-    },
+    invite: publicInvite(loadInvite(id)),
+  });
+});
+
+app.post("/api/admin/invites/:id/resend", requireAuth, requireAdmin, async (req, res) => {
+  const invite = db.prepare("SELECT * FROM invites WHERE id = ?").get(req.params.id);
+  if (!invite) {
+    res.status(404).json({ error: "That key was not found." });
+    return;
+  }
+  const block = resendBlock(invite);
+  if (block) {
+    res.status(block.includes("just sent") ? 429 : 400).json({ error: block });
+    return;
+  }
+  const code = newInviteCode();
+  db.prepare("UPDATE invites SET code_hash = ?, code_hint = ? WHERE id = ?").run(hashCode(code), codeHint(code), invite.id);
+  const delivery = await emailTheInvite({
+    to: invite.email,
+    code,
+    label: invite.label,
+    expiresAt: invite.expires_at,
+    origin: requestOrigin(req),
+    approveOnUse: invite.approve_on_use,
+  });
+  const recorded = storeInviteDelivery(invite.id, delivery);
+  res.json({
+    code,
+    inviteLink: inviteLink(requestOrigin(req), code),
+    emailSent: recorded.emailSent,
+    emailError: recorded.emailError,
+    invite: publicInvite(loadInvite(invite.id)),
   });
 });
 

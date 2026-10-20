@@ -117,8 +117,10 @@ export const api = {
     body.append("file", file);
     return request("/api/admin/templates/upload", { method: "POST", body });
   },
+  mailStatus: () => request("/api/admin/mail"),
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
+  resendInvite: (id) => request(`/api/admin/invites/${id}/resend`, { method: "POST" }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),
   adminRequests: () => request("/api/admin/requests"),
   updateRequest: (id, body) => request(`/api/admin/requests/${id}`, { method: "PATCH", body }),

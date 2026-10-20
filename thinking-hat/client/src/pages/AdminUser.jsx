@@ -47,6 +47,9 @@ export default function AdminUser() {
   const [removingId, setRemovingId] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [toast, setToast] = useState("");
+  const [issued, setIssued] = useState(null);
+  const [copied, setCopied] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -75,9 +78,48 @@ export default function AdminUser() {
     document.getElementById(target)?.scrollIntoView({ block: "start" });
   }, [id, record?.user?.id]);
 
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(""), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   function note(text) {
     setError("");
     setMessage(text);
+  }
+
+  async function copyIssued(value, which) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(which);
+    } catch {
+      setCopied("");
+    }
+  }
+
+  async function resendInvite() {
+    if (!record?.invite) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const data = await api.resendInvite(record.invite.id);
+      setIssued(data);
+      setCopied("");
+      setRecord((current) => ({
+        ...current,
+        invite: data.invite,
+        user: { ...current.user, invite: data.invite },
+      }));
+      if (data.emailSent) setToast(`Invite emailed to ${data.invite.email}.`);
+      if (data.emailError) setError(data.emailError);
+    } catch (err) {
+      setError(err.message);
+      setMessage("");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveDetails(event) {
@@ -248,6 +290,45 @@ export default function AdminUser() {
       </PageIntro>
       {error ? <Alert>{error}</Alert> : null}
       {message ? <Alert tone="ok">{message}</Alert> : null}
+
+      {record.user.role === "client" ? (
+        <Card>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="font-display text-xl font-extrabold text-ink">Invite</h2>
+              {record.invite ? (
+                <>
+                  <div className="mt-3"><Badge status={record.invite.inviteStatus} /></div>
+                  <p className="mt-2 text-sm text-mute">
+                    {record.invite.email || "No email"} · {record.invite.codeHint}
+                    {record.invite.expiresAt ? ` · Expires ${formatDate(record.invite.expiresAt)}` : " · No expiry"}
+                  </p>
+                  {record.invite.emailError && record.invite.inviteStatus === "pending" ? <p className="mt-2 text-sm text-ink">{record.invite.emailError}</p> : null}
+                </>
+              ) : <p className="mt-2 text-sm text-mute">No invite on file for this email.</p>}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {record.invite && (record.invite.inviteStatus === "pending" || record.invite.inviteStatus === "sent") ? (
+                <Button type="button" disabled={busy} onClick={resendInvite}>Resend invite</Button>
+              ) : null}
+              <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white px-5 font-display text-sm font-extrabold text-[#4c1d95]" to="/admin/invites">New invite key</Link>
+            </div>
+          </div>
+          {issued?.code ? (
+            <div className="mt-4 rounded-3xl bg-[#f5f0ff] p-4">
+              <p className="text-sm font-semibold text-ink">
+                {issued.emailSent ? `Emailed to ${issued.invite.email}. The key is shown once.` : "The key is saved. Copy it or the invite link if the email did not arrive."}
+              </p>
+              <p className="mt-2 text-sm text-ink">This replaces the previous key. The earlier key no longer works.</p>
+              <p className="mt-2 break-all font-mono text-2xl font-bold tracking-wide text-plum">{issued.code}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="ghost" type="button" onClick={() => copyIssued(issued.code, "key")}>{copied === "key" ? "Copied" : "Copy key"}</Button>
+                <Button variant="ghost" type="button" onClick={() => copyIssued(issued.inviteLink, "link")}>{copied === "link" ? "Copied" : "Copy invite link"}</Button>
+              </div>
+            </div>
+          ) : null}
+        </Card>
+      ) : null}
 
       {record.user.role === "client" ? (
         <Card>
@@ -423,6 +504,11 @@ export default function AdminUser() {
         </form>
         </div>
       </Card>
+      {toast ? (
+        <p role="status" className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card">
+          {toast}
+        </p>
+      ) : null}
     </div>
   );
 }
