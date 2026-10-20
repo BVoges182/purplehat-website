@@ -187,6 +187,12 @@ if (!inviteColumns.some((column) => column.name === "template_id")) {
 if (!inviteColumns.some((column) => column.name === "new_template")) {
   db.exec("ALTER TABLE invites ADD COLUMN new_template INTEGER NOT NULL DEFAULT 0");
 }
+if (!inviteColumns.some((column) => column.name === "email_sent_at")) {
+  db.exec("ALTER TABLE invites ADD COLUMN email_sent_at TEXT");
+}
+if (!inviteColumns.some((column) => column.name === "email_error")) {
+  db.exec("ALTER TABLE invites ADD COLUMN email_error TEXT NOT NULL DEFAULT ''");
+}
 const userColumns = db.prepare("PRAGMA table_info(users)").all();
 if (!userColumns.some((column) => column.name === "needs_template")) {
   db.exec("ALTER TABLE users ADD COLUMN needs_template INTEGER NOT NULL DEFAULT 0");

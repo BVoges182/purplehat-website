@@ -47,11 +47,13 @@ export function Badge({ status }) {
     overdue: "bg-rose-50 text-rose-800",
     declined: "bg-rose-50 text-rose-800",
     used: "bg-slate-100 text-slate-700",
+    accepted: "bg-emerald-50 text-emerald-800",
+    expired: "bg-slate-100 text-slate-700",
     revoked: "bg-rose-50 text-rose-800",
     admin: "bg-[#2a1548] text-white",
     client: "bg-white text-ink border border-[rgba(109,40,217,0.12)]",
   };
-  const labels = { ...accessLabel, ...invoiceLabel, ...requestLabel, used: "Used", revoked: "Revoked", admin: "Admin", client: "Client" };
+  const labels = { ...accessLabel, ...invoiceLabel, ...requestLabel, used: "Used", accepted: "Accepted", expired: "Expired", revoked: "Revoked", admin: "Admin", client: "Client" };
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tones[status] || "bg-white text-ink"}`}>
       {labels[status] || status}

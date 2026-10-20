@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, AuthFrame, Button, Field, inputClass } from "../components/ui";
@@ -16,7 +16,8 @@ const empty = {
 
 export default function Register() {
   const { user, ready } = useAuth();
-  const [form, setForm] = useState(empty);
+  const [params] = useSearchParams();
+  const [form, setForm] = useState(() => ({ ...empty, inviteCode: params.get("key") || "" }));
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);

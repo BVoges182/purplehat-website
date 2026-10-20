@@ -8,7 +8,7 @@
     "build": "node thinking-hat/scripts/build-client.mjs",
     "postinstall": "node thinking-hat/scripts/build-client.mjs",
     "start": "node thinking-hat/server/src/index.js",
-    "test": "node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js"
+    "test": "node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",

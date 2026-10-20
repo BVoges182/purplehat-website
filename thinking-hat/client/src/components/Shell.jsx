@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { api } from "../api";
 import { useAuth } from "../auth";
-import { Avatar, Button } from "./ui";
+import { Alert, Avatar, Button } from "./ui";
 
 const clientLinks = [
   ["/dashboard", "Dashboard"],
@@ -35,9 +37,20 @@ function Item({ to, end, children }) {
 export default function Shell() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [mailWarning, setMailWarning] = useState("");
   const links = user.role === "admin" ? adminLinks : clientLinks;
   const wide = location.pathname.startsWith("/admin/template-builder");
   const frame = wide ? "max-w-[90rem]" : "max-w-6xl";
+
+  useEffect(() => {
+    if (user.role !== "admin") return undefined;
+    let stop = false;
+    api.mailStatus()
+      .then((data) => { if (!stop && data.warning) setMailWarning(data.warning); })
+      .catch(() => {});
+    return () => { stop = true; };
+  }, [user.role]);
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-[rgba(109,40,217,0.08)] bg-[rgba(247,244,255,0.86)] backdrop-blur-md">
@@ -69,6 +82,7 @@ export default function Shell() {
         </div>
       </header>
       <main className={`mx-auto ${frame} px-5 py-8 sm:px-8`}>
+        {mailWarning ? <div className="mb-4"><Alert>{mailWarning}</Alert></div> : null}
         <Outlet />
       </main>
     </div>

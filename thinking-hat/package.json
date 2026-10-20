@@ -10,8 +10,8 @@
     "build": "node scripts/build-client.mjs",
     "postinstall": "node scripts/build-client.mjs",
     "start": "node server/src/index.js",
-    "test": "node --test server/src/templateBuilder.test.js server/src/templateSections.test.js",
-    "install:all": "npm install --prefix server && npm install --prefix client"
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "test": "node --test server/src/templateBuilder.test.js server/src/templateSections.test.js server/src/inviteEmail.test.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
