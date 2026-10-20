@@ -15,7 +15,6 @@ import db, {
   publicUser,
   applyClientTemplate,
   assignClientTemplate,
-  copyClientTemplate,
   deleteClientTemplate,
   linkClientsToTemplates,
   purpleHatDemoBusiness,
@@ -31,6 +30,7 @@ import db, {
   copyBuilderTemplate,
   createBuilderClient,
   createBuilderTemplate,
+  deleteBuilderClient,
   importBuilderTemplate,
   renameBuilderTemplate,
   replaceBuilderSections,
@@ -1257,16 +1257,6 @@ app.post("/api/admin/templates/upload", requireAuth, requireAdmin, acceptTemplat
   res.status(201).json({ template: publicTemplate(template), clientsUpdated: saved.clientsUpdated });
 });
 
-app.post("/api/admin/templates/copy", requireAuth, requireAdmin, (req, res) => {
-  const result = copyClientTemplate(Number(req.body.sourceId), clean(req.body.name, 120));
-  if (result.error) {
-    res.status(400).json({ error: result.error });
-    return;
-  }
-  const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(result.id);
-  res.status(201).json({ template: publicTemplate(template) });
-});
-
 app.delete("/api/admin/templates/:id", requireAuth, requireAdmin, (req, res) => {
   const result = deleteClientTemplate(Number(req.params.id));
   if (result.error) {
@@ -1323,6 +1313,15 @@ app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId/usa
 
 app.delete("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
   const result = archiveBuilderTemplate(Number(req.params.clientId), Number(req.params.templateId));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.delete("/api/admin/template-builder/clients/:clientId", requireAuth, requireAdmin, (req, res) => {
+  const result = deleteBuilderClient(Number(req.params.clientId));
   if (result.error) {
     res.status(404).json({ error: result.error });
     return;

@@ -185,6 +185,16 @@ function sameTitle(left, right) {
   return clean(left, 160).toLowerCase() === clean(right, 160).toLowerCase();
 }
 
+function contactRole(section) {
+  const title = clean(section?.title, 160).toLowerCase();
+  const contact = section?.presentation === "contacts" || /top\s+(expenses|income)\b/.test(title);
+  if (!contact) return "";
+  const kind = /income/.test(title) ? "income" : /expense/.test(title) ? "expenses" : "";
+  if (!kind) return "";
+  const period = /year to date/.test(title) || /[a-z]+\s*[–—-]\s*[a-z]+/.test(title);
+  return `${kind}:${period ? "period" : "month"}`;
+}
+
 function isTotalLabel(label) {
   return /^(total|net|gross)\b/i.test(clean(label, 160));
 }
@@ -614,14 +624,17 @@ export function arrangeReportSections(reportSections, templateSections, { custom
   const ordered = [];
   for (const templateSection of templateSections || []) {
     if (templateSection?.hidden) continue;
-    const index = visible.findIndex((section, item) => !used.has(item) && sameTitle(section.title, templateSection.title));
+    let index = visible.findIndex((section, item) => !used.has(item) && sameTitle(section.title, templateSection.title));
+    if (index < 0) {
+      const role = contactRole(templateSection);
+      if (role) {
+        index = visible.findIndex((section, item) => !used.has(item) && contactRole(section) === role);
+      }
+    }
     if (index >= 0) {
       used.add(index);
       ordered.push(visible[index]);
     }
   }
-  visible.forEach((section, index) => {
-    if (!used.has(index)) ordered.push(section);
-  });
   return { customOrder: true, sections: ordered };
 }

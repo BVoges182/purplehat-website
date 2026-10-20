@@ -485,25 +485,6 @@ function templateNameTaken(name, exceptId) {
   return Boolean(row);
 }
 
-export function copyClientTemplate(sourceId, name) {
-  const trimmed = String(name || "").trim();
-  if (!trimmed) return { error: "Name the new template." };
-  if (trimmed.length > 120) return { error: "Use a shorter name." };
-  const source = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(sourceId);
-  if (!source) return { error: "Choose a template to copy." };
-  if (templateNameTaken(trimmed)) return { error: "A template already has that name." };
-  const layout = layoutKey(source.report_template);
-  const ts = nowIso();
-  const id = transaction(() => {
-    const created = db.prepare(
-      `INSERT INTO client_templates (template_key, name, source_business, created_at, report_template, copied_from_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(`copy-${crypto.randomBytes(6).toString("hex")}`, trimmed, source.name, ts, layout, source.id);
-    return Number(created.lastInsertRowid);
-  });
-  return { id };
-}
-
 export function templateDocument(id) {
   const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(id);
   if (!template) return null;
@@ -1003,6 +984,7 @@ export function seedBuilderCatalog() {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   for (const user of users) {
+    if (flagValue(`builder-client-removed:${user.id}`)) continue;
     if (db.prepare("SELECT id FROM builder_clients WHERE user_id = ?").get(user.id)) continue;
     const profile = seedProfile(user.business_name || user.name);
     const name = String(user.business_name || user.name || "Client").slice(0, 120);
@@ -1167,6 +1149,33 @@ export function archiveBuilderTemplate(clientId, templateId) {
     reportCount,
     warning: planned.value.warning,
   };
+}
+
+export function deleteBuilderClient(clientId) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  if (!client) return { error: "That client was not found." };
+  const templates = db.prepare(
+    "SELECT id, template_key FROM client_templates WHERE builder_client_id = ?",
+  ).all(clientId);
+  return transaction(() => {
+    if (client.user_id) setFlag(`builder-client-removed:${client.user_id}`);
+    for (const template of templates) {
+      if (template.template_key === "wealth-tech" || template.template_key === "purple-hat-demo") {
+        setFlag(`template-removed:${template.template_key}`);
+      }
+      db.prepare("UPDATE users SET template_id = NULL WHERE template_id = ?").run(template.id);
+      db.prepare("UPDATE client_templates SET copied_from_id = NULL WHERE copied_from_id = ?").run(template.id);
+      db.prepare("DELETE FROM client_template_reports WHERE template_id = ?").run(template.id);
+      db.prepare("DELETE FROM client_template_events WHERE template_id = ?").run(template.id);
+      db.prepare("DELETE FROM client_templates WHERE id = ?").run(template.id);
+    }
+    db.prepare("DELETE FROM builder_clients WHERE id = ?").run(client.id);
+    return {
+      id: Number(client.id),
+      name: client.name,
+      templatesDeleted: templates.length,
+    };
+  });
 }
 
 export function createBuilderClient(input) {

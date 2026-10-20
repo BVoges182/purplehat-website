@@ -8,8 +8,6 @@ export default function AdminTemplates() {
   const [templates, setTemplates] = useState(null);
   const [clients, setClients] = useState([]);
   const [selectedId, setSelectedId] = useState("");
-  const [sourceId, setSourceId] = useState("");
-  const [copyName, setCopyName] = useState("");
   const [rename, setRename] = useState("");
   const [file, setFile] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -32,7 +30,6 @@ export default function AdminTemplates() {
       .then((list) => {
         if (stop || !list.length) return;
         setSelectedId(String(list[0].id));
-        setSourceId(String(list[0].id));
         setRename(list[0].name);
       })
       .catch((err) => { if (!stop) setError(err.message); });
@@ -49,25 +46,6 @@ export default function AdminTemplates() {
     setConfirmDelete(false);
     setError("");
     setNotice("");
-  }
-
-  async function onCopy(event) {
-    event.preventDefault();
-    setError("");
-    setNotice("");
-    setBusy(true);
-    try {
-      const data = await api.copyTemplate({ sourceId: Number(sourceId), name: copyName });
-      await refresh();
-      setSelectedId(String(data.template.id));
-      setRename(data.template.name);
-      setCopyName("");
-      setNotice(`${data.template.name} is ready. Choose it when you invite that client.`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   function fileName(format) {
@@ -149,7 +127,6 @@ export default function AdminTemplates() {
       const next = list.find((item) => item.id !== removed.id) || null;
       setSelectedId(next ? String(next.id) : "");
       setRename(next?.name || "");
-      setSourceId((current) => (String(current) === String(removed.id) ? (next ? String(next.id) : "") : current));
       setConfirmDelete(false);
       setNotice(`${removed.name} was deleted. Clients keep the dashboard and reports already on their accounts.`);
     } catch (err) {
@@ -161,31 +138,12 @@ export default function AdminTemplates() {
 
   return (
     <div>
-      <PageIntro title="Client templates" lede="Copy a template and name it for the new client. Their invite starts from that copy, and later changes stay on their own books." />
+      <PageIntro title="Client templates" lede="Choose a template to see who uses it, rename it, or download the file." />
       {error ? <div className="mb-4"><Alert>{error}</Alert></div> : null}
       {notice ? <div className="mb-4"><Alert tone="note">{notice}</Alert></div> : null}
       {!templates && !error ? <p className="text-mute">Loading templates…</p> : null}
       {templates ? (
         <div className="space-y-4">
-          <Card>
-            <h2 className="font-display text-xl font-extrabold text-ink">Copy a template</h2>
-            <form className="mt-4 space-y-4" onSubmit={onCopy}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Copy from" hint="The copy keeps this dashboard and starts with no reports.">
-                  <select className={inputClass} value={sourceId} onChange={(event) => setSourceId(event.target.value)} required>
-                    <option value="">Choose a template</option>
-                    {templates.map((template) => (
-                      <option key={template.id} value={template.id}>{template.name}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="New template name" hint="Name it for the client you want to add.">
-                  <input className={inputClass} value={copyName} onChange={(event) => setCopyName(event.target.value)} maxLength={120} required />
-                </Field>
-              </div>
-              <Button type="submit" disabled={busy || !sourceId}>{busy ? "Working…" : "Copy template"}</Button>
-            </form>
-          </Card>
           {selected ? (
             <Card>
               <Field label="Client template">

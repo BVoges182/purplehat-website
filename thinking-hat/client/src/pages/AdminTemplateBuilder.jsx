@@ -43,11 +43,19 @@ function IconDelete() {
   );
 }
 
+function IconDownload() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+      <path fill="currentColor" d="M10 2.2v8.1l2.2-2.2 1.3 1.3L10 13.9 6.5 9.4l1.3-1.3L10 10.3V2.2zM3.8 15.2h12.4V17H3.8v-1.8z" />
+    </svg>
+  );
+}
+
 const rowActionClass = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border bg-white px-3 font-display text-sm font-extrabold transition";
 const quietActionClass = `${rowActionClass} border-[rgba(109,40,217,0.12)] text-ink hover:bg-[#f5f3ff]`;
 const deleteActionClass = `${rowActionClass} border-rose-600 text-rose-700 hover:bg-rose-50`;
 
-function TemplateActions({ clientId, template, canManage, onEdit, onDelete }) {
+function TemplateActions({ clientId, template, canManage, onEdit, onDownload, onDelete }) {
   return (
     <div className="inline-flex flex-nowrap items-center justify-end gap-2">
       <Link
@@ -61,6 +69,11 @@ function TemplateActions({ clientId, template, canManage, onEdit, onDelete }) {
       {canManage ? (
         <button type="button" className={quietActionClass} title="Rename template" aria-label={`Rename ${template.name}`} onClick={() => onEdit(template)}>
           <IconEdit /> Edit
+        </button>
+      ) : null}
+      {canManage ? (
+        <button type="button" className={quietActionClass} title="Download CSV" aria-label={`Download CSV for ${template.name}`} onClick={() => onDownload(template)}>
+          <IconDownload /> Download CSV
         </button>
       ) : null}
       {canManage ? (
@@ -127,6 +140,7 @@ export default function AdminTemplateBuilder() {
   const [usage, setUsage] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [confirmClient, setConfirmClient] = useState(false);
   const fileRef = useRef(null);
 
   const requested = searchParams.get("client") || "";
@@ -271,6 +285,16 @@ export default function AdminTemplateBuilder() {
     }
   }
 
+  async function onDownloadCsv(template) {
+    setError("");
+    const safe = String(template?.name || "template").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "template";
+    try {
+      await api.downloadTemplate(template.id, "csv", `${safe}-template.csv`);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function openDelete(template) {
     if (!selected) return;
     setDeleteTarget(template);
@@ -285,6 +309,26 @@ export default function AdminTemplateBuilder() {
       setDeleteError(err.message);
     } finally {
       setUsageLoading(false);
+    }
+  }
+
+  async function onDeleteClient() {
+    if (!selected) return;
+    const removedId = selected.id;
+    setBusy(true);
+    setError("");
+    try {
+      await api.deleteBuilderClient(removedId);
+      await refresh();
+      const next = new URLSearchParams(searchParams);
+      if (next.get("client") === String(removedId)) next.delete("client");
+      setSearchParams(next, { replace: true });
+      setConfirmClient(false);
+      setToast("Client deleted");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -408,6 +452,17 @@ export default function AdminTemplateBuilder() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" onClick={openTemplateForm} disabled={busy}>+ New template</Button>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-rose-600 bg-white px-5 font-display text-sm font-extrabold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Delete client"
+                      disabled={busy}
+                      onClick={() => { setError(""); setConfirmClient(true); }}
+                    >
+                      Delete client
+                    </button>
+                  ) : null}
                   <Button type="button" variant="ghost" onClick={openCopy} disabled={busy}>Copy existing</Button>
                   <Button type="button" variant="ghost" onClick={() => fileRef.current?.click()} disabled={busy}>Import CSV</Button>
                   <input ref={fileRef} type="file" accept=".csv,text/csv,.txt,.json" className="hidden" onChange={onImport} />
@@ -443,6 +498,7 @@ export default function AdminTemplateBuilder() {
                             template={template}
                             canManage={canManage}
                             onEdit={openRename}
+                            onDownload={onDownloadCsv}
                             onDelete={openDelete}
                           />
                         </div>
@@ -484,6 +540,7 @@ export default function AdminTemplateBuilder() {
                               template={template}
                               canManage={canManage}
                               onEdit={openRename}
+                              onDownload={onDownloadCsv}
                               onDelete={openDelete}
                             />
                           </td>
@@ -554,6 +611,25 @@ export default function AdminTemplateBuilder() {
               <Button type="submit" disabled={busy}>Create template</Button>
             </div>
           </form>
+        </Modal>
+      ) : null}
+
+      {confirmClient && selected ? (
+        <Modal title="Delete client" onClose={() => { if (!busy) setConfirmClient(false); }}>
+          <div className="space-y-4">
+            <p className="text-sm text-ink">Delete client '{selected.name}'? This will also delete this client's templates. This can't be undone.</p>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmClient(false)}>Cancel</Button>
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-rose-600 bg-white px-5 font-display text-sm font-extrabold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={busy}
+                onClick={onDeleteClient}
+              >
+                Delete client
+              </button>
+            </div>
+          </div>
         </Modal>
       ) : null}
 

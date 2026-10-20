@@ -213,12 +213,34 @@ test("a saved template order is kept when a report is generated", () => {
     { title: "Balance sheet", hidden: true },
     { title: "E-commerce report" },
   ];
-  const custom = arrangeReportSections(report, moved, { customOrder: true });
+  const withExtraTab = [
+    ...report,
+    { title: "Profit and loss quarterly" },
+    { title: "December 2026 — Top expenses", presentation: "contacts" },
+  ];
+  const withContactSlot = [
+    ...moved.slice(0, 2),
+    { title: "September 2026 — Top expenses", presentation: "contacts" },
+    ...moved.slice(2),
+  ];
+  const custom = arrangeReportSections(withExtraTab, withContactSlot, { customOrder: true });
   assert.equal(custom.customOrder, true);
   assert.deepEqual(custom.sections.map((section) => section.title), [
     "Statement of cash flows",
     "Executive summary",
+    "December 2026 — Top expenses",
     "Profit and loss",
     "E-commerce report",
+  ]);
+
+  const keepsQuarter = arrangeReportSections(withExtraTab, [
+    { title: "Executive summary" },
+    { title: "Profit and loss quarterly" },
+    { title: "Profit and loss" },
+  ], { customOrder: true });
+  assert.deepEqual(keepsQuarter.sections.map((section) => section.title), [
+    "Executive summary",
+    "Profit and loss quarterly",
+    "Profit and loss",
   ]);
 });
