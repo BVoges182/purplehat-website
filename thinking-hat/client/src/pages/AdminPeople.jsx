@@ -84,6 +84,12 @@ export default function AdminPeople() {
                     <p className="mt-1 text-sm font-semibold text-ink">Template: {user.templateName || reportTemplateName(user.reportTemplate)}</p>
                   ) : null}
                   {user.needsTemplate ? <p className="text-xs font-semibold text-plum">New template to build</p> : null}
+                  {user.role === "client" ? (
+                    <p className="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-mute">
+                      Invite
+                      {user.invite ? <Badge status={user.invite.inviteStatus} /> : <span>None</span>}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
