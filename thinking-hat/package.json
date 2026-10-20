@@ -10,6 +10,7 @@
     "build": "node scripts/build-client.mjs",
     "postinstall": "node scripts/build-client.mjs",
     "start": "node server/src/index.js",
+    "test": "node --test server/src/templateBuilder.test.js",
     "install:all": "npm install --prefix server && npm install --prefix client"
   },
   "dependencies": {

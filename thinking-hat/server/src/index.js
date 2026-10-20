@@ -23,7 +23,14 @@ import db, {
   seedAdmin,
   seedClientBooks,
   seedEmptyBooks,
+  builderCatalog,
+  builderTemplateView,
+  copyBuilderTemplate,
+  createBuilderClient,
+  createBuilderTemplate,
+  importBuilderTemplate,
   saveTemplateDocument,
+  seedBuilderCatalog,
   seedPurpleHatDemoTemplate,
   seedWealthTechTemplate,
   shortenWealthTechTemplateName,
@@ -32,6 +39,7 @@ import db, {
   uploadsDir,
 } from "./db.js";
 import { parseTemplateFile, templateCsv, templateDownloadName, templateText } from "./templateFile.js";
+import { builderOptions } from "./templateBuilder.js";
 import {
   deleteManagementReport,
   listAllManagementReports,
@@ -1167,6 +1175,81 @@ app.patch("/api/admin/templates/:id", requireAuth, requireAdmin, (req, res) => {
   res.json({ template: publicTemplate(template) });
 });
 
+app.get("/api/admin/template-builder", requireAuth, requireAdmin, (req, res) => {
+  res.json({ ...builderCatalog(), options: builderOptions() });
+});
+
+app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const view = builderTemplateView(Number(req.params.clientId), Number(req.params.templateId));
+  if (!view) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  res.json(view);
+});
+
+app.post("/api/admin/template-builder/clients", requireAuth, requireAdmin, (req, res) => {
+  const result = createBuilderClient({
+    name: clean(req.body.name, 120),
+    framework: clean(req.body.framework, 40),
+    currency: clean(req.body.currency, 8),
+    yearEnd: clean(req.body.yearEnd, 8),
+    period: clean(req.body.period, 20),
+  });
+  if (result.error) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates", requireAuth, requireAdmin, (req, res) => {
+  const framework = clean(req.body.framework, 40);
+  const period = clean(req.body.period, 20);
+  const result = createBuilderTemplate(Number(req.params.clientId), {
+    name: clean(req.body.name, 120),
+    ...(framework ? { framework } : {}),
+    ...(period ? { period } : {}),
+  });
+  if (result.error) {
+    res.status(result.error === "That client was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/copy", requireAuth, requireAdmin, (req, res) => {
+  const result = copyBuilderTemplate(Number(req.params.clientId), Number(req.body.sourceId));
+  if (result.error) {
+    res.status(result.error === "That client was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/import", requireAuth, requireAdmin, acceptTemplateFile, (req, res) => {
+  const name = String(req.file?.originalname || "").toLowerCase();
+  if (!req.file) {
+    res.status(400).json({ error: "Choose a CSV file." });
+    return;
+  }
+  if (!name.endsWith(".csv") && !name.endsWith(".txt") && !name.endsWith(".json")) {
+    res.status(400).json({ error: "Upload a CSV or text file." });
+    return;
+  }
+  const parsed = parseTemplateFile(req.file.buffer.toString("utf8"), req.file.originalname);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  const saved = importBuilderTemplate(Number(req.params.clientId), parsed.document);
+  if (saved.error) {
+    res.status(saved.error === "That client was not found." ? 404 : 400).json({ error: saved.error });
+    return;
+  }
+  res.status(201).json(saved);
+});
+
 app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {
   const label = clean(req.body.label, 80);
   const email = clean(req.body.email, 120).toLowerCase();
@@ -1405,6 +1488,7 @@ seedWealthTechTemplate();
 seedPurpleHatDemoTemplate();
 shortenWealthTechTemplateName();
 linkClientsToTemplates();
+seedBuilderCatalog();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

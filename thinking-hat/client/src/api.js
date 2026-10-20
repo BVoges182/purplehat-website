@@ -117,6 +117,16 @@ export const api = {
     body.append("file", file);
     return request("/api/admin/templates/upload", { method: "POST", body });
   },
+  templateBuilder: () => request("/api/admin/template-builder"),
+  templateBuilderTemplate: (clientId, templateId) => request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}`),
+  createBuilderClient: (body) => request("/api/admin/template-builder/clients", { method: "POST", body }),
+  createBuilderTemplate: (clientId, body) => request(`/api/admin/template-builder/clients/${clientId}/templates`, { method: "POST", body }),
+  copyBuilderTemplate: (clientId, sourceId) => request(`/api/admin/template-builder/clients/${clientId}/templates/copy`, { method: "POST", body: { sourceId } }),
+  importBuilderTemplate: (clientId, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/import`, { method: "POST", body });
+  },
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),
