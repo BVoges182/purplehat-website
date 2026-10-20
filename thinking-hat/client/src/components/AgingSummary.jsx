@@ -18,6 +18,7 @@ export default function AgingSummary({ section }) {
   return (
     <Card>
       <h2 className="font-display text-xl font-extrabold text-ink">{section.title}</h2>
+      {section.subtitle ? <p className="mt-1 text-sm text-mute">{section.subtitle}</p> : null}
       {section.note ? <p className="mt-1 text-sm text-mute">{section.note}</p> : null}
       <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((tile, index) => (

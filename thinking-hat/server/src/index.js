@@ -23,12 +23,14 @@ import db, {
   seedAdmin,
   seedClientBooks,
   seedEmptyBooks,
+  applyBuilderSectionAction,
   builderCatalog,
   builderTemplateView,
   copyBuilderTemplate,
   createBuilderClient,
   createBuilderTemplate,
   importBuilderTemplate,
+  replaceBuilderSections,
   saveTemplateDocument,
   seedBuilderCatalog,
   seedPurpleHatDemoTemplate,
@@ -40,6 +42,7 @@ import db, {
 } from "./db.js";
 import { parseTemplateFile, templateCsv, templateDownloadName, templateText } from "./templateFile.js";
 import { builderOptions } from "./templateBuilder.js";
+import { parseWorkbook, previewTabs, sectionsFromMapping } from "./templateSections.js";
 import {
   deleteManagementReport,
   listAllManagementReports,
@@ -315,6 +318,32 @@ const workbookUpload = multer({
     callback(null, true);
   },
 }).single("file");
+
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter(req, file, callback) {
+    const name = String(file.originalname || "").toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      callback(new Error("Upload an Excel .xlsx or .xls file."));
+      return;
+    }
+    callback(null, true);
+  },
+}).single("file");
+
+function acceptExcel(req, res, next) {
+  excelUpload(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const message = error.code === "LIMIT_FILE_SIZE"
+      ? "Use an Excel file under 8 MB."
+      : (error.message || "Upload an Excel .xlsx or .xls file.");
+    res.status(400).json({ error: message });
+  });
+}
 
 function acceptWorkbook(req, res, next) {
   workbookUpload(req, res, (error) => {
@@ -1248,6 +1277,66 @@ app.post("/api/admin/template-builder/clients/:clientId/templates/import", requi
     return;
   }
   res.status(201).json(saved);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/:templateId/sections", requireAuth, requireAdmin, (req, res) => {
+  const patch = req.body.patch && typeof req.body.patch === "object" && !Array.isArray(req.body.patch) ? req.body.patch : {};
+  const result = applyBuilderSectionAction(Number(req.params.clientId), Number(req.params.templateId), {
+    action: clean(req.body.action, 20),
+    sectionType: clean(req.body.sectionType, 40),
+    id: clean(req.body.id, 40),
+    ids: Array.isArray(req.body.ids) ? req.body.ids.map((id) => clean(id, 40)) : [],
+    patch,
+  });
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/:templateId/excel", requireAuth, requireAdmin, acceptExcel, async (req, res) => {
+  const clientId = Number(req.params.clientId);
+  const templateId = Number(req.params.templateId);
+  if (!builderTemplateView(clientId, templateId)) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  if (!req.file) {
+    res.status(400).json({ error: "Choose an Excel file." });
+    return;
+  }
+  const parsed = await parseWorkbook(req.file.buffer);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  if (!req.body.mapping) {
+    res.json({ tabs: previewTabs(parsed.tabs) });
+    return;
+  }
+  let mapping;
+  try {
+    mapping = JSON.parse(String(req.body.mapping));
+  } catch {
+    res.status(400).json({ error: "The tab mapping could not be read." });
+    return;
+  }
+  if (!Array.isArray(mapping)) {
+    res.status(400).json({ error: "The tab mapping could not be read." });
+    return;
+  }
+  const built = sectionsFromMapping(parsed.tabs, mapping);
+  if (built.error) {
+    res.status(400).json({ error: built.error });
+    return;
+  }
+  const saved = replaceBuilderSections(clientId, templateId, built.sections);
+  if (saved.error) {
+    res.status(saved.error === "That template was not found." ? 404 : 400).json({ error: saved.error });
+    return;
+  }
+  res.json(saved);
 });
 
 app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {

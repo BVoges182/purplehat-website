@@ -16,6 +16,7 @@ import {
   seedProfile,
   validateClient,
 } from "./templateBuilder.js";
+import { applySectionAction, normalizeEditorSections, sectionTypeChoices } from "./templateSections.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
@@ -224,6 +225,9 @@ if (!builderColumns.some((column) => column.name === "review_required")) {
 }
 if (!builderColumns.some((column) => column.name === "sections_json")) {
   db.exec("ALTER TABLE client_templates ADD COLUMN sections_json TEXT");
+}
+if (!builderColumns.some((column) => column.name === "layout_saved")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN layout_saved INTEGER NOT NULL DEFAULT 0");
 }
 db.exec(`
 CREATE TABLE IF NOT EXISTS builder_clients (
@@ -807,6 +811,69 @@ function reportSectionConfigs(templateId) {
   }
 }
 
+function parseStoredSections(template) {
+  if (template.sections_json == null || template.sections_json === "") return null;
+  try {
+    const parsed = JSON.parse(template.sections_json);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function fullReportSections(templateId) {
+  const row = db.prepare(
+    "SELECT content_json FROM client_template_reports WHERE template_id = ? ORDER BY month DESC LIMIT 1",
+  ).get(templateId);
+  if (!row) return [];
+  try {
+    const content = JSON.parse(row.content_json);
+    return Array.isArray(content.sections) ? content.sections : [];
+  } catch {
+    return [];
+  }
+}
+
+function sectionIsRich(section) {
+  return Boolean(
+    section
+    && (section.id || Array.isArray(section.rows) || Array.isArray(section.columns) || section.subtitle || section.chart != null || section.hidden != null),
+  );
+}
+
+function overlayEditorSections(stored, figures) {
+  const used = new Set();
+  return stored.map((config) => {
+    const index = figures.findIndex((section, item) => (
+      !used.has(item) && String(section?.title || "").trim().toLowerCase() === String(config?.title || "").trim().toLowerCase()
+    ));
+    if (index < 0) return config;
+    used.add(index);
+    return {
+      ...figures[index],
+      title: config.title || figures[index].title,
+      presentation: config.presentation || figures[index].presentation,
+    };
+  });
+}
+
+function editorSectionList(sections) {
+  const normalized = normalizeEditorSections(sections);
+  return normalized.sections || [];
+}
+
+function readEditorSections(template) {
+  const stored = parseStoredSections(template);
+  if (Number(template.layout_saved) === 1) return editorSectionList(stored || []);
+  if (stored && stored.some(sectionIsRich)) return editorSectionList(stored);
+  if (stored && stored.length === 0) return [];
+  let figures = fullReportSections(template.id);
+  if (!figures.length && template.copied_from_id) figures = fullReportSections(template.copied_from_id);
+  if (!figures.length) return editorSectionList(stored || []);
+  if (!stored?.length) return editorSectionList(figures);
+  return editorSectionList(overlayEditorSections(stored, figures));
+}
+
 function readTemplateSections(template) {
   if (template.sections_json != null && template.sections_json !== "") {
     try {
@@ -960,11 +1027,52 @@ export function builderCatalog() {
   };
 }
 
-export function builderTemplateView(clientId, templateId) {
+function loadBuilderTemplateRow(clientId, templateId) {
   const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
-  const template = loadBuilderTemplate(clientId, templateId);
+  const template = db.prepare(
+    "SELECT * FROM client_templates WHERE id = ? AND builder_client_id = ?",
+  ).get(templateId, clientId);
   if (!client || !template) return null;
-  return { client: describeClient(clientRecord(client), []), template };
+  return { client, template };
+}
+
+function writeBuilderSections(templateId, sections) {
+  const normalized = normalizeEditorSections(sections);
+  if (normalized.error) return normalized;
+  db.prepare(
+    "UPDATE client_templates SET sections_json = ?, layout_saved = 1, updated_at = ? WHERE id = ?",
+  ).run(JSON.stringify(normalized.sections), nowIso(), templateId);
+  return { ok: true };
+}
+
+export function builderTemplateView(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return null;
+  return {
+    client: describeClient(clientRecord(loaded.client), []),
+    template: presentStoredTemplate(loaded.template, loaded.client),
+    sections: readEditorSections(loaded.template),
+    sectionTypes: sectionTypeChoices(),
+    layoutSaved: Number(loaded.template.layout_saved) === 1,
+  };
+}
+
+export function applyBuilderSectionAction(clientId, templateId, action) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return { error: "That template was not found." };
+  const result = applySectionAction(readEditorSections(loaded.template), action || {});
+  if (result.error) return result;
+  const written = writeBuilderSections(loaded.template.id, result.sections);
+  if (written.error) return written;
+  return builderTemplateView(clientId, templateId);
+}
+
+export function replaceBuilderSections(clientId, templateId, sections) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return { error: "That template was not found." };
+  const written = writeBuilderSections(loaded.template.id, sections);
+  if (written.error) return written;
+  return builderTemplateView(clientId, templateId);
 }
 
 export function createBuilderClient(input) {

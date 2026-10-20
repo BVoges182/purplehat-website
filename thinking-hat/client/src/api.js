@@ -127,6 +127,21 @@ export const api = {
     body.append("file", file);
     return request(`/api/admin/template-builder/clients/${clientId}/templates/import`, { method: "POST", body });
   },
+  saveTemplateSections: (clientId, templateId, body) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}/sections`,
+    { method: "POST", body },
+  ),
+  previewTemplateExcel: (clientId, templateId, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}/excel`, { method: "POST", body });
+  },
+  importTemplateExcel: (clientId, templateId, file, mapping) => {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("mapping", JSON.stringify(mapping));
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}/excel`, { method: "POST", body });
+  },
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),

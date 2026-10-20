@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
 import { ecommerceInsight, ecommerceSeries, insightMonthName } from "../../client/src/reportMoney.js";
 import db, { nowIso } from "./db.js";
+import { arrangeReportSections } from "./templateSections.js";
 
 const fontDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fonts");
 
@@ -249,6 +250,21 @@ export function dashboardFigures(userId) {
   return { latest, chart, months: points };
 }
 
+function savedTemplateOrder(userId) {
+  const user = db.prepare("SELECT template_id FROM users WHERE id = ?").get(userId);
+  if (!user?.template_id) return null;
+  const template = db.prepare(
+    "SELECT sections_json, layout_saved FROM client_templates WHERE id = ?",
+  ).get(user.template_id);
+  if (!template || Number(template.layout_saved) !== 1) return null;
+  try {
+    const parsed = JSON.parse(template.sections_json || "[]");
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function readManagementReport(userId, month) {
   if (!/^\d{4}-\d{2}$/.test(String(month || ""))) return null;
   const row = db.prepare(
@@ -256,10 +272,11 @@ export function readManagementReport(userId, month) {
   ).get(userId, month);
   if (!row) return null;
   const content = JSON.parse(row.content_json);
-  return {
-    ...listRow(row),
-    sections: Array.isArray(content.sections) ? content.sections : [],
-  };
+  const sections = Array.isArray(content.sections) ? content.sections : [];
+  const templateSections = savedTemplateOrder(userId);
+  if (!templateSections) return { ...listRow(row), sections, customOrder: false };
+  const arranged = arrangeReportSections(sections, templateSections, { customOrder: true });
+  return { ...listRow(row), sections: arranged.sections, customOrder: true };
 }
 
 function registerFonts(doc) {
@@ -337,7 +354,9 @@ function ownsPage(section) {
 }
 
 function sectionNote(section) {
-  return String(section.note || "").split(" · ").filter((part) => !/grouped into other/i.test(part)).join(" · ");
+  const note = String(section.note || "").split(" · ").filter((part) => !/grouped into other/i.test(part)).join(" · ");
+  const subtitle = String(section.subtitle || "").trim();
+  return [subtitle, note].filter(Boolean).join(" · ");
 }
 
 function labelColumnWidth(section, width) {
@@ -571,8 +590,9 @@ function drawReport(doc, report, businessName) {
   let y = drawBanner(doc, report, businessName, false);
   let contentStart = y;
   const demo = doc.reportTemplate === "purple-hat-demo";
-  const sections = cashFlowFollowsBalance(report.sections).filter((section) => (
-    demo || (section.presentation !== "aging" && section.presentation !== "ecommerce")
+  const ordered = report.customOrder ? (report.sections || []) : cashFlowFollowsBalance(report.sections);
+  const sections = ordered.filter((section) => (
+    !section?.hidden && (demo || (section.presentation !== "aging" && section.presentation !== "ecommerce"))
   ));
   const laterContacts = sections.filter((section) => groupedContact(section, demo));
   const opening = sections.filter((section) => !groupedContact(section, demo) && !ownsPage(section) && section.presentation !== "aging");
@@ -1250,8 +1270,9 @@ function drawDemoContacts(doc, section, startY, left, width) {
   const lines = rows.filter((row) => row.kind !== "total");
   const total = rows.find((row) => row.kind === "total");
   const { fontSize, rowHeight, totalHeight } = demoContactMetrics();
-  const diameter = Math.max(78, lines.length * rowHeight - 2);
-  const gap = 18;
+  const showChart = section.chart !== false;
+  const diameter = showChart ? Math.max(78, lines.length * rowHeight - 2) : 0;
+  const gap = showChart ? 18 : 0;
   const listWidth = width - diameter - gap;
   const amountWidth = 72;
   const numberWidth = 14;
@@ -1288,7 +1309,9 @@ function drawDemoContacts(doc, section, startY, left, width) {
     });
     y += totalHeight;
   }
-  drawDemoDonut(doc, slices, left + listWidth + gap + diameter / 2, startY + (lines.length * rowHeight) / 2, diameter / 2);
+  if (showChart) {
+    drawDemoDonut(doc, slices, left + listWidth + gap + diameter / 2, startY + (lines.length * rowHeight) / 2, diameter / 2);
+  }
   return y;
 }
 
@@ -1346,6 +1369,7 @@ function drawContacts(doc, section, startY, left, width, style) {
     y += rowHeight;
   });
 
+  if (section.chart === false) return y;
   const cx = chartLeft + frame.chartWidth / 2;
   const cy = startY + layout.radius;
   drawDonut(doc, slices, cx, cy, layout.radius);

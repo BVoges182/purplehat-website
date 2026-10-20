@@ -8,6 +8,11 @@ function amountClass(value, strong) {
   return strong ? "font-display font-extrabold text-neutral-950" : "text-neutral-950";
 }
 
+function subtitleLine(section) {
+  if (!section?.subtitle) return null;
+  return <p className="mt-1 text-sm text-neutral-500">{section.subtitle}</p>;
+}
+
 function cashFlowFollowsBalance(sections) {
   const items = [...(sections || [])];
   const cashIndex = items.findIndex((section) => /cash flow/i.test(String(section.title || "")));
@@ -68,6 +73,7 @@ export function Statement({ section }) {
   return (
     <Card>
       <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
+      {subtitleLine(section)}
       {visibleNote(section.note) ? <p className="mt-1 text-sm text-neutral-500">{visibleNote(section.note)}</p> : null}
       <div className="mt-4 hidden sm:block">
         <table className="w-full table-fixed text-sm">
@@ -241,8 +247,9 @@ export function ContactDonutCard({ section }) {
   return (
     <Card>
       <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
+      {subtitleLine(section)}
       {visibleNote(section.note) ? <p className="mt-1 text-sm text-mute">{visibleNote(section.note)}</p> : null}
-      <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-center">
+      <div className={`mt-6 flex flex-col gap-8 ${section.chart === false ? "" : "lg:flex-row lg:items-center"}`}>
         <ol className="min-w-0 flex-1">
           {lines.map((row, index) => {
             const colour = demoDonutColour(lines.length, index);
@@ -264,9 +271,11 @@ export function ContactDonutCard({ section }) {
             </li>
           ) : null}
         </ol>
-        <div className="shrink-0">
-          <Donut title={title} slices={slices} />
-        </div>
+        {section.chart === false ? null : (
+          <div className="shrink-0">
+            <Donut title={title} slices={slices} />
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -344,8 +353,9 @@ function ClassicContactSection({ section }) {
   return (
     <Card>
       <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
+      {subtitleLine(section)}
       {visibleNote(section.note) ? <p className="mt-1 text-sm text-neutral-500">{visibleNote(section.note)}</p> : null}
-      <div className="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className={`mt-4 grid items-start gap-6 ${section.chart === false ? "" : "lg:grid-cols-[minmax(0,1fr)_17rem]"}`}>
         <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
@@ -365,7 +375,7 @@ function ClassicContactSection({ section }) {
             ))}
           </tbody>
         </table>
-        <ClassicDonut title={displayTitle(section)} slices={slices} />
+        {section.chart === false ? null : <ClassicDonut title={displayTitle(section)} slices={slices} />}
       </div>
     </Card>
   );
@@ -373,12 +383,13 @@ function ClassicContactSection({ section }) {
 
 function EcommerceReport({ section }) {
   const rows = section.rows || [];
-  const points = ecommerceSeries([section]);
+  const points = section.chart === false ? null : ecommerceSeries([section]);
   return (
     <div className="space-y-4">
       {points ? <EcommercePerformance points={points} /> : null}
       <Card>
       <h2 className="font-display text-xl font-extrabold text-neutral-950">{section.title}</h2>
+      {subtitleLine(section)}
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[52rem] text-sm">
           <thead>
@@ -413,11 +424,16 @@ function EcommerceReport({ section }) {
   );
 }
 
+function orderedSections(report) {
+  const sections = (Array.isArray(report?.sections) ? report.sections : []).filter((section) => !section?.hidden);
+  return report?.customOrder ? sections : cashFlowFollowsBalance(sections);
+}
+
 export default function ManagementReportView({ report, template = "wealth-tech" }) {
   const demo = template === "purple-hat-demo";
   return (
     <div className="space-y-4">
-      {cashFlowFollowsBalance(report.sections).map((section, index) => {
+      {orderedSections(report).map((section, index) => {
         const key = `${section.title}-${index}`;
         if (section.presentation === "contacts") {
           return demo
