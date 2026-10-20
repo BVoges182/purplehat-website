@@ -3,6 +3,27 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, Badge, Button, Card, Field, PageIntro, formatDate, inputClass, invoiceLabel, money } from "../components/ui";
+import AdminReportList from "../components/AdminReportList";
+import { reportMonthLabel } from "../reportMoney";
+
+function figureValue(value) {
+  return value === null || value === undefined ? "" : value;
+}
+
+function figuresFrom(finances) {
+  return {
+    cash: figureValue(finances?.cash),
+    revenue: figureValue(finances?.revenue),
+    expenses: figureValue(finances?.expenses),
+    receivables: figureValue(finances?.receivables),
+    payables: figureValue(finances?.payables),
+    months: (finances?.months || []).map((month) => ({
+      month: month.month,
+      revenue: figureValue(month.revenue),
+      expenses: figureValue(month.expenses),
+    })),
+  };
+}
 
 const blankInvoice = () => ({
   number: "",
@@ -21,8 +42,9 @@ export default function AdminUser() {
   const [access, setAccess] = useState(null);
   const [password, setPassword] = useState("");
   const [figures, setFigures] = useState(null);
-  const [movement, setMovement] = useState({ kind: "receipt", description: "", amount: "" });
   const [invoice, setInvoice] = useState(blankInvoice);
+  const [editing, setEditing] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,18 +62,18 @@ export default function AdminUser() {
           phone: data.user.phone,
         });
         setAccess({ role: data.user.role, status: data.user.status });
-        setFigures({
-          cash: data.finances.cash,
-          revenue: data.finances.revenue,
-          expenses: data.finances.expenses,
-          receivables: data.finances.receivables,
-          payables: data.finances.payables,
-          months: data.finances.months,
-        });
+        setFigures(figuresFrom(data.finances));
       })
       .catch((err) => { if (!stop) setError(err.message); });
     return () => { stop = true; };
   }, [id]);
+
+  useEffect(() => {
+    if (!record || String(record.user?.id) !== String(id)) return;
+    const target = window.location.hash.replace("#", "");
+    if (!target) return;
+    document.getElementById(target)?.scrollIntoView({ block: "start" });
+  }, [id, record?.user?.id]);
 
   function note(text) {
     setError("");
@@ -109,19 +131,9 @@ export default function AdminUser() {
     event.preventDefault();
     setBusy(true);
     try {
-      const body = { ...figures };
-      if (movement.description && movement.amount !== "") body.event = movement;
-      const data = await api.saveFinances(id, body);
+      const data = await api.saveFinances(id, figures);
       setRecord((current) => ({ ...current, finances: data }));
-      setFigures({
-        cash: data.cash,
-        revenue: data.revenue,
-        expenses: data.expenses,
-        receivables: data.receivables,
-        payables: data.payables,
-        months: data.months,
-      });
-      setMovement({ kind: "receipt", description: "", amount: "" });
+      setFigures(figuresFrom(data));
       note("Figures saved. The client dashboard will refresh.");
     } catch (err) {
       setError(err.message);
@@ -166,6 +178,58 @@ export default function AdminUser() {
     }
   }
 
+  function startEdit(item) {
+    setRemovingId(null);
+    setEditing({
+      id: item.id,
+      number: item.number,
+      description: item.description,
+      amount: item.amount,
+      status: item.status,
+      issuedOn: String(item.issuedOn || "").slice(0, 10),
+      dueOn: String(item.dueOn || "").slice(0, 10),
+    });
+  }
+
+  async function saveInvoice(event) {
+    event.preventDefault();
+    if (!editing) return;
+    setBusy(true);
+    try {
+      const data = await api.updateInvoice(editing.id, editing);
+      setRecord((current) => ({
+        ...current,
+        invoices: current.invoices.map((item) => (item.id === editing.id ? data.invoice : item)),
+      }));
+      setEditing(null);
+      note("Invoice saved.");
+    } catch (err) {
+      setError(err.message);
+      setMessage("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeInvoice(invoiceId) {
+    setBusy(true);
+    try {
+      await api.deleteInvoice(invoiceId);
+      setRecord((current) => ({
+        ...current,
+        invoices: current.invoices.filter((item) => item.id !== invoiceId),
+      }));
+      setRemovingId(null);
+      if (editing?.id === invoiceId) setEditing(null);
+      note("Invoice removed.");
+    } catch (err) {
+      setError(err.message);
+      setMessage("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!record || !details || !figures) {
     return error ? <Alert>{error}</Alert> : <p className="text-mute">Loading…</p>;
   }
@@ -176,7 +240,7 @@ export default function AdminUser() {
   return (
     <div className="space-y-4">
       <Link className="text-sm font-semibold text-plum" to="/admin">Back to people</Link>
-      <PageIntro title={record.user.name} lede={`${record.user.businessName || "No business name"} · ${record.user.email}`}>
+      <PageIntro title={record.user.name} lede={`${record.user.businessName || "No business name"} · ${record.user.email}${record.user.needsTemplate ? " · New template to build" : ""}`}>
         <div className="flex gap-2">
           <Badge status={record.user.role} />
           <Badge status={record.user.status} />
@@ -185,8 +249,33 @@ export default function AdminUser() {
       {error ? <Alert>{error}</Alert> : null}
       {message ? <Alert tone="ok">{message}</Alert> : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {record.user.role === "client" ? (
         <Card>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-display text-xl font-extrabold text-ink">Management Reports</h2>
+            <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white px-5 font-display text-sm font-extrabold text-[#4c1d95]" to={`/admin/reports?client=${id}`}>Upload Excel</Link>
+          </div>
+          <AdminReportList
+            reports={(record.reports || []).map((report) => ({
+              ...report,
+              userId: record.user.id,
+              businessName: record.user.businessName,
+              name: record.user.name,
+            }))}
+            onDeleted={(report) => {
+              setMessage(`${reportMonthLabel(report.month)} deleted for ${report.businessName || record.user.businessName || record.user.name}.`);
+              setError("");
+              api.user(id).then((data) => {
+                setRecord((current) => ({ ...current, reports: data.reports, finances: data.finances }));
+                setFigures(figuresFrom(data.finances));
+              }).catch((err) => setError(err.message));
+            }}
+          />
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="min-w-0">
           <h2 className="font-display text-xl font-extrabold text-ink">Details</h2>
           <form className="mt-4 space-y-4" onSubmit={saveDetails}>
             <Field label="Name"><input className={inputClass} value={details.name} onChange={(event) => setDetails({ ...details, name: event.target.value })} /></Field>
@@ -200,7 +289,7 @@ export default function AdminUser() {
           </form>
         </Card>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card>
             <h2 className="font-display text-xl font-extrabold text-ink">Access</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -227,7 +316,7 @@ export default function AdminUser() {
           </Card>
           <Card>
             <h2 className="font-display text-xl font-extrabold text-ink">Business photo</h2>
-            <div className="mt-4 flex items-center gap-4">
+            <div className="mt-4 flex flex-wrap items-center gap-4">
               {record.user.photoUrl ? (
                 <img src={record.user.photoUrl} alt="" className="h-24 w-24 rounded-3xl object-cover" />
               ) : (
@@ -236,7 +325,7 @@ export default function AdminUser() {
                 </div>
               )}
               <Field label="Replace photo" hint="JPG, PNG, or WebP. Under 2 MB.">
-                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onPhoto} />
+                <input className="max-w-full" type="file" accept="image/jpeg,image/png,image/webp" onChange={onPhoto} />
               </Field>
             </div>
           </Card>
@@ -244,56 +333,78 @@ export default function AdminUser() {
       </div>
 
       <Card>
-        <h2 className="font-display text-xl font-extrabold text-ink">Financial figures</h2>
-        <p className="mt-1 text-sm text-mute">Saved figures show on the client dashboard within a few seconds. Amounts are in ZAR.</p>
-        <form className="mt-4 space-y-4" onSubmit={saveFigures}>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[["cash", "Cash"], ["revenue", "Revenue"], ["expenses", "Expenses"], ["receivables", "Receivable"], ["payables", "Payable"]].map(([key, label]) => (
-              <Field key={key} label={label}>
-                <input className={inputClass} type="number" min="0" step="0.01" value={figures[key]} onChange={(event) => setFigures({ ...figures, [key]: event.target.value })} />
-              </Field>
-            ))}
-          </div>
-          <div className="space-y-2">
-            {figures.months.map((month, index) => (
-              <div key={month.month} className="grid gap-2 sm:grid-cols-[8rem_1fr_1fr] sm:items-center">
-                <p className="text-sm font-semibold text-ink">{month.month}</p>
-                <input className={inputClass} type="number" min="0" step="0.01" aria-label={`Revenue ${month.month}`} value={month.revenue} onChange={(event) => setMonth(index, "revenue", event.target.value)} />
-                <input className={inputClass} type="number" min="0" step="0.01" aria-label={`Expenses ${month.month}`} value={month.expenses} onChange={(event) => setMonth(index, "expenses", event.target.value)} />
-              </div>
-            ))}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Movement">
-              <select className={inputClass} value={movement.kind} onChange={(event) => setMovement({ ...movement, kind: event.target.value })}>
-                <option value="receipt">Receipt</option>
-                <option value="bill">Bill</option>
-                <option value="adjustment">Adjustment</option>
-              </select>
-            </Field>
-            <Field label="Description">
-              <input className={inputClass} value={movement.description} onChange={(event) => setMovement({ ...movement, description: event.target.value })} />
-            </Field>
-            <Field label="Amount">
-              <input className={inputClass} type="number" step="0.01" value={movement.amount} onChange={(event) => setMovement({ ...movement, amount: event.target.value })} />
-            </Field>
-          </div>
-          <Button type="submit" disabled={busy}>Save figures</Button>
-        </form>
+        <div id="financial-figures">
+          <h2 className="font-display text-xl font-extrabold text-ink">Financial figures</h2>
+          <p className="mt-1 text-sm text-mute">Saved figures show on the client dashboard within a few seconds. Amounts are in ZAR.</p>
+          <form className="mt-4 space-y-4" onSubmit={saveFigures}>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {[["cash", "Cash"], ["revenue", "Revenue"], ["expenses", "Expenses"], ["receivables", "Receivable"], ["payables", "Payable"]].map(([key, label]) => (
+                <Field key={key} label={label}>
+                  <input className={inputClass} type="number" min="0" step="0.01" value={figures[key]} onChange={(event) => setFigures({ ...figures, [key]: event.target.value })} />
+                </Field>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {figures.months.map((month, index) => (
+                <div key={month.month} className="grid gap-2 sm:grid-cols-[8rem_1fr_1fr] sm:items-center">
+                  <p className="text-sm font-semibold text-ink">{month.month}</p>
+                  <input className={inputClass} type="number" min="0" step="0.01" aria-label={`Revenue ${month.month}`} value={month.revenue} onChange={(event) => setMonth(index, "revenue", event.target.value)} />
+                  <input className={inputClass} type="number" min="0" step="0.01" aria-label={`Expenses ${month.month}`} value={month.expenses} onChange={(event) => setMonth(index, "expenses", event.target.value)} />
+                </div>
+              ))}
+            </div>
+            <Button type="submit" disabled={busy}>Save figures</Button>
+          </form>
+        </div>
       </Card>
 
       <Card>
+        <div id="invoices">
         <h2 className="font-display text-xl font-extrabold text-ink">Invoices</h2>
         <div className="mt-4 space-y-3">
           {record.invoices.map((item) => (
-            <div key={item.id} className="flex flex-col gap-2 rounded-2xl border border-[rgba(109,40,217,0.08)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold text-ink">{item.number} · {money(item.amount)}</p>
-                <p className="text-sm text-mute">{item.description} · Due {formatDate(item.dueOn)}</p>
-              </div>
-              <select className={`${inputClass} sm:max-w-[10rem]`} value={item.status} aria-label={`Status ${item.number}`} onChange={(event) => setInvoiceStatus(item.id, event.target.value)}>
-                {Object.entries(invoiceLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
+            <div key={item.id} className="rounded-2xl border border-[rgba(109,40,217,0.08)] px-4 py-3">
+              {editing?.id === item.id ? (
+                <form className="grid gap-3 sm:grid-cols-2" onSubmit={saveInvoice}>
+                  <Field label="Number"><input className={inputClass} value={editing.number} onChange={(event) => setEditing({ ...editing, number: event.target.value })} required /></Field>
+                  <Field label="Description"><input className={inputClass} value={editing.description} onChange={(event) => setEditing({ ...editing, description: event.target.value })} required /></Field>
+                  <Field label="Amount"><input className={inputClass} type="number" min="0" step="0.01" value={editing.amount} onChange={(event) => setEditing({ ...editing, amount: event.target.value })} required /></Field>
+                  <Field label="Status">
+                    <select className={inputClass} value={editing.status} onChange={(event) => setEditing({ ...editing, status: event.target.value })}>
+                      {Object.entries(invoiceLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Issued"><input className={inputClass} type="date" value={editing.issuedOn} onChange={(event) => setEditing({ ...editing, issuedOn: event.target.value })} required /></Field>
+                  <Field label="Due"><input className={inputClass} type="date" value={editing.dueOn} onChange={(event) => setEditing({ ...editing, dueOn: event.target.value })} required /></Field>
+                  <div className="flex flex-wrap gap-2 sm:col-span-2">
+                    <Button type="submit" disabled={busy}>Save invoice</Button>
+                    <Button type="button" variant="ghost" disabled={busy} onClick={() => setEditing(null)}>Cancel</Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-ink">{item.number} · {money(item.amount)}</p>
+                    <p className="text-sm text-mute">{item.description} · Due {formatDate(item.dueOn)}</p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select className={`${inputClass} sm:max-w-[10rem]`} value={item.status} aria-label={`Status ${item.number}`} onChange={(event) => setInvoiceStatus(item.id, event.target.value)}>
+                      {Object.entries(invoiceLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                    <Button type="button" variant="ghost" onClick={() => startEdit(item)}>Edit</Button>
+                    <Button type="button" variant="ghost" onClick={() => { setEditing(null); setRemovingId(item.id); }}>Remove</Button>
+                  </div>
+                </div>
+              )}
+              {removingId === item.id ? (
+                <div className="mt-3 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3">
+                  <p className="text-sm text-rose-900">Remove invoice {item.number} for this client?</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button type="button" disabled={busy} onClick={() => removeInvoice(item.id)}>Remove invoice</Button>
+                    <Button type="button" variant="ghost" disabled={busy} onClick={() => setRemovingId(null)}>Cancel</Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -310,6 +421,7 @@ export default function AdminUser() {
           <Field label="Due"><input className={inputClass} type="date" value={invoice.dueOn} onChange={(event) => setInvoice({ ...invoice, dueOn: event.target.value })} required /></Field>
           <Button type="submit" disabled={busy}>Add invoice</Button>
         </form>
+        </div>
       </Card>
     </div>
   );

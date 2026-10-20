@@ -3,7 +3,7 @@ import { useAuth } from "../auth";
 import { Avatar, Button } from "./ui";
 
 const clientLinks = [
-  ["/", "Dashboard"],
+  ["/dashboard", "Dashboard"],
   ["/reports", "Management Reports"],
   ["/statements", "Financial Statements"],
   ["/billing", "Billing"],
@@ -13,6 +13,8 @@ const clientLinks = [
 
 const adminLinks = [
   ["/admin", "People"],
+  ["/admin/reports", "Management Reports"],
+  ["/admin/templates", "Client templates"],
   ["/admin/invites", "Invite keys"],
   ["/admin/requests", "Build requests"],
 ];
@@ -57,7 +59,7 @@ export default function Shell() {
           </div>
           <nav className="flex flex-wrap gap-1" aria-label="App">
             {links.map(([to, label]) => (
-              <Item key={to} to={to} end={to === "/" || to === "/admin"}>{label}</Item>
+              <Item key={to} to={to} end={to === "/" || to === "/dashboard" || to === "/admin"}>{label}</Item>
             ))}
           </nav>
         </div>

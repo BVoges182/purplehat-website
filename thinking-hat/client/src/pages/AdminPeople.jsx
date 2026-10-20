@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { Alert, Avatar, Badge, Button, Card, PageIntro } from "../components/ui";
+import { reportTemplateName } from "../reportTemplates";
 
 export default function AdminPeople() {
   const [users, setUsers] = useState(null);
@@ -43,6 +44,10 @@ export default function AdminPeople() {
               <div>
                 <p className="font-display text-lg font-extrabold text-ink">{user.name}</p>
                 <p className="text-sm text-mute">{user.businessName || "No business name"} · {user.email}</p>
+                {user.role === "client" ? (
+                  <p className="mt-1 text-sm font-semibold text-ink">Template: {user.templateName || reportTemplateName(user.reportTemplate)}</p>
+                ) : null}
+                {user.needsTemplate ? <p className="text-xs font-semibold text-plum">New template to build</p> : null}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
