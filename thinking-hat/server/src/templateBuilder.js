@@ -327,6 +327,67 @@ export function planCopy({ client, source, takenNames = [] } = {}) {
   };
 }
 
+export function validateTemplateRename(name, { siblingNames = [], currentName = "" } = {}) {
+  const cleaned = String(name ?? "").replace(/[\u0000-\u001F\u007F]/g, "").trim();
+  if (!cleaned) return { error: "Name the template." };
+  if (cleaned.length > 100) return { error: "Use 100 characters or fewer." };
+  const current = String(currentName || "").trim().toLowerCase();
+  const lower = cleaned.toLowerCase();
+  const taken = (siblingNames || []).some((item) => {
+    const value = String(item || "").trim().toLowerCase();
+    return value && value === lower && value !== current;
+  });
+  if (taken) return { error: "This client already has a template with that name." };
+  return { value: { name: cleaned } };
+}
+
+export function applyTemplateRename(template, name, { siblingNames = [], updatedAt } = {}) {
+  const checked = validateTemplateRename(name, { siblingNames, currentName: template?.name || "" });
+  if (checked.error) return checked;
+  const nextUpdatedAt = updatedAt || template?.updatedAt || "";
+  return {
+    value: {
+      ...template,
+      name: checked.value.name,
+      updatedAt: nextUpdatedAt,
+      templateKey: template?.templateKey,
+      sections: template?.sections,
+    },
+    changed: {
+      name: checked.value.name,
+      updatedAt: nextUpdatedAt,
+    },
+  };
+}
+
+export function templateUsageWarning(reportCount) {
+  const count = Math.max(0, Number(reportCount) || 0);
+  if (!count) return "";
+  return count === 1
+    ? "1 management report uses this template."
+    : `${count} management reports use this template.`;
+}
+
+export function planTemplateArchive(template, { reportCount = 0, updatedAt } = {}) {
+  const count = Math.max(0, Number(reportCount) || 0);
+  const nextUpdatedAt = updatedAt || template?.updatedAt || "";
+  return {
+    value: {
+      ...template,
+      archived: true,
+      updatedAt: nextUpdatedAt,
+      templateKey: template?.templateKey,
+      sections: template?.sections,
+      reportCount: count,
+      warning: templateUsageWarning(count),
+    },
+  };
+}
+
+export function visibleBuilderTemplates(templates = []) {
+  return (templates || []).filter((template) => !template?.archived);
+}
+
 export function planImport({ client, document, takenNames = [] } = {}) {
   const template = document?.template;
   if (!template?.name) return { error: "Name the template." };

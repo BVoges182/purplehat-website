@@ -24,12 +24,15 @@ import db, {
   seedClientBooks,
   seedEmptyBooks,
   applyBuilderSectionAction,
+  archiveBuilderTemplate,
   builderCatalog,
+  builderTemplateUsage,
   builderTemplateView,
   copyBuilderTemplate,
   createBuilderClient,
   createBuilderTemplate,
   importBuilderTemplate,
+  renameBuilderTemplate,
   replaceBuilderSections,
   saveTemplateDocument,
   seedBuilderCatalog,
@@ -585,7 +588,10 @@ app.get("/api/me/finances", requireAuth, (req, res) => {
 });
 
 app.get("/api/me/reports", requireAuth, (req, res) => {
-  res.json({ reports: listManagementReports(req.user.id) });
+  res.json({
+    reports: listManagementReports(req.user.id),
+    templateName: publicUser(req.user).templateName,
+  });
 });
 
 app.get("/api/me/reports/:month/pdf", requireAuth, (req, res) => {
@@ -602,6 +608,7 @@ app.get("/api/me/reports/:month", requireAuth, (req, res) => {
     report,
     businessName: req.user.business_name,
     reportTemplate: req.user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    templateName: publicUser(req.user).templateName,
   });
 });
 
@@ -770,6 +777,7 @@ app.get("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, 
     report,
     businessName: user.business_name,
     reportTemplate: user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    templateName: publicUser(user).templateName,
   });
 });
 
@@ -1111,7 +1119,7 @@ function publicTemplate(template) {
 }
 
 app.get("/api/admin/templates", requireAuth, requireAdmin, (req, res) => {
-  const templates = db.prepare("SELECT * FROM client_templates ORDER BY id").all();
+  const templates = db.prepare("SELECT * FROM client_templates WHERE COALESCE(archived, 0) = 0 ORDER BY id").all();
   res.json({ templates: templates.map(publicTemplate) });
 });
 
@@ -1215,6 +1223,37 @@ app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId", r
     return;
   }
   res.json(view);
+});
+
+app.patch("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const result = renameBuilderTemplate(
+    Number(req.params.clientId),
+    Number(req.params.templateId),
+    clean(req.body?.name, 200),
+  );
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId/usage", requireAuth, requireAdmin, (req, res) => {
+  const result = builderTemplateUsage(Number(req.params.clientId), Number(req.params.templateId));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.delete("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const result = archiveBuilderTemplate(Number(req.params.clientId), Number(req.params.templateId));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
 });
 
 app.post("/api/admin/template-builder/clients", requireAuth, requireAdmin, (req, res) => {

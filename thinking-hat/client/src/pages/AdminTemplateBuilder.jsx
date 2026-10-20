@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api";
+import { useAuth } from "../auth";
 import { FrameworkBadge, ReviewFlag, SectionChips } from "../components/templateBuilderUi";
 import { Alert, Button, Card, Field, PageIntro, formatDate, inputClass } from "../components/ui";
 
@@ -16,6 +17,68 @@ function preferredClientId(clients, requested) {
   if (requested && clients.some((client) => String(client.id) === String(requested))) return String(requested);
   const demo = clients.find((client) => /purple\s*hat\s*demo/i.test(client.name));
   return String((demo || clients[0] || {}).id || "");
+}
+
+function IconOpen() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+      <path fill="currentColor" d="M11 3h6v6h-2V6.41l-6.3 6.3-1.4-1.42L13.58 5H11V3zM4 5h6v2H6v7h7v-4h2v6H4V5z" />
+    </svg>
+  );
+}
+
+function IconEdit() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+      <path fill="currentColor" d="M13.2 2.8a2 2 0 0 1 2.8 2.8l-8.1 8.2-3.5.7.7-3.5 8.1-8.2zM3.5 16h13v1.8h-13V16z" />
+    </svg>
+  );
+}
+
+function IconDelete() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true">
+      <path fill="currentColor" d="M7.5 2h5l1 2H17v1.8H3V4h3.5l1-2zM5 7h1.8v9H5V7zm4.1 0H11v9H9.1V7zM13.2 7H15v9h-1.8V7zM4.2 6.2h11.6l-.9 11.3H5.1L4.2 6.2z" />
+    </svg>
+  );
+}
+
+const rowActionClass = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border bg-white px-3 font-display text-sm font-extrabold transition";
+const quietActionClass = `${rowActionClass} border-[rgba(109,40,217,0.12)] text-ink hover:bg-[#f5f3ff]`;
+const deleteActionClass = `${rowActionClass} border-rose-600 text-rose-700 hover:bg-rose-50`;
+
+function TemplateActions({ clientId, template, canManage, onEdit, onDelete }) {
+  return (
+    <div className="inline-flex flex-nowrap items-center justify-end gap-2">
+      <Link
+        to={`/admin/template-builder/${clientId}/templates/${template.id}`}
+        className={quietActionClass}
+        title="Open template"
+        aria-label={`Open ${template.name}`}
+      >
+        <IconOpen /> Open
+      </Link>
+      {canManage ? (
+        <button type="button" className={quietActionClass} title="Rename template" aria-label={`Rename ${template.name}`} onClick={() => onEdit(template)}>
+          <IconEdit /> Edit
+        </button>
+      ) : null}
+      {canManage ? (
+        <button type="button" className={deleteActionClass} title="Delete template" aria-label={`Delete ${template.name}`} onClick={() => onDelete(template)}>
+          <IconDelete /> Delete
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function Toast({ message }) {
+  if (!message) return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card" role="status">
+      {message}
+    </div>
+  );
 }
 
 function Modal({ title, lede, onClose, children }) {
@@ -44,16 +107,26 @@ function Modal({ title, lede, onClose, children }) {
 }
 
 export default function AdminTemplateBuilder() {
+  const { user } = useAuth();
+  const canManage = user?.role === "admin";
   const [searchParams, setSearchParams] = useSearchParams();
   const [catalog, setCatalog] = useState(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
   const [clientForm, setClientForm] = useState(null);
   const [templateForm, setTemplateForm] = useState(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [copySource, setCopySource] = useState("");
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [renameName, setRenameName] = useState("");
+  const [renameError, setRenameError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [usage, setUsage] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const fileRef = useRef(null);
 
   const requested = searchParams.get("client") || "";
@@ -70,6 +143,12 @@ export default function AdminTemplateBuilder() {
       .catch((err) => { if (!stop) setError(err.message); });
     return () => { stop = true; };
   }, []);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = window.setTimeout(() => setToast(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const clients = catalog?.clients || [];
   const options = catalog?.options;
@@ -163,6 +242,63 @@ export default function AdminTemplateBuilder() {
       setNotice(`${data.template.name} was copied and flagged for review.`);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function openRename(template) {
+    setRenameTarget(template);
+    setRenameName(template.name);
+    setRenameError("");
+    setError("");
+  }
+
+  async function onRename(event) {
+    event.preventDefault();
+    if (!selected || !renameTarget) return;
+    setBusy(true);
+    setRenameError("");
+    try {
+      await api.renameBuilderTemplate(selected.id, renameTarget.id, renameName);
+      await refresh();
+      setRenameTarget(null);
+      setToast("Template renamed");
+    } catch (err) {
+      setRenameError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openDelete(template) {
+    if (!selected) return;
+    setDeleteTarget(template);
+    setUsage(null);
+    setDeleteError("");
+    setUsageLoading(true);
+    setError("");
+    try {
+      const data = await api.builderTemplateUsage(selected.id, template.id);
+      setUsage(data);
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setUsageLoading(false);
+    }
+  }
+
+  async function onDelete() {
+    if (!selected || !deleteTarget) return;
+    setBusy(true);
+    setDeleteError("");
+    try {
+      await api.archiveBuilderTemplate(selected.id, deleteTarget.id);
+      await refresh();
+      setDeleteTarget(null);
+      setToast("Template deleted");
+    } catch (err) {
+      setDeleteError(err.message);
     } finally {
       setBusy(false);
     }
@@ -299,20 +435,23 @@ export default function AdminTemplateBuilder() {
                         <span className="text-sm text-mute">{template.periodLabel}</span>
                       </div>
                       <div className="mt-3"><SectionChips chips={template.chips} /></div>
-                      <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="mt-4 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
                         <span className="text-sm text-mute">{formatDate(template.updatedAt)}</span>
-                        <Link
-                          to={`/admin/template-builder/${selected.id}/templates/${template.id}`}
-                          className="inline-flex min-h-10 items-center justify-center rounded-full border border-[rgba(109,40,217,0.12)] bg-white px-4 font-display text-sm font-extrabold text-ink hover:bg-[#f5f3ff]"
-                        >
-                          Open
-                        </Link>
+                        <div className="overflow-x-auto">
+                          <TemplateActions
+                            clientId={selected.id}
+                            template={template}
+                            canManage={canManage}
+                            onEdit={openRename}
+                            onDelete={openDelete}
+                          />
+                        </div>
                       </div>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6 hidden max-w-full overflow-x-auto md:block [contain:inline-size]">
-                  <table className="w-full min-w-[52rem] border-collapse text-left">
+                <div className="mt-6 hidden max-w-full overflow-x-auto md:block">
+                  <table className="w-full border-collapse text-left">
                     <thead>
                       <tr className="border-b border-[rgba(109,40,217,0.1)] text-xs font-bold uppercase tracking-wide text-mute">
                         <th className="px-3 py-3 font-bold">Template</th>
@@ -320,7 +459,7 @@ export default function AdminTemplateBuilder() {
                         <th className="px-3 py-3 font-bold">Period</th>
                         <th className="px-3 py-3 font-bold">Sections</th>
                         <th className="px-3 py-3 font-bold">Updated</th>
-                        <th className="px-3 py-3 font-bold"><span className="sr-only">Open</span></th>
+                        <th className="sticky right-0 bg-white px-3 py-3 text-right font-bold"><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -339,13 +478,14 @@ export default function AdminTemplateBuilder() {
                           <td className="px-3 py-4 text-sm text-ink">{template.periodLabel}</td>
                           <td className="px-3 py-4"><SectionChips chips={template.chips} /></td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-mute">{formatDate(template.updatedAt)}</td>
-                          <td className="px-3 py-4 text-right">
-                            <Link
-                              to={`/admin/template-builder/${selected.id}/templates/${template.id}`}
-                              className="inline-flex min-h-10 items-center justify-center rounded-full border border-[rgba(109,40,217,0.12)] bg-white px-4 font-display text-sm font-extrabold text-ink hover:bg-[#f5f3ff]"
-                            >
-                              Open
-                            </Link>
+                          <td className="sticky right-0 whitespace-nowrap bg-white px-3 py-4 text-right">
+                            <TemplateActions
+                              clientId={selected.id}
+                              template={template}
+                              canManage={canManage}
+                              onEdit={openRename}
+                              onDelete={openDelete}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -417,6 +557,53 @@ export default function AdminTemplateBuilder() {
         </Modal>
       ) : null}
 
+      {renameTarget ? (
+        <Modal title="Rename template" lede="Only the name changes. The template key and sections stay the same." onClose={() => setRenameTarget(null)}>
+          <form className="space-y-4" onSubmit={onRename}>
+            <Field label="Template name" hint="Required, up to 100 characters, and unique for this client.">
+              <input
+                className={inputClass}
+                value={renameName}
+                maxLength={100}
+                autoFocus
+                onChange={(event) => setRenameName(event.target.value)}
+              />
+            </Field>
+            {renameError ? <Alert>{renameError}</Alert> : null}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setRenameTarget(null)}>Cancel</Button>
+              <Button type="submit" disabled={busy}>Save</Button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
+
+      {deleteTarget ? (
+        <Modal title="Delete template" onClose={() => { if (!busy) setDeleteTarget(null); }}>
+          <div className="space-y-4">
+            <p className="text-sm text-ink">Delete template '{deleteTarget.name}'? This can't be undone.</p>
+            {usageLoading ? <p className="text-sm text-mute">Checking management reports…</p> : null}
+            {usage?.warning ? (
+              <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                {usage.warning} Existing reports will still display.
+              </p>
+            ) : null}
+            {deleteError ? <Alert>{deleteError}</Alert> : null}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-rose-600 bg-white px-5 font-display text-sm font-extrabold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={busy || usageLoading || Boolean(deleteError)}
+                onClick={onDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
       {copyOpen ? (
         <Modal title="Copy existing" lede="The copy keeps the other client’s section layout and is flagged for review. Figures are not copied onto this client’s books." onClose={() => setCopyOpen(false)}>
           <form className="space-y-4" onSubmit={onCopy}>
@@ -438,6 +625,7 @@ export default function AdminTemplateBuilder() {
           </form>
         </Modal>
       ) : null}
+      <Toast message={toast} />
     </div>
   );
 }

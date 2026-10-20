@@ -142,6 +142,17 @@ export const api = {
     body.append("mapping", JSON.stringify(mapping));
     return request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}/excel`, { method: "POST", body });
   },
+  renameBuilderTemplate: (clientId, templateId, name) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}`,
+    { method: "PATCH", body: { name } },
+  ),
+  builderTemplateUsage: (clientId, templateId) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}/usage`,
+  ),
+  archiveBuilderTemplate: (clientId, templateId) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}`,
+    { method: "DELETE" },
+  ),
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
   revokeInvite: (id) => request(`/api/admin/invites/${id}/revoke`, { method: "POST" }),

@@ -41,6 +41,7 @@ export default function AdminReports() {
   }
 
   const visibleReports = (reports || []).filter((report) => !listClient || String(report.userId) === String(listClient));
+  const listedClient = (clients || []).find((client) => String(client.id) === String(listClient)) || null;
 
   async function submit(event, replace = false) {
     event?.preventDefault();
@@ -156,6 +157,9 @@ export default function AdminReports() {
             </select>
           </Field>
         </div>
+        {listedClient?.templateName ? (
+          <p className="mt-3 text-sm font-semibold text-ink">Template: {listedClient.templateName}</p>
+        ) : null}
         {reports ? (
           visibleReports.length ? (
             <AdminReportList

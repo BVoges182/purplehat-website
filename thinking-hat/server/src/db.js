@@ -7,13 +7,16 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { DatabaseSync } from "node:sqlite";
 import {
+  applyTemplateRename,
   describeClient,
   describeTemplate,
   planCopy,
   planImport,
   planNewTemplate,
+  planTemplateArchive,
   sectionConfigs,
   seedProfile,
+  templateUsageWarning,
   validateClient,
 } from "./templateBuilder.js";
 import { applySectionAction, normalizeEditorSections, sectionTypeChoices } from "./templateSections.js";
@@ -228,6 +231,9 @@ if (!builderColumns.some((column) => column.name === "sections_json")) {
 }
 if (!builderColumns.some((column) => column.name === "layout_saved")) {
   db.exec("ALTER TABLE client_templates ADD COLUMN layout_saved INTEGER NOT NULL DEFAULT 0");
+}
+if (!builderColumns.some((column) => column.name === "archived")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
 }
 db.exec(`
 CREATE TABLE IF NOT EXISTS builder_clients (
@@ -917,7 +923,24 @@ function presentStoredTemplate(template, client) {
 }
 
 function takenTemplateNames() {
-  return db.prepare("SELECT name FROM client_templates").all().map((row) => row.name);
+  return db.prepare("SELECT name FROM client_templates WHERE COALESCE(archived, 0) = 0").all().map((row) => row.name);
+}
+
+function siblingTemplateNames(clientId, exceptId) {
+  return db.prepare(
+    `SELECT name FROM client_templates
+     WHERE builder_client_id = ? AND id != ? AND COALESCE(archived, 0) = 0`,
+  ).all(clientId, exceptId).map((row) => row.name);
+}
+
+function managementReportCount(templateId) {
+  const row = db.prepare(
+    `SELECT COUNT(*) AS count
+     FROM management_reports
+     JOIN users ON users.id = management_reports.user_id
+     WHERE users.template_id = ?`,
+  ).get(templateId);
+  return Number(row?.count || 0);
 }
 
 function builderNameTaken(name) {
@@ -1013,7 +1036,7 @@ export function seedBuilderCatalog() {
 export function builderCatalog() {
   const clients = db.prepare("SELECT * FROM builder_clients ORDER BY name COLLATE NOCASE, id").all();
   const templates = db.prepare(
-    "SELECT * FROM client_templates WHERE builder_client_id IS NOT NULL ORDER BY id",
+    "SELECT * FROM client_templates WHERE builder_client_id IS NOT NULL AND COALESCE(archived, 0) = 0 ORDER BY id",
   ).all();
   const grouped = new Map(clients.map((client) => [Number(client.id), []]));
   for (const template of templates) {
@@ -1075,6 +1098,71 @@ export function replaceBuilderSections(clientId, templateId, sections) {
   return builderTemplateView(clientId, templateId);
 }
 
+export function renameBuilderTemplate(clientId, templateId, name) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const planned = applyTemplateRename(
+    {
+      id: Number(loaded.template.id),
+      name: loaded.template.name,
+      templateKey: loaded.template.template_key,
+      sections: loaded.template.sections_json,
+      updatedAt: loaded.template.updated_at || loaded.template.created_at,
+    },
+    name,
+    {
+      siblingNames: siblingTemplateNames(clientId, loaded.template.id),
+      updatedAt: nowIso(),
+    },
+  );
+  if (planned.error) return planned;
+  db.prepare("UPDATE client_templates SET name = ?, updated_at = ? WHERE id = ?").run(
+    planned.changed.name,
+    planned.changed.updatedAt,
+    loaded.template.id,
+  );
+  return { template: loadBuilderTemplate(clientId, templateId) };
+}
+
+export function builderTemplateUsage(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const reportCount = managementReportCount(loaded.template.id);
+  return {
+    id: Number(loaded.template.id),
+    name: loaded.template.name,
+    reportCount,
+    warning: templateUsageWarning(reportCount),
+  };
+}
+
+export function archiveBuilderTemplate(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const reportCount = managementReportCount(loaded.template.id);
+  const planned = planTemplateArchive(
+    {
+      id: Number(loaded.template.id),
+      name: loaded.template.name,
+      templateKey: loaded.template.template_key,
+      sections: loaded.template.sections_json,
+      updatedAt: loaded.template.updated_at || loaded.template.created_at,
+    },
+    { reportCount, updatedAt: nowIso() },
+  );
+  db.prepare("UPDATE client_templates SET archived = 1, updated_at = ? WHERE id = ?").run(
+    planned.value.updatedAt,
+    loaded.template.id,
+  );
+  return {
+    id: Number(loaded.template.id),
+    name: loaded.template.name,
+    archived: true,
+    reportCount,
+    warning: planned.value.warning,
+  };
+}
+
 export function createBuilderClient(input) {
   const checked = validateClient(input);
   if (checked.error) return checked;
@@ -1116,7 +1204,7 @@ export function copyBuilderTemplate(clientId, sourceId) {
   const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
   if (!client) return { error: "That client was not found." };
   const source = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(sourceId);
-  if (!source) return { error: "Choose a template to copy." };
+  if (!source || Number(source.archived) === 1) return { error: "Choose a template to copy." };
   const record = clientRecord(client);
   const planned = planCopy({
     client: record,
