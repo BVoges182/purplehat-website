@@ -11,6 +11,7 @@ export default function AdminReports() {
   const [clients, setClients] = useState(null);
   const [reports, setReports] = useState(null);
   const [userId, setUserId] = useState(params.get("client") || "");
+  const [listClient, setListClient] = useState(params.get("client") || "");
   const [month, setMonth] = useState("");
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
@@ -26,7 +27,9 @@ export default function AdminReports() {
         const nextClients = (people.users || []).filter((user) => user.role === "client");
         setClients(nextClients);
         setReports(reportData.reports || []);
-        setUserId((current) => (nextClients.some((user) => String(user.id) === String(current)) ? current : ""));
+        const known = (current) => (nextClients.some((user) => String(user.id) === String(current)) ? current : "");
+        setUserId(known);
+        setListClient(known);
       })
       .catch((err) => { if (!stop) setError(err.message); });
     return () => { stop = true; };
@@ -36,6 +39,8 @@ export default function AdminReports() {
     const client = (clients || []).find((user) => String(user.id) === String(id));
     return client ? (client.businessName || client.name) : "that client";
   }
+
+  const visibleReports = (reports || []).filter((report) => !listClient || String(report.userId) === String(listClient));
 
   async function submit(event, replace = false) {
     event?.preventDefault();
@@ -136,15 +141,34 @@ export default function AdminReports() {
       </Card>
       <Card className="mt-4">
         <h2 className="font-display text-xl font-extrabold text-ink">Reports</h2>
+        <div className="mt-4 max-w-md">
+          <Field label="Client">
+            <select
+              className={inputClass}
+              aria-label="Show reports for"
+              value={listClient}
+              onChange={(event) => setListClient(event.target.value)}
+            >
+              <option value="">All clients</option>
+              {(clients || []).map((client) => (
+                <option key={client.id} value={client.id}>{client.businessName || client.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
         {reports ? (
-          <AdminReportList
-            reports={reports}
-            showClient
-            onDeleted={(report) => {
-              setReports((current) => (current || []).filter((item) => !(String(item.userId) === String(report.userId) && item.month === report.month)));
-              setMessage(`${reportMonthLabel(report.month)} deleted for ${report.businessName || report.name}.`);
-            }}
-          />
+          visibleReports.length ? (
+            <AdminReportList
+              reports={visibleReports}
+              showClient={!listClient}
+              onDeleted={(report) => {
+                setReports((current) => (current || []).filter((item) => !(String(item.userId) === String(report.userId) && item.month === report.month)));
+                setMessage(`${reportMonthLabel(report.month)} deleted for ${report.businessName || report.name}.`);
+              }}
+            />
+          ) : (
+            <p className="mt-4 text-sm text-mute">{listClient ? `No reports for ${clientName(listClient)} yet.` : "No management reports yet."}</p>
+          )
         ) : (
           <p className="mt-4 text-sm text-mute">Loading reports…</p>
         )}

@@ -14,6 +14,7 @@ import db, {
   nowIso,
   publicUser,
   applyClientTemplate,
+  assignClientTemplate,
   copyClientTemplate,
   deleteClientTemplate,
   linkClientsToTemplates,
@@ -735,6 +736,16 @@ app.get("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, 
   });
 });
 
+app.patch("/api/admin/users/:id/template", requireAuth, requireAdmin, (req, res) => {
+  const result = assignClientTemplate(Number(req.params.id), Number(req.body.templateId));
+  if (result.error) {
+    const missing = result.error === "That person was not found." || result.error === "That template was not found.";
+    res.status(missing ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ user: result.user });
+});
+
 app.patch("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
   if (!user) {
@@ -819,6 +830,34 @@ app.post("/api/admin/users/:id/photo", requireAuth, requireAdmin, photoUpload, (
     return;
   }
   res.json(saved);
+});
+
+app.delete("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "That person was not found." });
+    return;
+  }
+  if (user.email === bootstrapEmail()) {
+    res.status(400).json({ error: "This admin account cannot be deleted." });
+    return;
+  }
+  if (Number(user.id) === Number(req.user.id)) {
+    res.status(400).json({ error: "You cannot delete your own account." });
+    return;
+  }
+  try {
+    transaction(() => {
+      db.prepare("UPDATE invites SET created_by = NULL WHERE created_by = ?").run(user.id);
+      db.prepare("UPDATE invites SET used_by = NULL WHERE used_by = ?").run(user.id);
+      db.prepare("DELETE FROM users WHERE id = ?").run(user.id);
+    });
+  } catch {
+    res.status(400).json({ error: "That account could not be deleted." });
+    return;
+  }
+  if (user.photo_file) fs.rmSync(path.join(uploadsDir, user.photo_file), { force: true });
+  res.json({ ok: true });
 });
 
 app.put("/api/admin/users/:id/finances", requireAuth, requireAdmin, (req, res) => {

@@ -171,7 +171,7 @@ export default function AdminTemplates() {
             <h2 className="font-display text-xl font-extrabold text-ink">Copy a template</h2>
             <form className="mt-4 space-y-4" onSubmit={onCopy}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Copy from" hint="The copy keeps this dashboard and the saved reports.">
+                <Field label="Copy from" hint="The copy keeps this dashboard and starts with no reports.">
                   <select className={inputClass} value={sourceId} onChange={(event) => setSourceId(event.target.value)} required>
                     <option value="">Choose a template</option>
                     {templates.map((template) => (
