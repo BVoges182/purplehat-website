@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { isPlainDetailLabel } from "./reportChecks.js";
 
 function raw(cell) {
   if (!cell) return null;
@@ -67,6 +68,12 @@ function isTotal(label) {
     || name === "Net Assets"
     || name === "Net Cash Flows"
     || name.startsWith("Net Cash Flows from");
+}
+
+function measuredTotal(label, bold) {
+  if (!String(label || "").trim()) return true;
+  if (isPlainDetailLabel(label)) return false;
+  return Boolean(bold) || isTotal(label);
 }
 
 function isCurrencyToken(text) {
@@ -212,7 +219,7 @@ function readStatement(sheet, title, labelCol, valueCols) {
     const values = valueCols.map((col) => numberOf(row.getCell(col)));
     const hasNumber = values.some((value) => value !== null);
     if (!hasNumber) rows.push({ kind: "heading", label });
-    else if (isTotal(label)) rows.push({ kind: "total", label, values });
+    else if (isTotal(label) && !isPlainDetailLabel(label)) rows.push({ kind: "total", label, values });
     else rows.push({ kind: "line", label, values });
   }
   if (!rows.some((row) => Array.isArray(row.values) && row.values.some((value) => typeof value === "number"))) {
@@ -295,7 +302,7 @@ function readModernExecutive(sheet) {
     if (!label && !hasNumber) continue;
     const bold = cellBold(row.getCell(1)) || header.columns.some(({ col }) => cellBold(row.getCell(col)));
     if (!hasNumber) rows.push({ kind: "heading", label });
-    else if (!label || bold || isTotal(label)) rows.push({ kind: "total", label, values, formats });
+    else if (measuredTotal(label, bold)) rows.push({ kind: "total", label, values, formats });
     else rows.push({ kind: "line", label, values, formats });
   }
   if (!rows.some((row) => row.values?.some((value) => typeof value === "number"))) {
@@ -619,7 +626,7 @@ function readModernStatement(sheet, title) {
     blanks = 0;
     const bold = cellBold(row.getCell(1)) || cellBold(row.getCell(2)) || header.columns.some(({ col }) => cellBold(row.getCell(col)));
     if (!hasNumber) rows.push({ kind: "heading", label, indent });
-    else if (!label || bold || isTotal(label)) rows.push({ kind: "total", label, indent, values, formats });
+    else if (measuredTotal(label, bold)) rows.push({ kind: "total", label, indent, values, formats });
     else rows.push({ kind: "line", label, indent, values, formats });
   }
   if (!rows.some((row) => row.values?.some((value) => typeof value === "number"))) {
