@@ -7,7 +7,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import db, {
-  bootstrapEmail,
+  isProtectedAdmin,
   codeHint,
   hashCode,
   newInviteCode,
@@ -702,7 +702,7 @@ app.get("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
   const invoices = db.prepare("SELECT * FROM invoices WHERE user_id = ? ORDER BY issued_on DESC, id DESC").all(user.id);
   res.json({
     user: publicUser(user),
-    bootstrap: user.email === bootstrapEmail(),
+    bootstrap: isProtectedAdmin(user.email),
     finances: adminFigures(user.id),
     invoices: invoices.map(publicInvoice),
     reports: listManagementReports(user.id),
@@ -771,7 +771,7 @@ app.patch("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
     res.status(400).json({ error: "Choose a valid role and access." });
     return;
   }
-  const bootstrap = user.email === bootstrapEmail();
+  const bootstrap = isProtectedAdmin(user.email);
   if (bootstrap && email !== user.email) {
     res.status(400).json({ error: "Change this admin email in server/.env." });
     return;
@@ -838,7 +838,7 @@ app.delete("/api/admin/users/:id", requireAuth, requireAdmin, (req, res) => {
     res.status(404).json({ error: "That person was not found." });
     return;
   }
-  if (user.email === bootstrapEmail()) {
+  if (isProtectedAdmin(user.email)) {
     res.status(400).json({ error: "This admin account cannot be deleted." });
     return;
   }

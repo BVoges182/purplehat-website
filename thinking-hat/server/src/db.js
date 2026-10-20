@@ -270,12 +270,9 @@ export function publicUser(row) {
   };
 }
 
-export function seedAdmin() {
-  const email = String(process.env.ADMIN_EMAIL || "admin@purplehat.fun").trim().toLowerCase();
-  const password = String(process.env.ADMIN_PASSWORD || "");
-  if (password.length < 8) {
-    throw new Error("Set ADMIN_PASSWORD in server/.env to at least 8 characters.");
-  }
+const INFO_ADMIN_EMAIL = "info@purplehat.fun";
+
+function ensureAdminAccount(email, password) {
   const ts = nowIso();
   const existing = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
   if (!existing) {
@@ -291,6 +288,17 @@ export function seedAdmin() {
     ).run(bcrypt.hashSync(password, 10), ts, existing.id);
   }
   return { email, created: false };
+}
+
+export function seedAdmin() {
+  const password = String(process.env.ADMIN_PASSWORD || "");
+  if (password.length < 8) {
+    throw new Error("Set ADMIN_PASSWORD in server/.env to at least 8 characters.");
+  }
+  const email = String(process.env.ADMIN_EMAIL || "admin@purplehat.fun").trim().toLowerCase();
+  const primary = ensureAdminAccount(email, password);
+  if (email !== INFO_ADMIN_EMAIL) ensureAdminAccount(INFO_ADMIN_EMAIL, password);
+  return primary;
 }
 
 function flagValue(name) {
@@ -739,6 +747,11 @@ export function transaction(fn) {
 
 export function bootstrapEmail() {
   return String(process.env.ADMIN_EMAIL || "admin@purplehat.fun").trim().toLowerCase();
+}
+
+export function isProtectedAdmin(email) {
+  const value = String(email || "").trim().toLowerCase();
+  return value === bootstrapEmail() || value === INFO_ADMIN_EMAIL;
 }
 
 export default db;
