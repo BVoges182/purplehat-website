@@ -23,7 +23,19 @@ import db, {
   seedAdmin,
   seedClientBooks,
   seedEmptyBooks,
+  applyBuilderSectionAction,
+  archiveBuilderTemplate,
+  builderCatalog,
+  builderTemplateUsage,
+  builderTemplateView,
+  copyBuilderTemplate,
+  createBuilderClient,
+  createBuilderTemplate,
+  importBuilderTemplate,
+  renameBuilderTemplate,
+  replaceBuilderSections,
   saveTemplateDocument,
+  seedBuilderCatalog,
   seedPurpleHatDemoTemplate,
   seedWealthTechTemplate,
   shortenWealthTechTemplateName,
@@ -32,6 +44,8 @@ import db, {
   uploadsDir,
 } from "./db.js";
 import { parseTemplateFile, templateCsv, templateDownloadName, templateText } from "./templateFile.js";
+import { builderOptions } from "./templateBuilder.js";
+import { parseWorkbook, previewTabs, sectionsFromMapping } from "./templateSections.js";
 import {
   deleteManagementReport,
   listAllManagementReports,
@@ -331,6 +345,32 @@ const workbookUpload = multer({
   },
 }).single("file");
 
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter(req, file, callback) {
+    const name = String(file.originalname || "").toLowerCase();
+    if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
+      callback(new Error("Upload an Excel .xlsx or .xls file."));
+      return;
+    }
+    callback(null, true);
+  },
+}).single("file");
+
+function acceptExcel(req, res, next) {
+  excelUpload(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const message = error.code === "LIMIT_FILE_SIZE"
+      ? "Use an Excel file under 8 MB."
+      : (error.message || "Upload an Excel .xlsx or .xls file.");
+    res.status(400).json({ error: message });
+  });
+}
+
 function acceptWorkbook(req, res, next) {
   workbookUpload(req, res, (error) => {
     if (!error) {
@@ -571,7 +611,10 @@ app.get("/api/me/finances", requireAuth, (req, res) => {
 });
 
 app.get("/api/me/reports", requireAuth, (req, res) => {
-  res.json({ reports: listManagementReports(req.user.id) });
+  res.json({
+    reports: listManagementReports(req.user.id),
+    templateName: publicUser(req.user).templateName,
+  });
 });
 
 app.get("/api/me/reports/:month/pdf", requireAuth, (req, res) => {
@@ -588,6 +631,7 @@ app.get("/api/me/reports/:month", requireAuth, (req, res) => {
     report,
     businessName: req.user.business_name,
     reportTemplate: req.user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    templateName: publicUser(req.user).templateName,
   });
 });
 
@@ -828,6 +872,7 @@ app.get("/api/admin/users/:id/reports/:month", requireAuth, requireAdmin, (req, 
     report,
     businessName: user.business_name,
     reportTemplate: user.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    templateName: publicUser(user).templateName,
   });
 });
 
@@ -1148,7 +1193,7 @@ function publicTemplate(template) {
 }
 
 app.get("/api/admin/templates", requireAuth, requireAdmin, (req, res) => {
-  const templates = db.prepare("SELECT * FROM client_templates ORDER BY id").all();
+  const templates = db.prepare("SELECT * FROM client_templates WHERE COALESCE(archived, 0) = 0 ORDER BY id").all();
   res.json({ templates: templates.map(publicTemplate) });
 });
 
@@ -1239,6 +1284,172 @@ app.patch("/api/admin/templates/:id", requireAuth, requireAdmin, (req, res) => {
   }
   const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(result.id);
   res.json({ template: publicTemplate(template) });
+});
+
+app.get("/api/admin/template-builder", requireAuth, requireAdmin, (req, res) => {
+  res.json({ ...builderCatalog(), options: builderOptions() });
+});
+
+app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const view = builderTemplateView(Number(req.params.clientId), Number(req.params.templateId));
+  if (!view) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  res.json(view);
+});
+
+app.patch("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const result = renameBuilderTemplate(
+    Number(req.params.clientId),
+    Number(req.params.templateId),
+    clean(req.body?.name, 200),
+  );
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.get("/api/admin/template-builder/clients/:clientId/templates/:templateId/usage", requireAuth, requireAdmin, (req, res) => {
+  const result = builderTemplateUsage(Number(req.params.clientId), Number(req.params.templateId));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.delete("/api/admin/template-builder/clients/:clientId/templates/:templateId", requireAuth, requireAdmin, (req, res) => {
+  const result = archiveBuilderTemplate(Number(req.params.clientId), Number(req.params.templateId));
+  if (result.error) {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.post("/api/admin/template-builder/clients", requireAuth, requireAdmin, (req, res) => {
+  const result = createBuilderClient({
+    name: clean(req.body.name, 120),
+    framework: clean(req.body.framework, 40),
+    currency: clean(req.body.currency, 8),
+    yearEnd: clean(req.body.yearEnd, 8),
+    period: clean(req.body.period, 20),
+  });
+  if (result.error) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates", requireAuth, requireAdmin, (req, res) => {
+  const framework = clean(req.body.framework, 40);
+  const period = clean(req.body.period, 20);
+  const result = createBuilderTemplate(Number(req.params.clientId), {
+    name: clean(req.body.name, 120),
+    ...(framework ? { framework } : {}),
+    ...(period ? { period } : {}),
+  });
+  if (result.error) {
+    res.status(result.error === "That client was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/copy", requireAuth, requireAdmin, (req, res) => {
+  const result = copyBuilderTemplate(Number(req.params.clientId), Number(req.body.sourceId));
+  if (result.error) {
+    res.status(result.error === "That client was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/import", requireAuth, requireAdmin, acceptTemplateFile, (req, res) => {
+  const name = String(req.file?.originalname || "").toLowerCase();
+  if (!req.file) {
+    res.status(400).json({ error: "Choose a CSV file." });
+    return;
+  }
+  if (!name.endsWith(".csv") && !name.endsWith(".txt") && !name.endsWith(".json")) {
+    res.status(400).json({ error: "Upload a CSV or text file." });
+    return;
+  }
+  const parsed = parseTemplateFile(req.file.buffer.toString("utf8"), req.file.originalname);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  const saved = importBuilderTemplate(Number(req.params.clientId), parsed.document);
+  if (saved.error) {
+    res.status(saved.error === "That client was not found." ? 404 : 400).json({ error: saved.error });
+    return;
+  }
+  res.status(201).json(saved);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/:templateId/sections", requireAuth, requireAdmin, (req, res) => {
+  const patch = req.body.patch && typeof req.body.patch === "object" && !Array.isArray(req.body.patch) ? req.body.patch : {};
+  const result = applyBuilderSectionAction(Number(req.params.clientId), Number(req.params.templateId), {
+    action: clean(req.body.action, 20),
+    sectionType: clean(req.body.sectionType, 40),
+    id: clean(req.body.id, 40),
+    ids: Array.isArray(req.body.ids) ? req.body.ids.map((id) => clean(id, 40)) : [],
+    patch,
+  });
+  if (result.error) {
+    res.status(result.error === "That template was not found." ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json(result);
+});
+
+app.post("/api/admin/template-builder/clients/:clientId/templates/:templateId/excel", requireAuth, requireAdmin, acceptExcel, async (req, res) => {
+  const clientId = Number(req.params.clientId);
+  const templateId = Number(req.params.templateId);
+  if (!builderTemplateView(clientId, templateId)) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  if (!req.file) {
+    res.status(400).json({ error: "Choose an Excel file." });
+    return;
+  }
+  const parsed = await parseWorkbook(req.file.buffer);
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error });
+    return;
+  }
+  if (!req.body.mapping) {
+    res.json({ tabs: previewTabs(parsed.tabs) });
+    return;
+  }
+  let mapping;
+  try {
+    mapping = JSON.parse(String(req.body.mapping));
+  } catch {
+    res.status(400).json({ error: "The tab mapping could not be read." });
+    return;
+  }
+  if (!Array.isArray(mapping)) {
+    res.status(400).json({ error: "The tab mapping could not be read." });
+    return;
+  }
+  const built = sectionsFromMapping(parsed.tabs, mapping);
+  if (built.error) {
+    res.status(400).json({ error: built.error });
+    return;
+  }
+  const saved = replaceBuilderSections(clientId, templateId, built.sections);
+  if (saved.error) {
+    res.status(saved.error === "That template was not found." ? 404 : 400).json({ error: saved.error });
+    return;
+  }
+  res.json(saved);
 });
 
 app.post("/api/admin/invites", requireAuth, requireAdmin, async (req, res) => {
@@ -1507,6 +1718,7 @@ seedWealthTechTemplate();
 seedPurpleHatDemoTemplate();
 shortenWealthTechTemplateName();
 linkClientsToTemplates();
+seedBuilderCatalog();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

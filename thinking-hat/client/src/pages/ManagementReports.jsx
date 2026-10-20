@@ -32,16 +32,21 @@ export default function ManagementReports() {
   const { user } = useAuth();
   const { data, error } = useFinances();
   const [reports, setReports] = useState([]);
+  const [templateName, setTemplateName] = useState(user?.templateName || "");
   const [reportError, setReportError] = useState("");
   const [downloading, setDownloading] = useState("");
 
   useEffect(() => {
     let stop = false;
     api.reports()
-      .then((payload) => { if (!stop) setReports(payload.reports || []); })
+      .then((payload) => {
+        if (stop) return;
+        setReports(payload.reports || []);
+        setTemplateName(payload.templateName || user?.templateName || "");
+      })
       .catch((err) => { if (!stop) setReportError(err.message); });
     return () => { stop = true; };
-  }, []);
+  }, [user?.templateName]);
 
   async function download(report) {
     setDownloading(report.month);
@@ -71,6 +76,7 @@ export default function ManagementReports() {
   return (
     <div>
       <PageIntro title="Management Reports" lede="Revenue, expenses, and the monthly result from the figures Purple Hat maintains." />
+      {templateName ? <p className="mb-4 text-sm font-semibold text-ink">Template: {templateName}</p> : null}
       {error ? <Alert>{error}</Alert> : null}
       {reportError ? <div className="mb-4"><Alert>{reportError}</Alert></div> : null}
       {reports.length > 0 ? (

@@ -6,6 +6,20 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { DatabaseSync } from "node:sqlite";
+import {
+  applyTemplateRename,
+  describeClient,
+  describeTemplate,
+  planCopy,
+  planImport,
+  planNewTemplate,
+  planTemplateArchive,
+  sectionConfigs,
+  seedProfile,
+  templateUsageWarning,
+  validateClient,
+} from "./templateBuilder.js";
+import { applySectionAction, normalizeEditorSections, sectionTypeChoices } from "./templateSections.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
@@ -196,6 +210,51 @@ if (!templateColumns.some((column) => column.name === "report_template")) {
 if (!templateColumns.some((column) => column.name === "copied_from_id")) {
   db.exec("ALTER TABLE client_templates ADD COLUMN copied_from_id INTEGER");
 }
+const builderColumns = db.prepare("PRAGMA table_info(client_templates)").all();
+if (!builderColumns.some((column) => column.name === "builder_client_id")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN builder_client_id INTEGER");
+}
+if (!builderColumns.some((column) => column.name === "framework")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN framework TEXT");
+}
+if (!builderColumns.some((column) => column.name === "currency")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN currency TEXT");
+}
+if (!builderColumns.some((column) => column.name === "year_end")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN year_end TEXT");
+}
+if (!builderColumns.some((column) => column.name === "period")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN period TEXT");
+}
+if (!builderColumns.some((column) => column.name === "updated_at")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN updated_at TEXT");
+}
+if (!builderColumns.some((column) => column.name === "review_required")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN review_required INTEGER NOT NULL DEFAULT 0");
+}
+if (!builderColumns.some((column) => column.name === "sections_json")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN sections_json TEXT");
+}
+if (!builderColumns.some((column) => column.name === "layout_saved")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN layout_saved INTEGER NOT NULL DEFAULT 0");
+}
+if (!builderColumns.some((column) => column.name === "archived")) {
+  db.exec("ALTER TABLE client_templates ADD COLUMN archived INTEGER NOT NULL DEFAULT 0");
+}
+db.exec(`
+CREATE TABLE IF NOT EXISTS builder_clients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER UNIQUE,
+  name TEXT NOT NULL,
+  framework TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  year_end TEXT NOT NULL,
+  period TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+`);
 db.exec(`
 CREATE TABLE IF NOT EXISTS app_flags (
   name TEXT PRIMARY KEY,
@@ -749,6 +808,444 @@ export function transaction(fn) {
     }
     throw error;
   }
+}
+
+function reportSectionConfigs(templateId) {
+  const row = db.prepare(
+    "SELECT content_json, created_at FROM client_template_reports WHERE template_id = ? ORDER BY month DESC LIMIT 1",
+  ).get(templateId);
+  if (!row) return { sections: [], updatedAt: "" };
+  try {
+    const content = JSON.parse(row.content_json);
+    return { sections: sectionConfigs(content.sections || []), updatedAt: row.created_at || "" };
+  } catch {
+    return { sections: [], updatedAt: row.created_at || "" };
+  }
+}
+
+function parseStoredSections(template) {
+  if (template.sections_json == null || template.sections_json === "") return null;
+  try {
+    const parsed = JSON.parse(template.sections_json);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function fullReportSections(templateId) {
+  const row = db.prepare(
+    "SELECT content_json FROM client_template_reports WHERE template_id = ? ORDER BY month DESC LIMIT 1",
+  ).get(templateId);
+  if (!row) return [];
+  try {
+    const content = JSON.parse(row.content_json);
+    return Array.isArray(content.sections) ? content.sections : [];
+  } catch {
+    return [];
+  }
+}
+
+function sectionIsRich(section) {
+  return Boolean(
+    section
+    && (section.id || Array.isArray(section.rows) || Array.isArray(section.columns) || section.subtitle || section.chart != null || section.hidden != null),
+  );
+}
+
+function overlayEditorSections(stored, figures) {
+  const used = new Set();
+  return stored.map((config) => {
+    const index = figures.findIndex((section, item) => (
+      !used.has(item) && String(section?.title || "").trim().toLowerCase() === String(config?.title || "").trim().toLowerCase()
+    ));
+    if (index < 0) return config;
+    used.add(index);
+    return {
+      ...figures[index],
+      title: config.title || figures[index].title,
+      presentation: config.presentation || figures[index].presentation,
+    };
+  });
+}
+
+function editorSectionList(sections) {
+  const normalized = normalizeEditorSections(sections);
+  return normalized.sections || [];
+}
+
+function readEditorSections(template) {
+  const stored = parseStoredSections(template);
+  if (Number(template.layout_saved) === 1) return editorSectionList(stored || []);
+  if (stored && stored.some(sectionIsRich)) return editorSectionList(stored);
+  if (stored && stored.length === 0) return [];
+  let figures = fullReportSections(template.id);
+  if (!figures.length && template.copied_from_id) figures = fullReportSections(template.copied_from_id);
+  if (!figures.length) return editorSectionList(stored || []);
+  if (!stored?.length) return editorSectionList(figures);
+  return editorSectionList(overlayEditorSections(stored, figures));
+}
+
+function readTemplateSections(template) {
+  if (template.sections_json != null && template.sections_json !== "") {
+    try {
+      const parsed = JSON.parse(template.sections_json);
+      if (Array.isArray(parsed)) return sectionConfigs(parsed);
+    } catch {
+      /* Fall through to the stored report sections. */
+    }
+  }
+  const own = reportSectionConfigs(template.id);
+  if (own.sections.length) return own.sections;
+  if (template.copied_from_id) return reportSectionConfigs(template.copied_from_id).sections;
+  return [];
+}
+
+function clientRecord(row) {
+  return {
+    id: Number(row.id),
+    name: row.name,
+    framework: row.framework,
+    currency: row.currency,
+    yearEnd: row.year_end,
+    period: row.period,
+  };
+}
+
+function presentStoredTemplate(template, client) {
+  const record = clientRecord(client);
+  return describeTemplate({
+    id: template.id,
+    name: template.name,
+    framework: template.framework || record.framework,
+    period: template.period || record.period,
+    currency: template.currency || record.currency,
+    yearEnd: template.year_end || record.yearEnd,
+    layout: template.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+    sections: readTemplateSections(template),
+    reviewRequired: Number(template.review_required) === 1,
+    updatedAt: template.updated_at || template.created_at,
+  });
+}
+
+function takenTemplateNames() {
+  return db.prepare("SELECT name FROM client_templates WHERE COALESCE(archived, 0) = 0").all().map((row) => row.name);
+}
+
+function siblingTemplateNames(clientId, exceptId) {
+  return db.prepare(
+    `SELECT name FROM client_templates
+     WHERE builder_client_id = ? AND id != ? AND COALESCE(archived, 0) = 0`,
+  ).all(clientId, exceptId).map((row) => row.name);
+}
+
+function managementReportCount(templateId) {
+  const row = db.prepare(
+    `SELECT COUNT(*) AS count
+     FROM management_reports
+     JOIN users ON users.id = management_reports.user_id
+     WHERE users.template_id = ?`,
+  ).get(templateId);
+  return Number(row?.count || 0);
+}
+
+function builderNameTaken(name) {
+  return Boolean(db.prepare("SELECT id FROM builder_clients WHERE name = ? COLLATE NOCASE").get(name));
+}
+
+function loadBuilderTemplate(clientId, templateId) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  const template = db.prepare(
+    "SELECT * FROM client_templates WHERE id = ? AND builder_client_id = ?",
+  ).get(templateId, clientId);
+  if (!client || !template) return null;
+  return presentStoredTemplate(template, client);
+}
+
+function insertPlannedTemplate(planned, { copiedFromId = null, document = null } = {}) {
+  const ts = nowIso();
+  const key = `file-${crypto.randomBytes(6).toString("hex")}`;
+  return transaction(() => {
+    const created = db.prepare(
+      `INSERT INTO client_templates (
+         template_key, name, source_business, created_at, report_template, copied_from_id,
+         builder_client_id, framework, currency, year_end, period, updated_at, review_required, sections_json
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      key,
+      planned.name,
+      planned.sourceBusiness || "",
+      ts,
+      planned.layout,
+      copiedFromId,
+      planned.clientId,
+      planned.framework,
+      planned.currency,
+      planned.yearEnd,
+      planned.period,
+      ts,
+      planned.reviewRequired ? 1 : 0,
+      JSON.stringify(sectionConfigs(planned.sections || [])),
+    );
+    const templateId = Number(created.lastInsertRowid);
+    if (document) writeTemplatePack(templateId, document);
+    return templateId;
+  });
+}
+
+export function seedBuilderCatalog() {
+  const users = db.prepare(
+    "SELECT id, business_name, name, template_id FROM users WHERE role = 'client' ORDER BY id",
+  ).all();
+  const ts = nowIso();
+  const insertClient = db.prepare(
+    `INSERT INTO builder_clients (user_id, name, framework, currency, year_end, period, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  for (const user of users) {
+    if (db.prepare("SELECT id FROM builder_clients WHERE user_id = ?").get(user.id)) continue;
+    const profile = seedProfile(user.business_name || user.name);
+    const name = String(user.business_name || user.name || "Client").slice(0, 120);
+    insertClient.run(user.id, name, profile.framework, profile.currency, profile.yearEnd, profile.period, ts, ts);
+  }
+  const link = db.prepare(
+    `UPDATE client_templates
+     SET builder_client_id = ?, framework = ?, currency = ?, year_end = ?, period = ?, updated_at = ?, sections_json = ?
+     WHERE id = ? AND builder_client_id IS NULL`,
+  );
+  for (const user of users) {
+    if (!user.template_id) continue;
+    const client = db.prepare("SELECT * FROM builder_clients WHERE user_id = ?").get(user.id);
+    const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(user.template_id);
+    if (!client || !template || template.builder_client_id) continue;
+    const own = reportSectionConfigs(template.id);
+    let sections = own.sections;
+    let updatedAt = own.updatedAt;
+    if (!sections.length && template.copied_from_id) {
+      const source = reportSectionConfigs(template.copied_from_id);
+      sections = source.sections;
+      if (!updatedAt) updatedAt = source.updatedAt;
+    }
+    link.run(
+      client.id,
+      template.framework || client.framework,
+      template.currency || client.currency,
+      template.year_end || client.year_end,
+      template.period || client.period,
+      template.updated_at || updatedAt || template.created_at,
+      template.sections_json || JSON.stringify(sections),
+      template.id,
+    );
+  }
+}
+
+export function builderCatalog() {
+  const clients = db.prepare("SELECT * FROM builder_clients ORDER BY name COLLATE NOCASE, id").all();
+  const templates = db.prepare(
+    "SELECT * FROM client_templates WHERE builder_client_id IS NOT NULL AND COALESCE(archived, 0) = 0 ORDER BY id",
+  ).all();
+  const grouped = new Map(clients.map((client) => [Number(client.id), []]));
+  for (const template of templates) {
+    const client = clients.find((item) => Number(item.id) === Number(template.builder_client_id));
+    const list = grouped.get(Number(template.builder_client_id));
+    if (!client || !list) continue;
+    list.push(presentStoredTemplate(template, client));
+  }
+  return {
+    clients: clients.map((client) => describeClient(clientRecord(client), grouped.get(Number(client.id)) || [])),
+  };
+}
+
+function loadBuilderTemplateRow(clientId, templateId) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  const template = db.prepare(
+    "SELECT * FROM client_templates WHERE id = ? AND builder_client_id = ?",
+  ).get(templateId, clientId);
+  if (!client || !template) return null;
+  return { client, template };
+}
+
+function writeBuilderSections(templateId, sections) {
+  const normalized = normalizeEditorSections(sections);
+  if (normalized.error) return normalized;
+  db.prepare(
+    "UPDATE client_templates SET sections_json = ?, layout_saved = 1, updated_at = ? WHERE id = ?",
+  ).run(JSON.stringify(normalized.sections), nowIso(), templateId);
+  return { ok: true };
+}
+
+export function builderTemplateView(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return null;
+  return {
+    client: describeClient(clientRecord(loaded.client), []),
+    template: presentStoredTemplate(loaded.template, loaded.client),
+    sections: readEditorSections(loaded.template),
+    sectionTypes: sectionTypeChoices(),
+    layoutSaved: Number(loaded.template.layout_saved) === 1,
+  };
+}
+
+export function applyBuilderSectionAction(clientId, templateId, action) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return { error: "That template was not found." };
+  const result = applySectionAction(readEditorSections(loaded.template), action || {});
+  if (result.error) return result;
+  const written = writeBuilderSections(loaded.template.id, result.sections);
+  if (written.error) return written;
+  return builderTemplateView(clientId, templateId);
+}
+
+export function replaceBuilderSections(clientId, templateId, sections) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded) return { error: "That template was not found." };
+  const written = writeBuilderSections(loaded.template.id, sections);
+  if (written.error) return written;
+  return builderTemplateView(clientId, templateId);
+}
+
+export function renameBuilderTemplate(clientId, templateId, name) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const planned = applyTemplateRename(
+    {
+      id: Number(loaded.template.id),
+      name: loaded.template.name,
+      templateKey: loaded.template.template_key,
+      sections: loaded.template.sections_json,
+      updatedAt: loaded.template.updated_at || loaded.template.created_at,
+    },
+    name,
+    {
+      siblingNames: siblingTemplateNames(clientId, loaded.template.id),
+      updatedAt: nowIso(),
+    },
+  );
+  if (planned.error) return planned;
+  db.prepare("UPDATE client_templates SET name = ?, updated_at = ? WHERE id = ?").run(
+    planned.changed.name,
+    planned.changed.updatedAt,
+    loaded.template.id,
+  );
+  return { template: loadBuilderTemplate(clientId, templateId) };
+}
+
+export function builderTemplateUsage(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const reportCount = managementReportCount(loaded.template.id);
+  return {
+    id: Number(loaded.template.id),
+    name: loaded.template.name,
+    reportCount,
+    warning: templateUsageWarning(reportCount),
+  };
+}
+
+export function archiveBuilderTemplate(clientId, templateId) {
+  const loaded = loadBuilderTemplateRow(clientId, templateId);
+  if (!loaded || Number(loaded.template.archived) === 1) return { error: "That template was not found." };
+  const reportCount = managementReportCount(loaded.template.id);
+  const planned = planTemplateArchive(
+    {
+      id: Number(loaded.template.id),
+      name: loaded.template.name,
+      templateKey: loaded.template.template_key,
+      sections: loaded.template.sections_json,
+      updatedAt: loaded.template.updated_at || loaded.template.created_at,
+    },
+    { reportCount, updatedAt: nowIso() },
+  );
+  db.prepare("UPDATE client_templates SET archived = 1, updated_at = ? WHERE id = ?").run(
+    planned.value.updatedAt,
+    loaded.template.id,
+  );
+  return {
+    id: Number(loaded.template.id),
+    name: loaded.template.name,
+    archived: true,
+    reportCount,
+    warning: planned.value.warning,
+  };
+}
+
+export function createBuilderClient(input) {
+  const checked = validateClient(input);
+  if (checked.error) return checked;
+  if (builderNameTaken(checked.value.name)) return { error: "A client already has that name." };
+  const ts = nowIso();
+  const created = db.prepare(
+    `INSERT INTO builder_clients (user_id, name, framework, currency, year_end, period, created_at, updated_at)
+     VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    checked.value.name,
+    checked.value.framework,
+    checked.value.currency,
+    checked.value.yearEnd,
+    checked.value.period,
+    ts,
+    ts,
+  );
+  const row = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(created.lastInsertRowid);
+  return { client: describeClient(clientRecord(row), []) };
+}
+
+export function createBuilderTemplate(clientId, input) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  if (!client) return { error: "That client was not found." };
+  const record = clientRecord(client);
+  const planned = planNewTemplate({
+    name: input?.name,
+    framework: input?.framework || record.framework,
+    period: input?.period || record.period,
+    client: record,
+    takenNames: takenTemplateNames(),
+  });
+  if (planned.error) return planned;
+  const id = insertPlannedTemplate({ ...planned.value, clientId: record.id, sourceBusiness: record.name });
+  return { template: loadBuilderTemplate(record.id, id) };
+}
+
+export function copyBuilderTemplate(clientId, sourceId) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  if (!client) return { error: "That client was not found." };
+  const source = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(sourceId);
+  if (!source || Number(source.archived) === 1) return { error: "Choose a template to copy." };
+  const record = clientRecord(client);
+  const planned = planCopy({
+    client: record,
+    source: {
+      id: Number(source.id),
+      clientId: source.builder_client_id == null ? null : Number(source.builder_client_id),
+      name: source.name,
+      layout: source.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
+      sections: readTemplateSections(source),
+    },
+    takenNames: takenTemplateNames(),
+  });
+  if (planned.error) return planned;
+  const id = insertPlannedTemplate(
+    { ...planned.value, clientId: record.id, sourceBusiness: source.name },
+    { copiedFromId: Number(source.id) },
+  );
+  return { template: loadBuilderTemplate(record.id, id) };
+}
+
+export function importBuilderTemplate(clientId, document) {
+  const client = db.prepare("SELECT * FROM builder_clients WHERE id = ?").get(clientId);
+  if (!client) return { error: "That client was not found." };
+  const record = clientRecord(client);
+  const planned = planImport({ client: record, document, takenNames: takenTemplateNames() });
+  if (planned.error) return planned;
+  const id = insertPlannedTemplate(
+    {
+      ...planned.value,
+      clientId: record.id,
+      sourceBusiness: document.template.sourceBusiness || record.name,
+    },
+    { document },
+  );
+  return { template: loadBuilderTemplate(record.id, id) };
 }
 
 export function bootstrapEmail() {

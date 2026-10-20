@@ -16,6 +16,8 @@ import AdminInvites from "./pages/AdminInvites";
 import AdminRequests from "./pages/AdminRequests";
 import AdminReports from "./pages/AdminReports";
 import AdminTemplates from "./pages/AdminTemplates";
+import AdminTemplateBuilder from "./pages/AdminTemplateBuilder";
+import TemplateBuilderOpen from "./pages/TemplateBuilderOpen";
 
 function Loading() {
   return <p className="grid min-h-screen place-items-center text-mute">Loading…</p>;
@@ -60,6 +62,8 @@ export default function App() {
             <Route path="admin" element={<AdminPeople />} />
             <Route path="admin/reports" element={<AdminReports />} />
             <Route path="admin/templates" element={<AdminTemplates />} />
+            <Route path="admin/template-builder" element={<AdminTemplateBuilder />} />
+            <Route path="admin/template-builder/:clientId/templates/:templateId" element={<TemplateBuilderOpen />} />
             <Route path="admin/invites" element={<AdminInvites />} />
             <Route path="admin/requests" element={<AdminRequests />} />
             <Route path="admin/users/:id" element={<AdminUser />} />

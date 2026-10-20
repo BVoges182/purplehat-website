@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, Avatar, Button } from "./ui";
@@ -17,6 +17,7 @@ const adminLinks = [
   ["/admin", "People"],
   ["/admin/reports", "Management Reports"],
   ["/admin/templates", "Client templates"],
+  ["/admin/template-builder", "Client Template Builder"],
   ["/admin/invites", "Invite keys"],
   ["/admin/requests", "Build requests"],
 ];
@@ -35,8 +36,11 @@ function Item({ to, end, children }) {
 
 export default function Shell() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const [mailWarning, setMailWarning] = useState("");
   const links = user.role === "admin" ? adminLinks : clientLinks;
+  const wide = location.pathname.startsWith("/admin/template-builder");
+  const frame = wide ? "max-w-[90rem]" : "max-w-6xl";
 
   useEffect(() => {
     if (user.role !== "admin") return undefined;
@@ -50,7 +54,7 @@ export default function Shell() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-[rgba(109,40,217,0.08)] bg-[rgba(247,244,255,0.86)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-3 sm:px-8">
+        <div className={`mx-auto flex ${frame} flex-col gap-3 px-5 py-3 sm:px-8`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <img src="/logo.png" alt="" className="h-11 w-11 object-contain" />
@@ -77,7 +81,7 @@ export default function Shell() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
+      <main className={`mx-auto ${frame} px-5 py-8 sm:px-8`}>
         {mailWarning ? <div className="mb-4"><Alert>{mailWarning}</Alert></div> : null}
         <Outlet />
       </main>

@@ -117,6 +117,42 @@ export const api = {
     body.append("file", file);
     return request("/api/admin/templates/upload", { method: "POST", body });
   },
+  templateBuilder: () => request("/api/admin/template-builder"),
+  templateBuilderTemplate: (clientId, templateId) => request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}`),
+  createBuilderClient: (body) => request("/api/admin/template-builder/clients", { method: "POST", body }),
+  createBuilderTemplate: (clientId, body) => request(`/api/admin/template-builder/clients/${clientId}/templates`, { method: "POST", body }),
+  copyBuilderTemplate: (clientId, sourceId) => request(`/api/admin/template-builder/clients/${clientId}/templates/copy`, { method: "POST", body: { sourceId } }),
+  importBuilderTemplate: (clientId, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/import`, { method: "POST", body });
+  },
+  saveTemplateSections: (clientId, templateId, body) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}/sections`,
+    { method: "POST", body },
+  ),
+  previewTemplateExcel: (clientId, templateId, file) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}/excel`, { method: "POST", body });
+  },
+  importTemplateExcel: (clientId, templateId, file, mapping) => {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("mapping", JSON.stringify(mapping));
+    return request(`/api/admin/template-builder/clients/${clientId}/templates/${templateId}/excel`, { method: "POST", body });
+  },
+  renameBuilderTemplate: (clientId, templateId, name) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}`,
+    { method: "PATCH", body: { name } },
+  ),
+  builderTemplateUsage: (clientId, templateId) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}/usage`,
+  ),
+  archiveBuilderTemplate: (clientId, templateId) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}`,
+    { method: "DELETE" },
+  ),
   mailStatus: () => request("/api/admin/mail"),
   invites: () => request("/api/admin/invites"),
   createInvite: (body) => request("/api/admin/invites", { method: "POST", body }),
