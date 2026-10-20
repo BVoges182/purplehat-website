@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { DatabaseSync } from "node:sqlite";
+import { prepareReport, preserveReportFigures } from "./reportChecks.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
@@ -487,15 +488,28 @@ function writeTemplatePack(templateId, document) {
     `INSERT INTO client_template_reports (template_id, month, title, period_label, entity_name, content_json, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
+  const preserve = preserveReportFigures({
+    name: document?.template?.name,
+    templateName: document?.template?.name,
+    key: document?.template?.key,
+    templateKey: document?.template?.key,
+    layout: document?.template?.layout,
+    reportTemplate: document?.template?.layout,
+    sourceBusiness: document?.template?.sourceBusiness,
+  });
+  const warnings = [];
   const ts = nowIso();
   for (const report of document.reports) {
+    const prepared = prepareReport(report.sections, report.month, { preserveFigures: preserve });
+    report.sections = prepared.sections;
+    warnings.push(...prepared.warnings);
     insertReport.run(
       templateId,
       report.month,
       report.title,
       report.periodLabel,
       report.entityName,
-      JSON.stringify({ sections: report.sections }),
+      JSON.stringify({ sections: prepared.sections }),
       ts,
     );
   }
@@ -512,6 +526,7 @@ function writeTemplatePack(templateId, document) {
       movement.occurredAt,
     );
   }
+  return warnings;
 }
 
 function pushTemplateToClients(templateId, layout) {
@@ -587,9 +602,9 @@ export function saveTemplateDocument(document) {
       ).run(templateKey, name, document.template.sourceBusiness || "", nowIso(), layout);
       templateId = Number(created.lastInsertRowid);
     }
-    writeTemplatePack(templateId, document);
+    const warnings = writeTemplatePack(templateId, document);
     const clientsUpdated = pushTemplateToClients(templateId, layout);
-    return { id: templateId, clientsUpdated };
+    return { id: templateId, clientsUpdated, warnings };
   });
 }
 
@@ -752,6 +767,61 @@ export function bootstrapEmail() {
 export function isProtectedAdmin(email) {
   const value = String(email || "").trim().toLowerCase();
   return value === bootstrapEmail() || value === INFO_ADMIN_EMAIL;
+}
+
+function repairedJson(month, contentJson) {
+  let content;
+  try {
+    content = JSON.parse(contentJson);
+  } catch {
+    return null;
+  }
+  const prepared = prepareReport(Array.isArray(content.sections) ? content.sections : [], month);
+  const next = JSON.stringify({ ...content, sections: prepared.sections });
+  return next === contentJson ? null : next;
+}
+
+export function repairStoredDemoReports() {
+  const templateReports = db.prepare(
+    `SELECT client_template_reports.id, client_template_reports.month, client_template_reports.content_json
+     FROM client_template_reports
+     JOIN client_templates ON client_templates.id = client_template_reports.template_id
+     WHERE client_templates.template_key = 'purple-hat-demo'`,
+  ).all();
+  const clientReports = db.prepare(
+    `SELECT management_reports.id, management_reports.month, management_reports.content_json
+     FROM management_reports
+     JOIN users ON users.id = management_reports.user_id
+     LEFT JOIN client_templates ON client_templates.id = users.template_id
+     WHERE users.role = 'client'
+       AND users.business_name NOT LIKE '%Plas%'
+       AND COALESCE(client_templates.template_key, '') != 'copy-4f8c11f1b756'
+       AND COALESCE(client_templates.name, '') NOT LIKE '%Plas%'
+       AND (
+         client_templates.template_key = 'purple-hat-demo'
+         OR (users.template_id IS NULL AND users.business_name LIKE '%Purple%Hat%Demo%')
+       )`,
+  ).all();
+  const updates = [];
+  for (const report of templateReports) {
+    const next = repairedJson(report.month, report.content_json);
+    if (next) updates.push({ table: "client_template_reports", id: report.id, json: next });
+  }
+  for (const report of clientReports) {
+    const next = repairedJson(report.month, report.content_json);
+    if (next) updates.push({ table: "management_reports", id: report.id, json: next });
+  }
+  if (!updates.length) return 0;
+  transaction(() => {
+    const templateUpdate = db.prepare("UPDATE client_template_reports SET content_json = ? WHERE id = ?");
+    const clientUpdate = db.prepare("UPDATE management_reports SET content_json = ? WHERE id = ?");
+    for (const update of updates) {
+      const statement = update.table === "client_template_reports" ? templateUpdate : clientUpdate;
+      statement.run(update.json, update.id);
+    }
+  });
+  console.log(`Repaired ${updates.length} Purple Hat Demo report${updates.length === 1 ? "" : "s"}.`);
+  return updates.length;
 }
 
 export default db;

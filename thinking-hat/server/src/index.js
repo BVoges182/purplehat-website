@@ -24,6 +24,7 @@ import db, {
   seedClientBooks,
   seedEmptyBooks,
   saveTemplateDocument,
+  repairStoredDemoReports,
   seedPurpleHatDemoTemplate,
   seedWealthTechTemplate,
   shortenWealthTechTemplateName,
@@ -43,6 +44,7 @@ import {
   saveManagementReport,
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
+import { reportWarnings, templateReviewWarnings } from "./reportChecks.js";
 import { mailConfigured, sendInviteKeyEmail } from "./mail.js";
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
@@ -664,6 +666,7 @@ app.post("/api/admin/reports", requireAuth, requireAdmin, acceptWorkbook, async 
   }
   res.status(saved.replaced ? 200 : 201).json({
     replaced: Boolean(saved.replaced),
+    warnings: saved.warnings || [],
     report: {
       ...saved.report,
       userId: Number(user.id),
@@ -1052,7 +1055,7 @@ app.get("/api/admin/invites", requireAuth, requireAdmin, (req, res) => {
 
 function publicTemplate(template) {
   const reports = db.prepare(
-    "SELECT month, title FROM client_template_reports WHERE template_id = ? ORDER BY month",
+    "SELECT month, title, content_json FROM client_template_reports WHERE template_id = ? ORDER BY month",
   ).all(template.id);
   const movements = db.prepare(
     "SELECT description FROM client_template_events WHERE template_id = ? ORDER BY id",
@@ -1070,6 +1073,17 @@ function publicTemplate(template) {
     createdAt: template.created_at,
     reports: reports.map((report) => ({ month: report.month, title: report.title })),
     movements: movements.map((event) => event.description),
+    reviewWarnings: [
+      ...templateReviewWarnings(template),
+      ...reports.flatMap((report) => {
+        try {
+          const content = JSON.parse(report.content_json);
+          return reportWarnings(Array.isArray(content.sections) ? content.sections : [], report.month);
+        } catch {
+          return [`${report.month}: This report could not be read.`];
+        }
+      }),
+    ],
   };
 }
 
@@ -1135,7 +1149,11 @@ app.post("/api/admin/templates/upload", requireAuth, requireAdmin, acceptTemplat
     return;
   }
   const template = db.prepare("SELECT * FROM client_templates WHERE id = ?").get(saved.id);
-  res.status(201).json({ template: publicTemplate(template), clientsUpdated: saved.clientsUpdated });
+  res.status(201).json({
+    template: publicTemplate(template),
+    clientsUpdated: saved.clientsUpdated,
+    warnings: saved.warnings || [],
+  });
 });
 
 app.post("/api/admin/templates/copy", requireAuth, requireAdmin, (req, res) => {
@@ -1405,6 +1423,7 @@ seedWealthTechTemplate();
 seedPurpleHatDemoTemplate();
 shortenWealthTechTemplateName();
 linkClientsToTemplates();
+repairStoredDemoReports();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);

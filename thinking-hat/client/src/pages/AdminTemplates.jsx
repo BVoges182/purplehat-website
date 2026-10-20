@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
-import { Alert, Button, Card, Field, PageIntro, inputClass } from "../components/ui";
+import { Alert, Button, Card, Field, PageIntro, WarningList, inputClass } from "../components/ui";
 import { reportMonthLabel } from "../reportMoney";
 import { reportTemplateName } from "../reportTemplates";
 
@@ -223,6 +223,11 @@ export default function AdminTemplates() {
               ) : null}
               <h2 className="mt-6 font-display text-xl font-extrabold text-ink">{selected.name}</h2>
               <p className="mt-1 text-sm text-mute">Dashboard and management reports: {reportTemplateName(selected.reportTemplate)}.</p>
+              {selected.reviewWarnings?.length ? (
+                <div className="mt-4">
+                  <WarningList warnings={selected.reviewWarnings} heading="Review this template before you use it." />
+                </div>
+              ) : null}
               {selected.copiedFromName ? (
                 <p className="mt-1 text-sm text-mute">Copied from {selected.copiedFromName}. This copy is separate from that template.</p>
               ) : selected.sourceBusiness && selected.sourceBusiness !== selected.name ? (

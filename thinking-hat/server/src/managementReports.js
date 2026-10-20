@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
 import { ecommerceInsight, ecommerceSeries, insightMonthName } from "../../client/src/reportMoney.js";
 import db, { nowIso } from "./db.js";
+import { prepareReport, preserveReportFigures } from "./reportChecks.js";
 
 const fontDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "fonts");
 
@@ -154,7 +155,21 @@ export function saveManagementReport({ userId, month, entityName, sections, repl
     "SELECT id, title FROM management_reports WHERE user_id = ? AND month = ?",
   ).get(userId, month);
   if (existing && !replace) return { exists: true, title: existing.title };
-  const json = JSON.stringify({ sections });
+  const owner = db.prepare(
+    `SELECT users.business_name, users.report_template, client_templates.template_key, client_templates.name AS template_name
+     FROM users
+     LEFT JOIN client_templates ON client_templates.id = users.template_id
+     WHERE users.id = ?`,
+  ).get(userId);
+  const prepared = prepareReport(sections, month, {
+    preserveFigures: preserveReportFigures({
+      businessName: owner?.business_name,
+      reportTemplate: owner?.report_template,
+      templateKey: owner?.template_key,
+      templateName: owner?.template_name,
+    }),
+  });
+  const json = JSON.stringify({ sections: prepared.sections });
   if (existing) {
     db.prepare(
       "UPDATE management_reports SET title = ?, period_label = ?, entity_name = ?, content_json = ? WHERE id = ?",
@@ -168,6 +183,7 @@ export function saveManagementReport({ userId, month, entityName, sections, repl
   return {
     exists: Boolean(existing),
     replaced: Boolean(existing),
+    warnings: prepared.warnings,
     report: listRow(db.prepare(
       "SELECT month, title, period_label, entity_name FROM management_reports WHERE user_id = ? AND month = ?",
     ).get(userId, month)),

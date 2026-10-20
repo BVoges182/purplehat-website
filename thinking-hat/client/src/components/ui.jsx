@@ -86,10 +86,24 @@ export function Field({ label, hint, children }) {
 }
 
 export function Alert({ tone = "error", children }) {
-  const cls = tone === "error"
-    ? "border-rose-100 bg-rose-50 text-rose-800"
-    : "border-[rgba(109,40,217,0.12)] bg-[#f5f0ff] text-ink";
-  return <p className={`rounded-2xl border px-4 py-3 text-sm ${cls}`}>{children}</p>;
+  const styles = {
+    error: "border-rose-100 bg-rose-50 text-rose-800",
+    warn: "border-amber-200 bg-amber-50 text-amber-950",
+  };
+  const cls = styles[tone] || "border-[rgba(109,40,217,0.12)] bg-[#f5f0ff] text-ink";
+  return <div className={`rounded-2xl border px-4 py-3 text-sm ${cls}`}>{children}</div>;
+}
+
+export function WarningList({ warnings, heading }) {
+  if (!warnings?.length) return null;
+  return (
+    <Alert tone="warn">
+      <p className="font-semibold">{heading}</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        {warnings.map((warning, index) => <li key={`${warning}-${index}`}>{warning}</li>)}
+      </ul>
+    </Alert>
+  );
 }
 
 export function Card({ className = "", children }) {

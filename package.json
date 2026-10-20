@@ -7,7 +7,8 @@
   "scripts": {
     "build": "node thinking-hat/scripts/build-client.mjs",
     "postinstall": "node thinking-hat/scripts/build-client.mjs",
-    "start": "node thinking-hat/server/src/index.js"
+    "start": "node thinking-hat/server/src/index.js",
+    "test": "node --test thinking-hat/server/src/reportChecks.test.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",

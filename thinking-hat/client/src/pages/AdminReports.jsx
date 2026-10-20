@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import AdminReportList from "../components/AdminReportList";
-import { Alert, Button, Card, Field, PageIntro, inputClass } from "../components/ui";
+import { Alert, Button, Card, Field, PageIntro, WarningList, inputClass } from "../components/ui";
 import { reportMonthLabel } from "../reportMoney";
 
 export default function AdminReports() {
@@ -16,6 +16,7 @@ export default function AdminReports() {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [warnings, setWarnings] = useState([]);
   const [busy, setBusy] = useState(false);
   const [replaceAsk, setReplaceAsk] = useState(null);
 
@@ -46,6 +47,7 @@ export default function AdminReports() {
     event?.preventDefault();
     setError("");
     setMessage("");
+    setWarnings([]);
     const chosenId = replaceAsk?.userId || userId;
     const chosenMonth = replaceAsk?.month || month;
     const chosenFile = replaceAsk?.file || file;
@@ -77,6 +79,7 @@ export default function AdminReports() {
       const savedMonth = reportMonthLabel(data.report.month);
       const savedClient = data.report.businessName || data.report.name;
       setMessage(data.replaced ? `${savedMonth} replaced for ${savedClient}.` : `${savedMonth} saved for ${savedClient}.`);
+      setWarnings(Array.isArray(data.warnings) ? data.warnings : []);
     } catch (err) {
       if (err.status === 409 && !replace) {
         setReplaceAsk({
@@ -101,6 +104,11 @@ export default function AdminReports() {
       />
       {error ? <div className="mb-4"><Alert>{error}</Alert></div> : null}
       {message ? <div className="mb-4"><Alert tone="ok">{message}</Alert></div> : null}
+      {warnings.length ? (
+        <div className="mb-4">
+          <WarningList warnings={warnings} heading="The report was saved. Review these checks before you rely on it." />
+        </div>
+      ) : null}
       <Card>
         <h2 className="font-display text-xl font-extrabold text-ink">Upload Excel</h2>
         <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={(event) => submit(event, false)}>
