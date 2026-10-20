@@ -120,7 +120,9 @@ export function latestMonthColumn(columns, month) {
   if (!match) return -1;
   const index = Number(match[2]) - 1;
   if (index < 0 || index > 11) return -1;
-  const pattern = new RegExp(`\\b(?:${MONTH_NAMES[index]}|${MONTH_SHORT[index]})\\b`, "i");
+  const aliases = [MONTH_NAMES[index], MONTH_SHORT[index]];
+  if (MONTH_SHORT[index] === "sep") aliases.push("sept");
+  const pattern = new RegExp(`\\b(?:${aliases.join("|")})\\b`, "i");
   return (columns || []).findIndex((label) => {
     const text = String(label || "");
     return !/year to date/i.test(text) && text.includes(match[1]) && pattern.test(text);
@@ -170,6 +172,110 @@ export function statementCards(report) {
     profit: columnRows(profit, yearToDateColumn(profit?.columns)),
     position: columnRows(balance, latestMonthColumn(balance?.columns, month)),
     cash: columnRows(cash, cashFlowColumn(cash, month)),
+  };
+}
+
+export function isPlasYnGroveFarm(user) {
+  const name = `${user?.templateName || ""} ${user?.businessName || ""}`;
+  return /plas[\s-]*yn[\s-]*grove/i.test(name);
+}
+
+function cents(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.round(number * 100) / 100;
+}
+
+function positionBucket(label) {
+  const text = String(label || "").trim();
+  if (/creditors due after|due after more than one year|non-?current liabilit|long-?term liabilit/i.test(text)) {
+    return "nonCurrentLiabilities";
+  }
+  if (/creditors due within|due within one year|current liabilit/i.test(text)) return "currentLiabilities";
+  if (/\bcurrent assets\b/i.test(text)) return "currentAssets";
+  if (/fixed assets|non-?current assets|tangible fixed assets/i.test(text)) return "nonCurrentAssets";
+  if (/partners['’] accounts|members['’] equity|\bequity\b/i.test(text)) return "equity";
+  return null;
+}
+
+function sectionAmount(rows, columnIndex) {
+  const total = (rows || []).find((row) => {
+    if (row.kind !== "total") return false;
+    return !/^(net current assets|net assets)$/i.test(String(row.label || "").trim());
+  });
+  if (total) {
+    const value = total.values?.[columnIndex];
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+  const lines = (rows || []).filter((row) => row.kind === "line");
+  if (!lines.length) return null;
+  return lines.reduce((sum, row) => {
+    const value = row.values?.[columnIndex];
+    return sum + (typeof value === "number" && Number.isFinite(value) ? value : 0);
+  }, 0);
+}
+
+function bucketTotal(groups, key, columnIndex) {
+  let sum = 0;
+  for (const rows of groups[key] || []) {
+    const amount = sectionAmount(rows, columnIndex);
+    if (amount !== null) sum += amount;
+  }
+  return sum;
+}
+
+export function plasYnGroveFinancialPosition(report) {
+  const balance = sectionByTitle(report?.sections, /^balance sheet$/i);
+  const columnIndex = latestMonthColumn(balance?.columns, report?.month);
+  if (!balance || columnIndex < 0) {
+    return { column: "", rows: [], balanced: false, note: "No balance sheet column for this month." };
+  }
+  const groups = {
+    nonCurrentAssets: [],
+    currentAssets: [],
+    nonCurrentLiabilities: [],
+    currentLiabilities: [],
+    equity: [],
+  };
+  let bucket = null;
+  let pending = [];
+  const flush = () => {
+    if (bucket) groups[bucket].push(pending);
+    pending = [];
+  };
+  for (const row of balance.rows || []) {
+    if (row.kind === "heading") {
+      flush();
+      bucket = positionBucket(row.label);
+      continue;
+    }
+    if (bucket) pending.push(row);
+  }
+  flush();
+  const nonCurrentAssets = cents(bucketTotal(groups, "nonCurrentAssets", columnIndex));
+  const currentAssets = cents(bucketTotal(groups, "currentAssets", columnIndex));
+  const equity = cents(bucketTotal(groups, "equity", columnIndex));
+  const nonCurrentLiabilities = cents(bucketTotal(groups, "nonCurrentLiabilities", columnIndex));
+  const currentLiabilities = cents(bucketTotal(groups, "currentLiabilities", columnIndex));
+  const totalAssets = cents(nonCurrentAssets + currentAssets);
+  const totalEquityAndLiabilities = cents(equity + nonCurrentLiabilities + currentLiabilities);
+  const difference = cents(totalAssets - totalEquityAndLiabilities);
+  const line = (key, label, value, strong = false) => ({ key, label, value, format: "money2", strong });
+  return {
+    column: String(balance.columns?.[columnIndex] || ""),
+    rows: [
+      line("non-current-assets", "Non-current assets", nonCurrentAssets),
+      line("current-assets", "Current assets", currentAssets),
+      line("total-assets", "Total assets", totalAssets, true),
+      line("equity", "Equity", equity),
+      line("non-current-liabilities", "Non-current liabilities", nonCurrentLiabilities),
+      line("current-liabilities", "Current liabilities", currentLiabilities),
+      line("total-equity-liabilities", "Total equity and liabilities", totalEquityAndLiabilities, true),
+    ],
+    balanced: difference === 0,
+    note: difference === 0
+      ? ""
+      : `Total assets do not equal total equity and liabilities. The difference is ${reportFigure(difference, "money2")}.`,
   };
 }
 

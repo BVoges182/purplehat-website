@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { Alert, Card, PageIntro } from "../components/ui";
-import { reportFigure, statementCards } from "../reportMoney";
+import { useAuth } from "../auth";
+import { Alert, Card, Field, PageIntro, inputClass } from "../components/ui";
+import { isPlasYnGroveFarm, plasYnGroveFinancialPosition, reportFigure, reportMonthLabel, statementCards } from "../reportMoney";
 
 const emptyCard = { column: "", rows: [] };
 
@@ -31,16 +32,28 @@ function StatementCard({ title, card }) {
       <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
       {card.column ? <p className="mt-1 text-xs text-mute">{card.column}</p> : null}
       {card.rows.length ? <StatementLines rows={card.rows} /> : null}
+      {card.note ? <p className="mt-3 text-sm font-semibold text-rose-800">{card.note}</p> : null}
     </Card>
   );
 }
 
+function cardsForReport(report, plas) {
+  const cards = statementCards(report);
+  if (!plas) return cards;
+  return { ...cards, position: plasYnGroveFinancialPosition(report) };
+}
+
 export default function FinancialStatements() {
+  const { user } = useAuth();
+  const plas = isPlasYnGroveFarm(user);
+  const [months, setMonths] = useState([]);
+  const [month, setMonth] = useState("");
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (plas) return undefined;
     let stop = false;
     api.reports()
       .then(async (payload) => {
@@ -63,7 +76,46 @@ export default function FinancialStatements() {
         if (!stop) setReady(true);
       });
     return () => { stop = true; };
-  }, []);
+  }, [plas]);
+
+  useEffect(() => {
+    if (!plas) return undefined;
+    let stop = false;
+    api.reports()
+      .then((payload) => {
+        if (stop) return;
+        const list = payload.reports || [];
+        setMonths(list);
+        setMonth((current) => current || list[0]?.month || "");
+        if (!list.length) setReady(true);
+      })
+      .catch((err) => {
+        if (stop) return;
+        setError(err.message);
+        setReady(true);
+      });
+    return () => { stop = true; };
+  }, [plas]);
+
+  useEffect(() => {
+    if (!plas || !month) return undefined;
+    let stop = false;
+    api.report(month)
+      .then((detail) => {
+        if (stop) return;
+        setCards(cardsForReport(detail.report, true));
+        setError("");
+      })
+      .catch((err) => {
+        if (stop) return;
+        setCards(null);
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!stop) setReady(true);
+      });
+    return () => { stop = true; };
+  }, [plas, month]);
 
   const profit = cards?.profit || emptyCard;
   const position = cards?.position || emptyCard;
@@ -77,9 +129,20 @@ export default function FinancialStatements() {
       {ready ? (
         <div className="space-y-4">
           <p className="text-sm text-mute">These are not a full set of annual financial statements. Xero and QuickBooks stay the system of record.</p>
+          {plas && months.length > 0 ? (
+            <div className="max-w-xs">
+              <Field label="Month">
+                <select className={inputClass} aria-label="Statement month" value={month} onChange={(event) => setMonth(event.target.value)}>
+                  {months.map((item) => (
+                    <option key={item.month} value={item.month}>{reportMonthLabel(item.month)}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          ) : null}
           <div className="grid gap-4 lg:grid-cols-2">
             <StatementCard title="Profit and loss" card={profit} />
-            <StatementCard title="Financial position" card={position} />
+            <StatementCard title={plas ? "Statement of financial position" : "Financial position"} card={position} />
           </div>
           <StatementCard title="Statement of cash flows" card={cash} />
         </div>

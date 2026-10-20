@@ -426,28 +426,7 @@ export function copyClientTemplate(sourceId, name) {
       `INSERT INTO client_templates (template_key, name, source_business, created_at, report_template, copied_from_id)
        VALUES (?, ?, ?, ?, ?, ?)`,
     ).run(`copy-${crypto.randomBytes(6).toString("hex")}`, trimmed, source.name, ts, layout, source.id);
-    const templateId = Number(created.lastInsertRowid);
-    const reports = db.prepare(
-      "SELECT month, title, period_label, entity_name, content_json, created_at FROM client_template_reports WHERE template_id = ? ORDER BY month",
-    ).all(source.id);
-    const insertReport = db.prepare(
-      `INSERT INTO client_template_reports (template_id, month, title, period_label, entity_name, content_json, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    );
-    for (const report of reports) {
-      insertReport.run(templateId, report.month, report.title, report.period_label, report.entity_name, report.content_json, report.created_at);
-    }
-    const events = db.prepare(
-      "SELECT kind, description, amount_cents, occurred_at FROM client_template_events WHERE template_id = ? ORDER BY id",
-    ).all(source.id);
-    const insertEvent = db.prepare(
-      `INSERT INTO client_template_events (template_id, kind, description, amount_cents, occurred_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    );
-    for (const event of events) {
-      insertEvent.run(templateId, event.kind, event.description, event.amount_cents, event.occurred_at);
-    }
-    return templateId;
+    return Number(created.lastInsertRowid);
   });
   return { id };
 }
@@ -629,6 +608,21 @@ export function renameClientTemplate(id, name) {
   if (templateNameTaken(trimmed, id)) return { error: "A template already has that name." };
   db.prepare("UPDATE client_templates SET name = ? WHERE id = ?").run(trimmed, id);
   return { id: Number(id) };
+}
+
+export function assignClientTemplate(userId, templateId) {
+  const user = db.prepare("SELECT id, role FROM users WHERE id = ?").get(userId);
+  if (!user) return { error: "That person was not found." };
+  if (user.role !== "client") return { error: "Templates are for client accounts." };
+  const template = db.prepare("SELECT id, report_template FROM client_templates WHERE id = ?").get(templateId);
+  if (!template) return { error: "That template was not found." };
+  db.prepare("UPDATE users SET report_template = ?, template_id = ?, updated_at = ? WHERE id = ?").run(
+    layoutKey(template.report_template),
+    template.id,
+    nowIso(),
+    user.id,
+  );
+  return { user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(user.id)) };
 }
 
 export function applyClientTemplate(userId, templateId) {
