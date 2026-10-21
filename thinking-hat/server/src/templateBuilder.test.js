@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseTemplateFile, templateCsv } from "./templateFile.js";
 import {
+  applyUkGaapLabels,
   chipsFor,
   describeTemplate,
   needsReview,
@@ -15,7 +16,9 @@ import {
   sectionConfigs,
   sectionsFromDocument,
   seedProfile,
+  UK_GAAP_LABEL_MAP,
   uniqueName,
+  unrecognisedUsLabels,
   validateClient,
   validateTemplate,
   validateTemplateRename,
@@ -82,7 +85,7 @@ test("chips follow section order and collapse repeats", () => {
   ]);
 });
 
-test("Plas copied template needs review and the US demo template does not", () => {
+test("a UK GAAP template keeps the demo section names and only flags unrecognised US labels", () => {
   const plas = describeTemplate({
     name: "Plas-Yn-Grove Farm",
     framework: "uk-gaap",
@@ -93,9 +96,18 @@ test("Plas copied template needs review and the US demo template does not", () =
     currency: "GBP",
     yearEnd: "03-31",
   });
-  assert.equal(plas.needsReview, true);
-  assert.match(plas.reviewReason, /US labels/);
-  assert.match(plas.reviewReason, /UK GAAP/);
+  assert.equal(plas.needsReview, false);
+  assert.equal(plas.reviewReason, "");
+
+  const unknown = describeTemplate({
+    framework: "uk-gaap",
+    layout: "purple-hat-demo",
+    sections: [...demoSections, { title: "Treasury stock" }],
+    labels: ["Deferred revenue", "Grazing licences"],
+    reviewRequired: false,
+  });
+  assert.equal(unknown.needsReview, true);
+  assert.match(unknown.reviewReason, /US labels do not match UK GAAP: Treasury stock, Deferred revenue/);
 
   const demo = describeTemplate({
     framework: "us-gaap",
@@ -263,9 +275,101 @@ test("import reads the current CSV export and does not reuse its template key", 
   assert.equal(imported.value.name, "Purple Hat Demo import");
   assert.equal(imported.value.reuseFileKey, false);
   assert.equal(imported.value.pushToClients, false);
-  assert.equal(imported.value.reviewRequired, true);
+  assert.equal(imported.value.reviewRequired, false);
   assert.equal(imported.value.layout, "purple-hat-demo");
+  assert.deepEqual(imported.value.sections.map((section) => section.title), demoSections.map((section) => section.title));
   assert.deepEqual(chipsFor(imported.value.sections).slice(0, 2), ["Exec summary", "Contacts"]);
+});
+
+test("a UK GAAP import maps known US labels and lists the ones it does not know", () => {
+  const document = {
+    format: "thinking-hat-template",
+    version: 1,
+    template: {
+      name: "Plas-Yn-Grove Farm",
+      layout: "purple-hat-demo",
+      sourceBusiness: "Purple Hat Demo",
+      key: "copy-4f8c11f1b756",
+    },
+    reports: [{
+      month: "2026-09",
+      title: "September 2026",
+      sections: [
+        { title: "Income Statement", presentation: "table", rows: [
+          { label: "Inventory", kind: "line", value: 10 },
+          { label: "Grazing licences", kind: "line", value: 20 },
+        ] },
+        { title: "Balance sheet", presentation: "table", rows: [
+          { label: "Accounts Receivable", kind: "line", value: 30 },
+          { label: "Accounts Payable", kind: "line", value: 40 },
+          { label: "Stockholders' Equity", kind: "total", value: 50 },
+          { label: "Treasury stock", kind: "line", value: 60 },
+          { label: "Trade debtors", kind: "line", value: 70 },
+        ] },
+      ],
+    }],
+    movements: [],
+  };
+  const uk = planImport({
+    client: { framework: "uk-gaap", currency: "GBP", yearEnd: "03-31", period: "monthly" },
+    document,
+    takenNames: [],
+  });
+  assert.equal(uk.value.reviewRequired, true);
+  assert.equal(uk.value.layout, "purple-hat-demo");
+  assert.deepEqual(uk.value.sections.map((section) => section.title), ["Profit and loss", "Balance sheet"]);
+  const labels = uk.document.reports[0].sections.flatMap((section) => section.rows.map((row) => row.label));
+  assert.deepEqual(labels, [
+    "Stock",
+    "Grazing licences",
+    "Trade debtors",
+    "Trade creditors",
+    "Capital and reserves",
+    "Treasury stock",
+    "Trade debtors",
+  ]);
+  assert.equal(document.reports[0].sections[0].title, "Income Statement");
+  assert.deepEqual(uk.value.mappedLabels.map((item) => `${item.from} → ${item.to}`), [
+    "Income Statement → Profit and loss",
+    "Inventory → Stock",
+    "Accounts Receivable → Trade debtors",
+    "Accounts Payable → Trade creditors",
+    "Stockholders' Equity → Capital and reserves",
+  ]);
+  assert.deepEqual(unrecognisedUsLabels({ labels }), ["Treasury stock"]);
+  assert.equal(UK_GAAP_LABEL_MAP.some(([us, ukLabel]) => us === "Accounts Receivable" && ukLabel === "Trade debtors"), true);
+
+  const us = planImport({
+    client: { framework: "us-gaap", currency: "USD", yearEnd: "12-31", period: "monthly" },
+    document,
+    takenNames: [],
+  });
+  assert.equal(us.value.reviewRequired, false);
+  assert.deepEqual(us.value.mappedLabels, []);
+  assert.equal(us.document.reports[0].sections[1].rows[0].label, "Accounts Receivable");
+  assert.equal(us.value.sections[0].title, "Income Statement");
+});
+
+test("the older Plas CSV has no section rows and imports without a review flag", () => {
+  const csv = [
+    "record,template_name,layout,source_business,template_key,month,report_title,period_label,entity_name,section_index,section_title,presentation,row_index,row_kind,label,indent,line_month,value,values,formats,columns,units,note,section_json,movement_kind,description,amount,occurred_at",
+    "template,Plas-Yn-Grove Farm,purple-hat-demo,Purple Hat Demo,copy-4f8c11f1b756,,,,,,,,,,,,,,,,,,,,,,,",
+  ].join("\n");
+  const parsed = parseTemplateFile(csv, "Plas-Yn-Grove-Farm-template.csv");
+  assert.equal(parsed.error, undefined);
+  assert.equal(parsed.document.reports.length, 0);
+  const imported = planImport({
+    client: { framework: "uk-gaap", currency: "GBP", yearEnd: "03-31", period: "monthly" },
+    document: parsed.document,
+    takenNames: ["Plas-Yn-Grove Farm"],
+  });
+  assert.equal(imported.value.name, "Plas-Yn-Grove Farm import");
+  assert.equal(imported.value.layout, "purple-hat-demo");
+  assert.deepEqual(imported.value.sections, []);
+  assert.equal(imported.value.reviewRequired, false);
+  assert.deepEqual(imported.value.mappedLabels, []);
+  const described = describeTemplate({ ...imported.value, reviewRequired: imported.value.reviewRequired });
+  assert.equal(described.needsReview, false);
 });
 
 const storedTemplate = {

@@ -1,0 +1,29 @@
+{
+  "updated": "2026-10-20",
+  "title": "Financial insights",
+  "period": "December 2026",
+  "headline": "Overdue receivables are 1,900 of 12,500. Payables overdue are 1,300 of 8,400, and the month still covers its costs.",
+  "receivables": {
+    "total": 12500,
+    "overdue": 1900,
+    "note": "Most of the book is current. 1,700 sits at 30 days."
+  },
+  "payables": {
+    "total": 8400,
+    "overdue": 1300,
+    "note": "The overdue piece is the 30-day bucket."
+  },
+  "current_month": [
+    "Revenue for the month is 86,700 and expenses are 78,940.",
+    "Cash surplus for December is 13,760.",
+    "Closing bank balance is 71,970."
+  ],
+  "trends": [
+    "Revenue has climbed from July through November, then eased in December.",
+    "Expenses stayed below revenue in every month of the half year."
+  ],
+  "actions": [
+    "Chase the 30-day receivable before the January close.",
+    "Keep the 30-day payable on the next payment run."
+  ]
+}

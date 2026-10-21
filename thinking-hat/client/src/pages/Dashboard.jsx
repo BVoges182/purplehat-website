@@ -5,7 +5,8 @@ import { useAuth } from "../auth";
 import { ClassicDonut, ContactDonutCard, Statement } from "../components/ManagementReportView";
 import { Alert, Avatar, Card, PageIntro, money, monthLabel } from "../components/ui";
 import AgingSummary from "../components/AgingSummary";
-import AndysInsights from "../components/AndysInsights";
+import AndysInsights, { useClientBrief } from "../components/AndysInsights";
+import FinancialInsights from "../components/FinancialInsights";
 import EcommercePerformance from "../components/EcommercePerformance";
 import { ecommerceSeries, reportFigure, yearToDateContacts } from "../reportMoney";
 
@@ -120,7 +121,7 @@ function MonthChart({ months, max, fill = false }) {
   ));
   if (fill) {
     return (
-      <div className="relative mt-4 min-h-40 flex-1 pb-4">
+      <div className="relative mt-4 min-h-0 flex-1 pb-4">
         <div className="absolute inset-x-0 top-0 bottom-4 flex items-end gap-2">{plot}</div>
       </div>
     );
@@ -208,51 +209,63 @@ function executiveSummary(sections) {
   return (sections || []).find((section) => /executive summary/i.test(String(section.title || ""))) || null;
 }
 
-function useLockedRevenueHeight(revenueRef, insightsRef, active) {
+function useMatchedChartHeight(financialRef, insightsRef, chartRef, active) {
   const lockedHeight = useRef(0);
 
   useLayoutEffect(() => {
-    const revenue = revenueRef.current;
+    const financial = financialRef.current;
     const insights = insightsRef.current;
-    if (!active || !revenue || !insights) return undefined;
+    const chart = chartRef.current;
+    if (!active || !financial || !insights || !chart) return undefined;
 
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
-    // Opening the brief grows the insights card. Keep the revenue card at the collapsed height.
+    const minimum = 224;
+    // Size the chart to the collapsed columns. Opening the brief leaves that height alone.
     const sync = () => {
       if (!desktopQuery.matches) {
-        revenue.style.height = "";
+        chart.style.height = "";
         lockedHeight.current = 0;
         return;
       }
-      const expanded = Boolean(insights.querySelector("[aria-expanded='true']"));
-      if (!expanded) {
-        const next = insights.offsetHeight;
-        if (next) lockedHeight.current = next;
+      const open = Boolean(insights.querySelector("[aria-expanded='true']"));
+      if (!open) {
+        const gap = Number.parseFloat(getComputedStyle(chart.parentElement).rowGap) || 0;
+        const next = Math.max(minimum, Math.round(financial.getBoundingClientRect().height - insights.getBoundingClientRect().height - gap));
+        if (!lockedHeight.current || Math.abs(next - lockedHeight.current) > 2) lockedHeight.current = next;
       }
-      revenue.style.height = lockedHeight.current ? `${lockedHeight.current}px` : "";
+      const desired = lockedHeight.current ? `${lockedHeight.current}px` : "";
+      if (chart.style.height !== desired) chart.style.height = desired;
     };
 
     sync();
     const observer = new ResizeObserver(sync);
+    observer.observe(financial);
     observer.observe(insights);
+    const mutations = new MutationObserver(sync);
+    mutations.observe(insights, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-expanded"] });
+    window.addEventListener("resize", sync);
     desktopQuery.addEventListener("change", sync);
     return () => {
       observer.disconnect();
+      mutations.disconnect();
+      window.removeEventListener("resize", sync);
       desktopQuery.removeEventListener("change", sync);
-      revenue.style.height = "";
+      chart.style.height = "";
     };
-  }, [active, revenueRef, insightsRef]);
+  }, [active, financialRef, insightsRef, chartRef]);
 }
 
 function DemoDashboard({ user }) {
   const { data, error, live, tick } = useLiveFinances();
+  const brief = useClientBrief();
   const [highlights, setHighlights] = useState(null);
   const [commerce, setCommerce] = useState(null);
   const [summary, setSummary] = useState(null);
   const [aging, setAging] = useState([]);
-  const revenueRef = useRef(null);
+  const financialRef = useRef(null);
   const insightsRef = useRef(null);
-  useLockedRevenueHeight(revenueRef, insightsRef, Boolean(data));
+  const chartRef = useRef(null);
+  useMatchedChartHeight(financialRef, insightsRef, chartRef, Boolean(data));
 
   useEffect(() => {
     let stop = false;
@@ -316,18 +329,27 @@ function DemoDashboard({ user }) {
           </div>
           {summary ? <Statement section={summary} /> : null}
           <div className="grid items-start gap-4 lg:grid-cols-[2fr_3fr]">
-            <div ref={revenueRef}>
-              <Card className="flex h-full flex-col">
-                <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
-                <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
-                  <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
-                  <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
-                </div>
-                <MonthChart fill months={data.months} max={chartMax(data) * 1.15} />
-              </Card>
+            <div ref={financialRef} className="min-w-0">
+              <FinancialInsights
+                status={brief.status}
+                financial={brief.insights?.financial || null}
+                currency={brief.currency}
+              />
             </div>
-            <div ref={insightsRef}>
-              <AndysInsights always />
+            <div className="flex min-w-0 flex-col gap-4">
+              <div ref={insightsRef} className="min-w-0">
+                <AndysInsights always brief={brief} />
+              </div>
+              <div ref={chartRef} className="h-64 shrink-0">
+                <Card className="flex h-full flex-col">
+                  <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
+                  <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
+                  </div>
+                  <MonthChart fill months={data.months} max={chartMax(data) * 1.15} />
+                </Card>
+              </div>
             </div>
           </div>
           {commerce ? <EcommercePerformance points={commerce} /> : null}

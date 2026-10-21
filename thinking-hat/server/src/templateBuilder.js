@@ -157,11 +157,129 @@ export function expectedFamily(framework) {
   return "";
 }
 
+// Exact labels only. A UK import rewrites the left column and leaves every
+// other line alone. US clients never use this map.
+export const UK_GAAP_LABEL_MAP = [
+  ["Accounts Receivable", "Trade debtors"],
+  ["Accounts Payable", "Trade creditors"],
+  ["Inventory", "Stock"],
+  ["Inventories", "Stock"],
+  ["Merchandise inventory", "Stock"],
+  ["Income Statement", "Profit and loss"],
+  ["Statement of income", "Profit and loss"],
+  ["Stockholders' Equity", "Capital and reserves"],
+  ["Stockholder's Equity", "Capital and reserves"],
+  ["Stockholders Equity", "Capital and reserves"],
+  ["Retained earnings", "Profit and loss account"],
+  ["Cost of goods sold", "Cost of sales"],
+  ["Member drawings", "Partners' drawings"],
+  ["Members' drawings", "Partners' drawings"],
+  ["Members drawings", "Partners' drawings"],
+  ["Members' equity", "Capital and reserves"],
+  ["Members equity", "Capital and reserves"],
+  ["Common stock", "Called up share capital"],
+  ["Additional paid-in capital", "Share premium"],
+  ["Allowance for doubtful accounts", "Provision for doubtful debts"],
+  ["Prepaid expenses", "Prepayments"],
+  ["Property, plant and equipment", "Tangible fixed assets"],
+  ["Property, plant & equipment", "Tangible fixed assets"],
+  ["Sales tax payable", "VAT"],
+];
+
+// US terms with no safe UK equivalent. A UK import keeps the words and lists them.
+export const UNRECOGNISED_US_LABELS = [
+  "Deferred revenue",
+  "Unearned revenue",
+  "Treasury stock",
+  "Accumulated other comprehensive income",
+  "Other comprehensive income",
+  "Accumulated deficit",
+  "Paid-in capital",
+  "Par value",
+  "Federal income tax",
+  "State income tax",
+  "Sales tax",
+  "Checking account",
+  "Allowance for bad debts",
+];
+
+function normalLabel(value) {
+  return String(value || "")
+    .replace(/\u2019/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const UK_LABEL_BY_US = new Map(UK_GAAP_LABEL_MAP.map(([us, uk]) => [normalLabel(us), uk]));
+const UNRECOGNISED_US = new Set(UNRECOGNISED_US_LABELS.map((label) => normalLabel(label)));
+
+export function unrecognisedUsLabels({ sections = [], labels = [] } = {}) {
+  const found = [];
+  const seen = new Set();
+  const consider = (label) => {
+    const text = String(label || "").trim();
+    const key = normalLabel(text);
+    if (!key || seen.has(key) || UK_LABEL_BY_US.has(key) || !UNRECOGNISED_US.has(key)) return;
+    seen.add(key);
+    found.push(text);
+  };
+  for (const section of sectionConfigs(sections)) consider(section.title);
+  for (const label of labels) consider(label);
+  return found;
+}
+
+function labelsInDocument(document) {
+  const labels = [];
+  for (const report of document?.reports || []) {
+    for (const section of report?.sections || []) {
+      if (section?.title) labels.push(section.title);
+      for (const row of section?.rows || []) {
+        if (row?.label) labels.push(row.label);
+      }
+      for (const slice of section?.slices || []) {
+        if (slice?.label) labels.push(slice.label);
+      }
+    }
+  }
+  return labels;
+}
+
+function rewriteUkLabel(label, mapped) {
+  const text = String(label ?? "");
+  const key = normalLabel(text);
+  const to = key ? UK_LABEL_BY_US.get(key) : "";
+  if (!to) return text;
+  const from = text.trim();
+  if (!mapped.some((item) => item.from === from && item.to === to)) mapped.push({ from, to });
+  return to;
+}
+
+export function applyUkGaapLabels(document) {
+  const copy = structuredClone(document);
+  const mapped = [];
+  for (const report of copy?.reports || []) {
+    for (const section of report?.sections || []) {
+      if (section?.title) section.title = rewriteUkLabel(section.title, mapped);
+      for (const row of section?.rows || []) {
+        if (row?.label) row.label = rewriteUkLabel(row.label, mapped);
+      }
+      for (const slice of section?.slices || []) {
+        if (slice?.label) slice.label = rewriteUkLabel(slice.label, mapped);
+      }
+    }
+  }
+  return { document: copy, mapped };
+}
+
 export function layoutForFramework(framework) {
   return framework === "us-gaap" ? "purple-hat-demo" : "wealth-tech";
 }
 
-export function needsReview({ framework, layout, sections, reviewRequired } = {}) {
+export function needsReview({ framework, layout, sections, labels, reviewRequired } = {}) {
+  if (framework === "uk-gaap") {
+    return unrecognisedUsLabels({ sections, labels }).length > 0 || Boolean(reviewRequired);
+  }
   if (reviewRequired) return true;
   const family = labelFamily({ layout, sections });
   const expected = expectedFamily(framework);
@@ -169,12 +287,19 @@ export function needsReview({ framework, layout, sections, reviewRequired } = {}
   return family !== expected;
 }
 
-export function reviewReason({ framework, layout, sections, reviewRequired } = {}) {
-  const family = labelFamily({ layout, sections });
-  const expected = expectedFamily(framework);
-  if (family && expected && family !== expected) {
-    const labels = family === "us" ? "US labels" : "UK labels";
-    return `${labels} do not match ${frameworkLabel(framework, { short: true }) || "this framework"}. Review this template before using it.`;
+export function reviewReason({ framework, layout, sections, labels, reviewRequired } = {}) {
+  if (framework === "uk-gaap") {
+    const unknown = unrecognisedUsLabels({ sections, labels });
+    if (unknown.length) {
+      return `US labels do not match UK GAAP: ${unknown.join(", ")}. Review this template before using it.`;
+    }
+  } else {
+    const family = labelFamily({ layout, sections });
+    const expected = expectedFamily(framework);
+    if (family && expected && family !== expected) {
+      const labelName = family === "us" ? "US labels" : "UK labels";
+      return `${labelName} do not match ${frameworkLabel(framework, { short: true }) || "this framework"}. Review this template before using it.`;
+    }
   }
   if (reviewRequired) return "Copied from another client. Review it before using the template.";
   return "Review this template before using it.";
@@ -190,10 +315,11 @@ export function describeTemplate({
   layout,
   sections,
   reviewRequired,
+  labels,
   updatedAt,
 } = {}) {
   const configs = sectionConfigs(sections);
-  const flagged = needsReview({ framework, layout, sections: configs, reviewRequired });
+  const flagged = needsReview({ framework, layout, sections: configs, labels, reviewRequired });
   return {
     id: id == null ? null : Number(id),
     name: name || "",
@@ -209,7 +335,7 @@ export function describeTemplate({
     chips: chipsFor(configs),
     updatedAt: updatedAt || "",
     needsReview: flagged,
-    reviewReason: flagged ? reviewReason({ framework, layout, sections: configs, reviewRequired }) : "",
+    reviewReason: flagged ? reviewReason({ framework, layout, sections: configs, labels, reviewRequired }) : "",
   };
 }
 
@@ -394,10 +520,24 @@ export function planImport({ client, document, takenNames = [] } = {}) {
   if (!template?.name) return { error: "Name the template." };
   const layout = template.layout === "purple-hat-demo" ? "purple-hat-demo" : template.layout === "wealth-tech" ? "wealth-tech" : "";
   if (!layout) return { error: "Use a WealthTech or Purple Hat Demo layout." };
-  const sections = sectionsFromDocument(document);
   const framework = client?.framework || "";
-  const reviewRequired = needsReview({ framework, layout, sections, reviewRequired: false });
+  let working = document;
+  let mappedLabels = [];
+  if (framework === "uk-gaap") {
+    const applied = applyUkGaapLabels(document);
+    working = applied.document;
+    mappedLabels = applied.mapped;
+  }
+  const sections = sectionsFromDocument(working);
+  const reviewRequired = needsReview({
+    framework,
+    layout,
+    sections,
+    labels: labelsInDocument(working),
+    reviewRequired: false,
+  });
   return {
+    document: working,
     value: {
       name: uniqueName(template.name, takenNames, "import"),
       layout,
@@ -407,6 +547,7 @@ export function planImport({ client, document, takenNames = [] } = {}) {
       period: client?.period || "",
       sections,
       reviewRequired,
+      mappedLabels,
       reuseFileKey: false,
       pushToClients: false,
     },

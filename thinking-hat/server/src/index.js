@@ -625,10 +625,12 @@ app.get("/api/me/insights", requireAuth, async (req, res) => {
       bot_name: bot?.name || "",
       bot_source: bot?.source || "",
     });
-    res.json(result);
+    res.set("Cache-Control", "no-store");
+    res.json({ ...result, currency: bot?.currency || "" });
   } catch (error) {
     console.error(error);
-    res.json({ configured: false, botName: null, insights: null });
+    res.set("Cache-Control", "no-store");
+    res.json({ configured: false, botName: null, insights: null, currency: "" });
   }
 });
 

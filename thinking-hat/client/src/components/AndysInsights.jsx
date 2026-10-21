@@ -71,7 +71,7 @@ function Brief({ insights, title, open, onToggle }) {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p>
         {updated ? <p className="shrink-0 text-xs text-mute">{updated}</p> : null}
       </div>
-      <h3 className="mt-2 font-display text-lg font-extrabold leading-snug text-ink">{insights.headline}</h3>
+      <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{insights.headline}</h3>
       <ClippedBody open={open}>
         {visible.length ? (
           <ol className="mt-4 space-y-3">
@@ -117,9 +117,8 @@ function EmptyBrief({ configured, title }) {
   );
 }
 
-export default function AndysInsights({ always = false, fallback = null }) {
-  const [state, setState] = useState({ status: "loading", configured: false, botName: "", insights: null });
-  const [open, setOpen] = useState(false);
+export function useClientBrief({ missingOnError = false } = {}) {
+  const [state, setState] = useState({ status: "loading", configured: false, botName: "", insights: null, currency: "" });
 
   useEffect(() => {
     let stop = false;
@@ -131,14 +130,22 @@ export default function AndysInsights({ always = false, fallback = null }) {
           configured: Boolean(data.configured),
           botName: data.botName || "",
           insights: data.insights || null,
+          currency: data.currency || "",
         });
       })
       .catch(() => {
-        if (!stop) setState({ status: "ready", configured: always, botName: "", insights: null });
+        if (!stop) {
+          setState({ status: "ready", configured: !missingOnError, botName: "", insights: null, currency: "" });
+        }
       });
     return () => { stop = true; };
-  }, [always]);
+  }, [missingOnError]);
 
+  return state;
+}
+
+function InsightsView({ always = false, fallback = null, state }) {
+  const [open, setOpen] = useState(false);
   if (state.status === "ready" && !always && !state.configured) return fallback;
   const showBrief = state.status === "ready" && state.insights;
   const showEmpty = state.status === "ready" && !state.insights;
@@ -154,4 +161,14 @@ export default function AndysInsights({ always = false, fallback = null }) {
       ) : null}
     </Card>
   );
+}
+
+function OwnInsights(props) {
+  const state = useClientBrief({ missingOnError: true });
+  return <InsightsView {...props} state={state} />;
+}
+
+export default function AndysInsights({ brief = null, ...props }) {
+  if (brief) return <InsightsView {...props} state={brief} />;
+  return <OwnInsights {...props} />;
 }

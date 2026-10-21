@@ -173,6 +173,8 @@ export default function AdminTemplateBuilder() {
   const options = catalog?.options;
   const selectedId = preferredClientId(clients, requested);
   const selected = clients.find((client) => String(client.id) === selectedId) || null;
+  const assignedBot = bots.find((bot) => bot.id === selected?.grokBotId) || null;
+
   const shown = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return clients;
@@ -516,7 +518,7 @@ export default function AdminTemplateBuilder() {
                     {selected.currency} · Year end {selected.yearEndLabel} · {selected.periodLabel}
                   </p>
                   <div className="mt-4 max-w-md">
-                    <Field label="Grok bot assigned" hint="One bot for this client, or none. The dashboard uses that bot's name and file.">
+                    <Field label="Grok bot assigned" hint="One bot for this client, or none. That bot's file feeds both dashboard cards.">
                       <select
                         className={inputClass}
                         value={selected.grokBotId ? String(selected.grokBotId) : ""}
@@ -527,6 +529,9 @@ export default function AdminTemplateBuilder() {
                         {bots.map((bot) => <option key={bot.id} value={String(bot.id)}>{bot.name}</option>)}
                       </select>
                     </Field>
+                    {assignedBot?.fileId ? (
+                      <p className="mt-2 break-all text-xs text-mute">Insights file: {assignedBot.fileId}</p>
+                    ) : null}
                     {canManage ? (
                       <button type="button" className="mt-3 text-sm font-semibold text-plum" onClick={openBots}>
                         Add, edit, or remove bots

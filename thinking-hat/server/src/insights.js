@@ -55,6 +55,14 @@ export function parseInsights(value) {
     .slice(0, 8);
   const title = cleanText(value.title, 80);
   const joke = cleanText(value.joke, 400);
+  let financial = null;
+  if (value.financial != null) {
+    try {
+      financial = parseFinancialInsights(value.financial);
+    } catch {
+      financial = null;
+    }
+  }
   return {
     updated,
     client: cleanText(value.client, 120),
@@ -63,6 +71,7 @@ export function parseInsights(value) {
     findings,
     actions,
     ...(joke ? { joke } : {}),
+    ...(financial ? { financial } : {}),
   };
 }
 
@@ -85,6 +94,60 @@ export function botInsightsTitle(name) {
   const text = cleanText(name, 80);
   if (!text) return "";
   return `${text}'s insights`;
+}
+
+function moneyValue(value) {
+  if (value == null || value === "") return null;
+  const number = typeof value === "number" ? value : Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(number)) return null;
+  return Math.round(number * 100) / 100;
+}
+
+function bulletList(value) {
+  return (Array.isArray(value) ? value : []).slice(0, 8).flatMap((item) => {
+    const text = cleanText(typeof item === "string" ? item : item?.text || item?.detail || item?.title, 500);
+    return text ? [text] : [];
+  });
+}
+
+function moneySide(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const total = moneyValue(value.total);
+  const overdue = moneyValue(value.overdue);
+  const note = cleanText(value.note, 800);
+  if (total == null && overdue == null && !note) return null;
+  return {
+    ...(total == null ? {} : { total }),
+    ...(overdue == null ? {} : { overdue }),
+    ...(note ? { note } : {}),
+  };
+}
+
+export function parseFinancialInsights(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Financial insights file must be a JSON object.");
+  }
+  const updated = cleanText(value.updated, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(updated)) throw new Error("Financial insights need an updated date.");
+  const headline = cleanText(value.headline, 500);
+  const title = cleanText(value.title, 80);
+  const period = cleanText(value.period, 80);
+  const receivables = moneySide(value.receivables);
+  const payables = moneySide(value.payables);
+  const currentMonth = bulletList(value.current_month);
+  const trends = bulletList(value.trends);
+  const actions = bulletList(value.actions);
+  return {
+    updated,
+    ...(title ? { title } : {}),
+    ...(period ? { period } : {}),
+    ...(headline ? { headline } : {}),
+    ...(receivables ? { receivables } : {}),
+    ...(payables ? { payables } : {}),
+    currentMonth,
+    trends,
+    actions,
+  };
 }
 
 export function grokBotInput(input = {}) {
@@ -110,16 +173,25 @@ async function readJsonResponse(response) {
   return JSON.parse(text);
 }
 
+function driveReadUrl(fileId) {
+  const apiKey = process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_API_KEY || "";
+  const bust = `cb=${Date.now()}`;
+  if (apiKey) {
+    return `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&key=${encodeURIComponent(apiKey)}&${bust}`;
+  }
+  return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}&${bust}`;
+}
+
 async function readRemote(source, fetchImpl) {
   const fileId = driveFileId(source);
-  const apiKey = process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_API_KEY || "";
-  const url = fileId
-    ? (apiKey
-      ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&key=${encodeURIComponent(apiKey)}`
-      : `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}`)
-    : source;
+  const url = fileId ? driveReadUrl(fileId) : source;
   if (!fileId && !/^https:\/\//i.test(source)) throw new Error("Insights source is not a file link.");
-  return readJsonResponse(await fetchImpl(url, { redirect: "follow" }));
+  const init = { redirect: "follow" };
+  if (fileId) {
+    init.cache = "no-store";
+    init.headers = { "Cache-Control": "no-store" };
+  }
+  return readJsonResponse(await fetchImpl(url, init));
 }
 
 function readSample(source) {
@@ -133,6 +205,7 @@ export function createInsightLoader({
   now = () => Date.now(),
   fetchImpl = globalThis.fetch,
   cacheMs = INSIGHTS_CACHE_MS,
+  parse = parseInsights,
 } = {}) {
   const cache = new Map();
   const pending = new Map();
@@ -142,14 +215,15 @@ export function createInsightLoader({
     const botName = botNameOf(user);
     if (!source) return { configured: false, botName: null, insights: null };
     const key = `${user?.id ?? ""}:${source}`;
-    const hit = cache.get(key);
+    const fromDrive = Boolean(driveFileId(source));
+    const hit = fromDrive ? null : cache.get(key);
     if (hit && now() - hit.at < cacheMs) return { configured: true, botName, insights: hit.insights };
     if (pending.has(key)) return pending.get(key);
 
     const job = (async () => {
       const raw = source.startsWith("sample:") ? readSample(source) : await readRemote(source, fetchImpl);
-      const insights = parseInsights(raw);
-      cache.set(key, { at: now(), insights });
+      const insights = parse(raw);
+      if (!fromDrive) cache.set(key, { at: now(), insights });
       return { configured: true, botName, insights };
     })();
     pending.set(key, job);

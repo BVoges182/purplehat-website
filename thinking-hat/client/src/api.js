@@ -14,7 +14,7 @@ export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler;
 }
 
-async function request(path, { method = "GET", body } = {}) {
+async function request(path, { method = "GET", body, cache } = {}) {
   const headers = {};
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -27,7 +27,7 @@ async function request(path, { method = "GET", body } = {}) {
   }
   let response;
   try {
-    response = await fetch(path, { method, headers, body: payload });
+    response = await fetch(path, { method, headers, body: payload, cache });
   } catch {
     throw new ApiError("Cannot reach Thinking Hat. Start the server and try again.", 0);
   }
@@ -78,7 +78,7 @@ export const api = {
   updateMe: (body) => request("/api/me", { method: "PATCH", body }),
   uploadPhoto: (file) => request("/api/me/photo", { method: "POST", body: photoBody(file) }),
   finances: () => request("/api/me/finances"),
-  insights: () => request("/api/me/insights"),
+  insights: () => request(`/api/me/insights?cb=${Date.now()}`, { cache: "no-store" }),
   reports: () => request("/api/me/reports"),
   report: (month) => request(`/api/me/reports/${month}`),
   userReport: (id, month) => request(`/api/admin/users/${id}/reports/${month}`),

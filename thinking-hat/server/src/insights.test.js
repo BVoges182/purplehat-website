@@ -8,6 +8,7 @@ import {
   insightSource,
   insightsFileLabel,
   insightsFileSource,
+  parseFinancialInsights,
   parseInsights,
 } from "./insights.js";
 
@@ -50,6 +51,37 @@ test("reads an optional title and joke, and leaves them out when blank", () => {
 
   const long = parseInsights({ ...brief, joke: "a".repeat(500) });
   assert.equal(long.joke.length, 400);
+});
+
+test("keeps a nested financial brief and ignores a bad one", () => {
+  const parsed = parseInsights({
+    ...brief,
+    financial: {
+      updated: "2026-10-21",
+      period: "Sep 2026",
+      headline: "A short month.",
+      receivables: { total: 3000, overdue: 0, note: "Unchanged." },
+      payables: { total: 2867, overdue: 2807 },
+      current_month: ["One"],
+      trends: ["Two"],
+      actions: ["Three"],
+    },
+  });
+  assert.equal(parsed.headline, "Cash is healthy.");
+  assert.equal(parsed.financial.period, "Sep 2026");
+  assert.equal(parsed.financial.receivables.total, 3000);
+  assert.equal(parsed.financial.receivables.overdue, 0);
+  assert.equal(parsed.financial.payables.overdue, 2807);
+  assert.deepEqual(parsed.financial.currentMonth, ["One"]);
+  assert.deepEqual(parsed.financial.trends, ["Two"]);
+  assert.deepEqual(parsed.financial.actions, ["Three"]);
+
+  const plain = parseInsights(brief);
+  assert.equal(Object.hasOwn(plain, "financial"), false);
+
+  const broken = parseInsights({ ...brief, financial: { headline: "no date" } });
+  assert.equal(broken.headline, "Cash is healthy.");
+  assert.equal(Object.hasOwn(broken, "financial"), false);
 });
 
 test("rejects a brief without a headline or date", () => {
@@ -116,6 +148,27 @@ test("caches a fetched brief for an hour and keeps clients apart", async () => {
   assert.equal(calls.length, 3);
 });
 
+test("a Drive file is read again on every load and is not stored", async () => {
+  const calls = [];
+  const loader = createInsightLoader({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, cache: options?.cache, control: options?.headers?.["Cache-Control"] });
+      return new Response(JSON.stringify({ ...brief, joke: "You cannot be serious." }), { status: 200 });
+    },
+  });
+  const user = { id: 6, bot_name: "John McEnroe", bot_source: "drive:1HhuQmZx_kqSzQJrkBWll6M2QmmqeQnkL" };
+  const first = await loader.load(user);
+  const second = await loader.load(user);
+  assert.equal(first.insights.joke, "You cannot be serious.");
+  assert.equal(second.insights.joke, "You cannot be serious.");
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].url, /export=download&id=1HhuQmZx_kqSzQJrkBWll6M2QmmqeQnkL&cb=\d+/);
+  assert.match(calls[1].url, /&cb=\d+/);
+  assert.equal(calls[0].cache, "no-store");
+  assert.equal(calls[0].control, "no-store");
+  assert.equal(loader.cache.size, 0);
+});
+
 test("a missing file stays empty without inventing a brief", async () => {
   const loader = createInsightLoader({
     fetchImpl: async () => {
@@ -132,6 +185,47 @@ test("a missing file stays empty without inventing a brief", async () => {
   assert.equal(failed.configured, true);
   assert.equal(failed.botName, "Andy Murray");
   assert.equal(failed.insights, null);
+});
+
+test("parses a financial insights file and drops blank lines", () => {
+  const parsed = parseFinancialInsights({
+    updated: "2026-10-20",
+    title: " Financial insights ",
+    period: " December 2026 ",
+    headline: " Overdue is small. ",
+    receivables: { total: "12,500", overdue: 1900, note: " 30 days. " },
+    payables: { total: 8400, overdue: 1300 },
+    current_month: [" Revenue held up. ", ""],
+    trends: [{ text: " Expenses stayed below revenue. " }],
+    actions: [" Chase the 30-day book. "],
+  });
+  assert.equal(parsed.title, "Financial insights");
+  assert.equal(parsed.period, "December 2026");
+  assert.equal(parsed.headline, "Overdue is small.");
+  assert.equal(parsed.receivables.total, 12500);
+  assert.equal(parsed.receivables.overdue, 1900);
+  assert.equal(parsed.receivables.note, "30 days.");
+  assert.equal(parsed.payables.total, 8400);
+  assert.deepEqual(parsed.currentMonth, ["Revenue held up."]);
+  assert.deepEqual(parsed.trends, ["Expenses stayed below revenue."]);
+  assert.deepEqual(parsed.actions, ["Chase the 30-day book."]);
+});
+
+test("rejects a financial file without an updated date", () => {
+  assert.throws(() => parseFinancialInsights({ headline: "Hello", receivables: { total: 1 } }));
+  assert.throws(() => parseFinancialInsights({ updated: "20 October 2026", headline: "Hello" }));
+});
+
+test("the Purple Hat financial sample is a valid brief", async () => {
+  const loader = createInsightLoader({ parse: parseFinancialInsights });
+  const result = await loader.load({ id: 6, bot_source: "sample:purple-hat-financial" });
+  assert.equal(result.configured, true);
+  assert.equal(result.insights.title, "Financial insights");
+  assert.equal(result.insights.period, "December 2026");
+  assert.equal(result.insights.receivables.overdue, 1900);
+  assert.equal(result.insights.payables.total, 8400);
+  assert.ok(result.insights.currentMonth.length >= 1);
+  assert.ok(result.insights.actions.length >= 1);
 });
 
 test("the Purple Hat Demo sample file is a valid brief", async () => {

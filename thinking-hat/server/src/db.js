@@ -272,6 +272,9 @@ const builderClientColumns = db.prepare("PRAGMA table_info(builder_clients)").al
 if (!builderClientColumns.some((column) => column.name === "grok_bot_id")) {
   db.exec("ALTER TABLE builder_clients ADD COLUMN grok_bot_id INTEGER");
 }
+if (!builderClientColumns.some((column) => column.name === "financial_insights_source")) {
+  db.exec("ALTER TABLE builder_clients ADD COLUMN financial_insights_source TEXT NOT NULL DEFAULT ''");
+}
 db.exec(`
 CREATE TABLE IF NOT EXISTS app_flags (
   name TEXT PRIMARY KEY,
@@ -908,6 +911,7 @@ function clientRecord(row) {
     yearEnd: row.year_end,
     period: row.period,
     grokBotId: row.grok_bot_id ? Number(row.grok_bot_id) : null,
+    financialInsightsSource: row.financial_insights_source || "",
   };
 }
 
@@ -922,9 +926,31 @@ function presentStoredTemplate(template, client) {
     yearEnd: template.year_end || record.yearEnd,
     layout: template.report_template === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech",
     sections: readTemplateSections(template),
+    labels: templateLineLabels(template.id),
     reviewRequired: Number(template.review_required) === 1,
     updatedAt: template.updated_at || template.created_at,
   });
+}
+
+function templateLineLabels(templateId) {
+  const rows = db.prepare(
+    "SELECT content_json FROM client_template_reports WHERE template_id = ?",
+  ).all(templateId);
+  const labels = [];
+  for (const row of rows) {
+    try {
+      const content = JSON.parse(row.content_json);
+      for (const section of content.sections || []) {
+        if (section?.title) labels.push(section.title);
+        for (const line of section?.rows || []) {
+          if (line?.label) labels.push(line.label);
+        }
+      }
+    } catch {
+      /* A stored report that is not JSON does not add labels. */
+    }
+  }
+  return labels;
 }
 
 function takenTemplateNames() {
@@ -1071,13 +1097,15 @@ export function listGrokBots() {
 
 export function assignedGrokBot(userId) {
   const row = db.prepare(
-    `SELECT grok_bots.name AS name, grok_bots.insights_source AS insights_source
+    `SELECT grok_bots.name AS name,
+            grok_bots.insights_source AS insights_source,
+            builder_clients.currency AS currency
      FROM builder_clients
-     JOIN grok_bots ON grok_bots.id = builder_clients.grok_bot_id
+     LEFT JOIN grok_bots ON grok_bots.id = builder_clients.grok_bot_id
      WHERE builder_clients.user_id = ?`,
   ).get(userId);
   if (!row) return null;
-  return { name: row.name, source: row.insights_source };
+  return { name: row.name || "", source: row.insights_source || "", currency: row.currency || "" };
 }
 
 export function createGrokBot(input) {
@@ -1366,9 +1394,12 @@ export function importBuilderTemplate(clientId, document) {
       clientId: record.id,
       sourceBusiness: document.template.sourceBusiness || record.name,
     },
-    { document },
+    { document: planned.document || document },
   );
-  return { template: loadBuilderTemplate(record.id, id) };
+  return {
+    template: loadBuilderTemplate(record.id, id),
+    mappedLabels: planned.value.mappedLabels || [],
+  };
 }
 
 export function bootstrapEmail() {
