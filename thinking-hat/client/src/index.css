@@ -55,6 +55,15 @@ h1, h2, h3, .font-display {
   animation: app-menu-in 160ms ease-out;
 }
 
+@keyframes app-switch-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.app-switch-in {
+  animation: app-switch-in 160ms ease-out;
+}
+
 @media (max-width: 767px) {
   .app-shell .text-xs,
   .app-shell .text-\[10px\] {
@@ -68,5 +77,5 @@ h1, h2, h3, .font-display {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-menu-panel { animation: none; }
+  .app-menu-panel, .app-switch-in { animation: none; }
 }

@@ -1,6 +1,7 @@
+import { useState } from "react";
 import AgingSummary from "./AgingSummary";
 import EcommercePerformance from "./EcommercePerformance";
-import { Card } from "./ui";
+import { Card, SegmentedPills } from "./ui";
 import { ecommerceSeries, reportFigure } from "../reportMoney";
 
 function amountClass(value, strong) {
@@ -53,6 +54,135 @@ function isOtherLabel(label) {
   return /^other$/i.test(String(label || "").trim());
 }
 
+function roundHalfAway(value, digits) {
+  const factor = 10 ** digits;
+  const sign = value < 0 ? -1 : 1;
+  return (sign * Math.round(Math.abs(value) * factor)) / factor;
+}
+
+function formatCount(value) {
+  const digits = Number.isInteger(value) ? 0 : 1;
+  return new Intl.NumberFormat("en-GB", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+}
+
+function periodPill(column) {
+  const text = String(column || "").trim();
+  if (/year to date|^ytd$/i.test(text)) return "YTD";
+  const match = text.match(/\b(January|February|March|April|May|June|July|August|September|Sept|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i);
+  const short = {
+    january: "Jan", jan: "Jan", february: "Feb", feb: "Feb", march: "Mar", mar: "Mar",
+    april: "Apr", apr: "Apr", may: "May", june: "Jun", jun: "Jun", july: "Jul", jul: "Jul",
+    august: "Aug", aug: "Aug", september: "Sep", sept: "Sept", sep: "Sep",
+    october: "Oct", oct: "Oct", november: "Nov", nov: "Nov", december: "Dec", dec: "Dec",
+  };
+  return match ? short[match[1].toLowerCase()] || match[1] : text;
+}
+
+function summarySubtotal(label) {
+  return /^(cash surplus \(deficit\)|gross profit \(loss\)|net profit \(loss\))$/i.test(String(label || "").trim());
+}
+
+function costLine(label) {
+  return /^(cash spent|cost of sales|expenses|member drawings|partners' drawings)$/i.test(String(label || "").trim());
+}
+
+function lineChange(current, previous, row) {
+  const format = row.formats?.[0] || "money";
+  const points = format === "percent" || format === "percent2";
+  const cost = costLine(row.label);
+  const now = Number(current);
+  const then = Number(previous);
+  if (!Number.isFinite(now) || !Number.isFinite(then)) return null;
+  if (points) {
+    const pp = (now - then) * 100;
+    const shown = Math.abs(pp) >= 10 ? roundHalfAway(pp, 0) : roundHalfAway(pp, 1);
+    if (shown === 0) return null;
+    return { up: shown > 0, favourable: shown > 0, text: `${formatCount(Math.abs(shown))} pp` };
+  }
+  const delta = now - then;
+  const basis = cost ? Math.abs(now) - Math.abs(then) : delta;
+  const shown = roundHalfAway(basis, 0);
+  if (shown === 0) return null;
+  const previousShown = roundHalfAway(then, 0);
+  const base = cost ? Math.abs(then) : then;
+  const usePercent = previousShown > 0 && base > 0;
+  const text = usePercent
+    ? `${formatCount(Math.abs(roundHalfAway((basis / base) * 100, 0)))}%`
+    : formatCount(Math.abs(shown));
+  return { up: shown > 0, favourable: cost ? shown < 0 : shown > 0, text };
+}
+
+function summaryGroups(rows) {
+  const groups = [];
+  let current = null;
+  for (const row of rows || []) {
+    if (row.kind === "heading") {
+      current = { label: row.label, rows: [] };
+      groups.push(current);
+      continue;
+    }
+    if (!current) {
+      current = { label: "", rows: [] };
+      groups.push(current);
+    }
+    current.rows.push(row);
+  }
+  return groups;
+}
+
+function ChangeMark({ change }) {
+  return (
+    <span className={`text-xs font-semibold ${change.favourable ? "text-emerald-700" : "text-rose-700"}`}>
+      {change.up ? "▲" : "▼"} {change.text}
+    </span>
+  );
+}
+
+function ExecutiveSummaryMobile({ section }) {
+  const columns = section.columns || [];
+  const periods = columns.map((column, index) => ({
+    id: String(index),
+    index,
+    label: periodPill(column),
+    ytd: /year to date|^ytd$/i.test(String(column || "").trim()),
+  }));
+  const latest = periods.find((period) => !period.ytd) || periods[0];
+  const [selected, setSelected] = useState(latest?.id || "0");
+  const period = periods.find((item) => item.id === selected) || latest;
+  const earlier = period && !period.ytd
+    ? periods.find((item) => !item.ytd && item.index > period.index) || null
+    : null;
+  const groups = summaryGroups(section.rows);
+  if (!period) return null;
+  return (
+    <div className="mt-4 md:hidden">
+      <SegmentedPills label="Period" options={periods} value={period.id} onChange={setSelected} />
+      <div key={period.id} className="app-switch-in mt-2">
+        {groups.map((group) => (
+          <div key={group.label || "lines"}>
+            {group.label ? <p className="pt-4 font-display text-sm font-extrabold text-neutral-950">{group.label}</p> : null}
+            {group.rows.map((row, index) => {
+              const subtotal = summarySubtotal(row.label);
+              const change = earlier ? lineChange(row.values?.[period.index], row.values?.[earlier.index], row) : null;
+              return (
+                <div key={`${row.label}-${index}`} className={subtotal ? "mt-1 rounded-xl bg-neutral-100 px-3" : "border-t border-neutral-200"}>
+                  <div className="flex items-baseline justify-between gap-3 py-2.5">
+                    <p className={`min-w-0 ${subtotal ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`}>{row.label}</p>
+                    <p className="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
+                      <span className={`tabular-nums ${subtotal ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`}>{reportFigure(row.values?.[period.index], row.formats?.[period.index])}</span>
+                      {change ? <ChangeMark change={change} /> : null}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function displayTitle(section) {
   const title = String(section.title || "").replace(/\s+by\s+contact\b/gi, "").replace(/\s+/g, " ").trim();
   if (section.presentation !== "contacts") return String(section.title || "");
@@ -84,7 +214,7 @@ export function Statement({ section }) {
       <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
       {subtitleLine(section)}
       {visibleNote(section.note) ? <p className="mt-1 text-sm text-neutral-500">{visibleNote(section.note)}</p> : null}
-      <div className="mt-4 hidden sm:block">
+      <div className={`mt-4 hidden ${executiveSummary ? "md:block" : "sm:block"}`}>
         <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
@@ -118,7 +248,8 @@ export function Statement({ section }) {
           </tbody>
         </table>
       </div>
-      <div className="mt-4 space-y-3 sm:hidden">
+      {executiveSummary ? <ExecutiveSummaryMobile section={section} /> : null}
+      <div className={`mt-4 space-y-3 sm:hidden ${executiveSummary ? "hidden" : ""}`}>
         {(section.rows || []).map((row, index) => {
           if (row.kind === "heading") {
             return <p key={`${row.label}-${index}`} className="pt-1 font-display text-sm font-extrabold text-neutral-950" style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>;

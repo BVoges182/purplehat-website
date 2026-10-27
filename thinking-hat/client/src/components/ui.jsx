@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export const inputClass = "w-full rounded-2xl border border-[rgba(109,40,217,0.16)] bg-white px-4 py-3 text-ink outline-none transition focus:border-plum";
 
 export function money(value) {
@@ -74,6 +76,44 @@ export function Button({ children, variant = "primary", className = "", ...props
     >
       {children}
     </button>
+  );
+}
+
+export function SegmentedPills({ options, value, onChange, label }) {
+  const scroller = useRef(null);
+  useEffect(() => {
+    const track = scroller.current;
+    const active = track?.querySelector("[aria-selected='true']");
+    if (!active || !track) return;
+    const trackBox = track.getBoundingClientRect();
+    const activeBox = active.getBoundingClientRect();
+    let left = track.scrollLeft;
+    if (activeBox.right > trackBox.right - 8) left += activeBox.right - (trackBox.right - 8);
+    if (activeBox.left < trackBox.left + 8) left -= (trackBox.left + 8) - activeBox.left;
+    track.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [value]);
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)]">
+      <div ref={scroller} className="overflow-x-auto" role="tablist" aria-label={label}>
+        <div className="flex w-max gap-1 rounded-full bg-[#f6f3ff] p-1">
+          {options.map((option) => {
+            const active = option.id === value;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${active ? "bg-plum text-white shadow-card" : "text-mute"}`}
+                onClick={() => onChange(option.id)}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
