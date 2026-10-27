@@ -144,8 +144,17 @@ function isEmail(value) {
   return isInviteEmail(value);
 }
 
+function configuredAppUrl() {
+  return String(process.env.APP_URL || "").trim().replace(/\/$/, "");
+}
+
+function appLoginHref() {
+  const configured = configuredAppUrl();
+  return configured ? `${configured}/login` : "/login";
+}
+
 function requestOrigin(req) {
-  const configured = String(process.env.APP_URL || "").trim().replace(/\/$/, "");
+  const configured = configuredAppUrl();
   if (configured) return configured;
   const host = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim().toLowerCase();
   const proto = String(req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
@@ -1892,6 +1901,14 @@ if (siteRoot) {
       next();
       return;
     }
+    if (fileName.endsWith(".html")) {
+      const loginHref = appLoginHref();
+      let html = fs.readFileSync(filePath, "utf8");
+      if (loginHref !== "/login") html = html.replaceAll('href="/login"', `href="${loginHref}"`);
+      res.setHeader("Cache-Control", "no-cache");
+      res.type("html").send(html);
+      return;
+    }
     res.sendFile(filePath);
   });
 }
@@ -1907,6 +1924,7 @@ if (fs.existsSync(path.join(clientDist, "index.html"))) {
       next();
       return;
     }
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }
