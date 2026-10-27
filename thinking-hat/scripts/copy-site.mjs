@@ -9,7 +9,7 @@ if (!fs.existsSync(source)) process.exit(0);
 
 const dest = path.join(appRoot, "site");
 fs.mkdirSync(dest, { recursive: true });
-for (const name of ["index.html", "integrations.html", "integrations-booking-calendar.html", "logo.png"]) {
+for (const name of ["index.html", "integrations.html", "integrations-booking-calendar.html", "privacy.html", "terms.html", "about.html", "contact.html", "disclaimer.html", "logo.png"]) {
   const from = path.join(repoRoot, name);
   if (fs.existsSync(from)) fs.copyFileSync(from, path.join(dest, name));
 }

@@ -86,6 +86,16 @@ import {
   tokenProblem,
 } from "./passwordReset.js";
 import {
+  CONTACT_SEND_FAILED,
+  CONTACT_SUCCESS,
+  CONTACT_WAIT,
+  buildContactMessage,
+  deliverContactMessage,
+  parseContact,
+  releaseContactSlot,
+  takeContactSlot,
+} from "./contactForm.js";
+import {
   buildInviteMessage,
   deliverInviteEmail,
   displayInviteStatus,
@@ -637,6 +647,34 @@ app.post("/api/auth/reset-password", rateLimit, (req, res) => {
     usedAt: nowIso(),
   });
   res.json({ message: PASSWORD_UPDATED });
+});
+
+app.post("/api/contact", rateLimit, async (req, res) => {
+  const parsed = parseContact(req.body);
+  if (parsed.spam) {
+    res.json({ message: CONTACT_SUCCESS });
+    return;
+  }
+  if (parsed.fields) {
+    res.status(400).json({ error: "Please check the form.", fields: parsed.fields });
+    return;
+  }
+  if (!takeContactSlot(req.ip)) {
+    res.status(429).json({ error: CONTACT_WAIT });
+    return;
+  }
+  const message = buildContactMessage(parsed);
+  const config = readMailConfig();
+  const delivery = await Promise.race([
+    deliverContactMessage({ message, config, sendSmtp: sendSmtpMail }),
+    new Promise((resolve) => setTimeout(() => resolve({ ok: false }), 8000)),
+  ]);
+  if (!delivery?.ok) {
+    releaseContactSlot(req.ip);
+    res.status(502).json({ error: CONTACT_SEND_FAILED });
+    return;
+  }
+  res.json({ message: CONTACT_SUCCESS });
 });
 
 app.post("/api/auth/login", rateLimit, (req, res) => {
@@ -1789,6 +1827,16 @@ const marketingFiles = {
   "/index.html": "index.html",
   "/integrations.html": "integrations.html",
   "/integrations-booking-calendar.html": "integrations-booking-calendar.html",
+  "/privacy": "privacy.html",
+  "/privacy.html": "privacy.html",
+  "/terms": "terms.html",
+  "/terms.html": "terms.html",
+  "/about": "about.html",
+  "/about.html": "about.html",
+  "/contact": "contact.html",
+  "/contact.html": "contact.html",
+  "/disclaimer": "disclaimer.html",
+  "/disclaimer.html": "disclaimer.html",
   "/logo.png": "logo.png",
 };
 

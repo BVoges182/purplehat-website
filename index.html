@@ -171,7 +171,7 @@
         <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
       </a>
       <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
-        <a class="nav-link" href="#about">About</a>
+        <a class="nav-link whitespace-nowrap" href="#about">About the Practice</a>
         <a class="nav-link" href="#practice">What I Do</a>
         <a class="nav-link" href="#services">Services</a>
         <div class="nav-item">
@@ -184,7 +184,7 @@
             <a href="integrations-booking-calendar.html">Booking calendar</a>
           </div>
         </div>
-        <a class="nav-link" href="#contact">Contact</a>
+        <a class="nav-link" href="/contact">Contact</a>
       </nav>
       <div class="flex items-center gap-2">
         <a class="btn btn-ghost !min-h-10 hidden !px-4 text-sm xl:inline-flex" href="/login" data-thinking-hat>Thinking Hat Login</a>
@@ -200,7 +200,7 @@
 
   <div id="mobile-nav" class="fixed inset-x-0 bottom-0 top-[4.5rem] z-40 hidden flex-col md:hidden" hidden>
     <nav class="flex flex-1 flex-col gap-1 px-6 py-8" aria-label="Mobile">
-      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#about">About</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#about">About the Practice</a>
       <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#practice">What I Do</a>
       <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#services">Services</a>
       <div>
@@ -215,7 +215,7 @@
           <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations-booking-calendar.html">Booking calendar</a>
         </div>
       </div>
-      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="#contact">Contact</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="/contact">Contact</a>
       <a class="btn btn-ghost mt-6 w-full" href="/login" data-thinking-hat>Thinking Hat Login</a>
       <a class="btn btn-primary w-full" href="#book">Book a Call</a>
     </nav>
@@ -249,8 +249,8 @@
       <div class="mx-auto max-w-page">
         <div class="grid items-end gap-8 lg:grid-cols-12">
           <div class="reveal lg:col-span-5">
-            <p class="pill mb-4">About</p>
-            <h2 class="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">About the practice</h2>
+            <p class="pill mb-4">About the Practice</p>
+            <h2 class="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">About the Practice</h2>
           </div>
           <div class="reveal lg:col-span-7" style="animation-delay: 0.1s">
             <p class="font-display text-2xl font-bold leading-snug text-ink sm:text-3xl">
@@ -404,6 +404,7 @@
       <div class="lg:col-span-3">
         <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Contact</h2>
         <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="/contact">Contact us</a></li>
           <li><a class="hover:text-white" href="mailto:info@purplehat.fun">info@purplehat.fun</a></li>
           <li>Meetings by appointment</li>
           <li><a class="hover:text-white" href="#book">Book a call</a></li>
@@ -419,7 +420,18 @@
     </div>
     <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-[#a78bfa] sm:flex-row sm:items-center sm:justify-between">
       <p>© 2026 Purple Hat. All rights reserved.</p>
-      <a class="hover:text-white" href="#top">Back to top</a>
+      <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>Legal &amp; info:</span>
+        <a class="hover:text-white" href="/about">About Us</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/privacy">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/terms">Terms</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/disclaimer">Disclaimer</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="#top">Back to top</a>
+      </span>
     </div>
   </footer>
 
