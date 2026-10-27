@@ -133,6 +133,46 @@
       transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
     .card:hover { transform: translateY(-4px); box-shadow: 0 22px 46px rgba(76, 29, 149, 0.12); }
+    .shot-open {
+      display: block; width: 100%; margin: 0; padding: 0; border: 0;
+      background: transparent; text-align: left; cursor: zoom-in; color: inherit;
+    }
+    .shot {
+      display: block; overflow: hidden; background: #fff;
+      border-radius: 1.25rem;
+      box-shadow: 0 18px 44px rgba(76, 29, 149, 0.1);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .shot-open:hover .shot { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(76, 29, 149, 0.16); }
+    .shot-chrome {
+      display: flex; align-items: center; gap: 0.4rem;
+      height: 2.25rem; padding: 0 0.9rem; background: #f6f3ff;
+      border-bottom: 1px solid rgba(109, 40, 217, 0.08);
+    }
+    .shot-chrome span { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: #ddd6fe; }
+    .shot-chrome span:first-child { background: #c4b5fd; }
+    .shot-chrome span:nth-child(2) { background: #a78bfa; }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot-phone {
+      width: min(100%, 17.5rem); margin-inline: auto; padding: 0.55rem;
+      border-radius: 2rem; background: linear-gradient(180deg, #3b2468 0%, #2a1548 100%);
+      box-shadow: 0 18px 44px rgba(42, 21, 72, 0.22);
+    }
+    .shot-phone img { border-radius: 1.45rem; }
+    #shot-dialog {
+      width: min(96vw, 72rem); max-height: 92vh; margin: auto; padding: 0.75rem;
+      border: 0; border-radius: 1.25rem; background: #fff;
+      box-shadow: 0 24px 60px rgba(42, 21, 72, 0.28);
+    }
+    #shot-dialog::backdrop { background: rgba(42, 21, 72, 0.72); }
+    #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 4.5rem); object-fit: contain; border-radius: 0.85rem; }
+    .shot-close {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 2.5rem; margin: 0 0 0.5rem auto; padding: 0.35rem 0.9rem;
+      border: 0; border-radius: 999px; background: #f5f0ff; color: #4c1d95;
+      font-family: Nunito, sans-serif; font-weight: 800;
+    }
+    .shot-close:hover { background: #ede9fe; }
     .pill {
       display: inline-flex; align-items: center; gap: 0.45rem;
       border-radius: 999px; background: #fff; color: #6d28d9;
@@ -157,7 +197,7 @@
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       .reveal { opacity: 1; transform: none; animation: none; }
-      .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover { animation: none; transform: none; }
+      .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover, .shot-open:hover .shot { animation: none; transform: none; }
     }
   </style>
 </head>
@@ -325,43 +365,89 @@
           </div>
           <p class="max-w-md text-mute md:text-right">Simple monthly pricing. No office visits.</p>
         </div>
-        <div class="mt-10 grid gap-4 md:grid-cols-2">
-          <article id="monthly-accounting" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.05s">
+        <div class="mt-14 space-y-16 md:mt-16 md:space-y-24">
+          <article id="thinking-hat" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+            <button type="button" class="shot-open reveal" data-shot aria-label="Enlarge the real-time dashboard">
+              <span class="shot">
+                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
+                <picture>
+                  <source srcset="images/app/dashboard.webp" type="image/webp">
+                  <img src="images/app/dashboard.png" alt="PurpleHat Demo dashboard with cash, revenue, expenses, receivables, payables, financial insights, a Grok Bot insight, and a six-month revenue chart." width="1600" height="1842" loading="lazy" decoding="async">
+                </picture>
+              </span>
+              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
+            </button>
+            <div class="reveal">
+              <p class="pill mb-4">Thinking Hat</p>
+              <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Real-time dashboards</h3>
+              <p class="mt-4 max-w-xl leading-relaxed">Cash, revenue, expenses, and what you are owed, as the month moves. A written insight sits beside six months of revenue.</p>
+              <p class="mt-3 max-w-xl text-sm text-mute">A Chartered Accountant still checks the numbers.</p>
+              <a class="btn btn-primary mt-6" href="/login" data-thinking-hat>Client login</a>
+            </div>
+          </article>
+          <article id="management-reports" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+            <button type="button" class="shot-open reveal lg:order-2" data-shot aria-label="Enlarge the executive summary">
+              <span class="shot">
+                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
+                <picture>
+                  <source srcset="images/app/executive-summary.webp" type="image/webp">
+                  <img src="images/app/executive-summary.png" alt="Executive summary for PurpleHat Demo for the month ended 31 December 2026, with cash and profit for December, November, October, and the year to date." width="1600" height="1016" loading="lazy" decoding="async">
+                </picture>
+              </span>
+              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
+            </button>
+            <div class="reveal lg:order-1">
+              <p class="pill mb-4">Monthly</p>
+              <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Monthly management reports</h3>
+              <p class="mt-4 max-w-xl leading-relaxed">Cash, profit, and the change since last month. The same report is ready on a laptop or a phone.</p>
+            </div>
+          </article>
+          <article id="financial-statements" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+            <button type="button" class="shot-open reveal" data-shot aria-label="Enlarge the income and expenses charts">
+              <span class="shot">
+                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
+                <picture>
+                  <source srcset="images/app/top-income-expenses.webp" type="image/webp">
+                  <img src="images/app/top-income-expenses.png" alt="December 2026 top income and top expenses for PurpleHat Demo, listing customers and suppliers with amounts and share of the total." width="1600" height="1212" loading="lazy" decoding="async">
+                </picture>
+              </span>
+              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
+            </button>
+            <div class="reveal">
+              <p class="pill mb-4">Periodic</p>
+              <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Financial reporting &amp; statements</h3>
+              <p class="mt-4 max-w-xl leading-relaxed">Top income and top expenses for the month. Profit and loss, balance sheet, and cash flow, when a lender or partner asks.</p>
+            </div>
+          </article>
+          <article class="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+            <button type="button" class="shot-open reveal lg:order-2" data-shot aria-label="Enlarge the phone dashboard">
+              <span class="shot shot-phone">
+                <picture>
+                  <source srcset="images/app/dashboard-mobile.webp" type="image/webp">
+                  <img src="images/app/dashboard-mobile.png" alt="Phone view of the PurpleHat Demo executive summary, with December, November, October, and year-to-date period buttons and the change from the previous month." width="780" height="1688" loading="lazy" decoding="async">
+                </picture>
+              </span>
+              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
+            </button>
+            <div class="reveal lg:order-1">
+              <p class="pill mb-4">Any device</p>
+              <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Check your numbers from anywhere</h3>
+              <p class="mt-4 max-w-xl leading-relaxed">Switch the month on your phone. Cash and profit update for that period, with the change from the month before.</p>
+            </div>
+          </article>
+        </div>
+        <div class="mt-16 grid gap-4 md:grid-cols-2">
+          <article id="monthly-accounting" class="card reveal scroll-mt-28 p-7">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Monthly</p>
             <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Monthly accounting</h3>
             <p class="mt-3 leading-relaxed">Bank reconciliations, tidy records, and a monthly close. One monthly fee.</p>
           </article>
-          <article id="management-reports" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.1s">
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Monthly</p>
-            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Monthly management reports</h3>
-            <p class="mt-3 leading-relaxed">Cash, profit, and the changes that need a decision. Ready on any device.</p>
-          </article>
-          <article id="financial-statements" class="card reveal scroll-mt-28 p-7" style="animation-delay: 0.16s">
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Periodic</p>
-            <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Financial reporting &amp; statements</h3>
-            <p class="mt-3 leading-relaxed">Profit and loss, balance sheet, and cash flow, when a lender or partner asks.</p>
-          </article>
-          <article id="ai-integrations" class="card relative reveal scroll-mt-28 border-[#c4b5fd] bg-[#f5f0ff] p-7" style="animation-delay: 0.22s">
+          <article id="ai-integrations" class="card relative reveal scroll-mt-28 border-[#c4b5fd] bg-[#f5f0ff] p-7">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Your website</p>
             <h3 class="mt-3 font-display text-2xl font-extrabold text-ink"><a class="after:absolute after:inset-0 hover:text-plum" href="integrations.html">AI integrations</a></h3>
             <p class="mt-3 leading-relaxed">Connect a booking or form on your site to the books. A person still checks the numbers.</p>
           </article>
         </div>
-        <article id="thinking-hat" class="card reveal mt-8 grid items-center gap-8 p-7 sm:p-10 lg:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <p class="pill mb-4">Thinking Hat App</p>
-            <h2 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">A dashboard you can open anywhere.</h2>
-            <p class="mt-4 max-w-xl leading-relaxed">Thinking Hat is a private app for clients.</p>
-            <p class="mt-3 max-w-xl leading-relaxed">See cash, revenue, expenses, and invoices as the month moves. Open it on any device. You can also read billing and request a build.</p>
-            <p class="mt-3 max-w-xl text-sm text-mute">A Chartered Accountant still checks the numbers.</p>
-            <a class="btn btn-primary mt-6" href="/login" data-thinking-hat>Client login</a>
-          </div>
-          <ul class="space-y-3 rounded-3xl bg-[#f5f0ff] p-6 text-sm leading-relaxed text-ink">
-            <li><span class="font-display font-extrabold">Dashboard.</span> Cash, revenue, expenses, and what you are owed.</li>
-            <li><span class="font-display font-extrabold">Billing.</span> Draft, sent, and paid invoices in one list.</li>
-            <li><span class="font-display font-extrabold">Request a build.</span> Ask for a website, an integration, or a report pack.</li>
-          </ul>
-        </article>
       </div>
     </section>
 
@@ -434,6 +520,13 @@
       </span>
     </div>
   </footer>
+
+  <dialog id="shot-dialog" aria-label="Enlarged screenshot">
+    <form method="dialog" class="flex">
+      <button type="submit" class="shot-close" aria-label="Close">Close</button>
+    </form>
+    <img id="shot-full" alt="">
+  </dialog>
 
   <noscript>
     <style>.reveal { opacity: 1 !important; transform: none !important; animation: none !important; }</style>
@@ -526,6 +619,27 @@
         sections.forEach((section) => spy.observe(section));
       } else {
         document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+      }
+
+      const shotDialog = document.getElementById("shot-dialog");
+      const shotFull = document.getElementById("shot-full");
+      if (shotDialog && shotFull) {
+        document.querySelectorAll("[data-shot]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const img = button.querySelector("img");
+            if (!img) return;
+            shotFull.src = img.currentSrc || img.src;
+            shotFull.alt = img.alt;
+            shotDialog.showModal();
+          });
+        });
+        shotDialog.addEventListener("click", (event) => {
+          if (event.target === shotDialog) shotDialog.close();
+        });
+        shotDialog.addEventListener("close", () => {
+          shotFull.removeAttribute("src");
+          shotFull.alt = "";
+        });
       }
     })();
   </script>

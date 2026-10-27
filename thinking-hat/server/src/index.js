@@ -1886,6 +1886,12 @@ function isAppPath(pathname) {
 }
 
 if (siteRoot) {
+  app.use("/images", express.static(path.join(siteRoot, "images"), {
+    index: false,
+    dotfiles: "deny",
+    fallthrough: false,
+    maxAge: "1h",
+  }));
   app.use((req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       next();
