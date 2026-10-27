@@ -276,6 +276,23 @@ if (!builderClientColumns.some((column) => column.name === "financial_insights_s
   db.exec("ALTER TABLE builder_clients ADD COLUMN financial_insights_source TEXT NOT NULL DEFAULT ''");
 }
 db.exec(`
+CREATE TABLE IF NOT EXISTS password_resets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS password_reset_requests_email ON password_reset_requests (email, created_at);
+`);
+db.exec(`
 CREATE TABLE IF NOT EXISTS app_flags (
   name TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -793,6 +810,40 @@ export function hashCode(code) {
 
 export function codeHint(code) {
   return `TH-••••-${String(code).slice(-4)}`;
+}
+
+export function resetRequestTimes(email) {
+  return db.prepare(
+    "SELECT created_at FROM password_reset_requests WHERE email = ? ORDER BY id DESC LIMIT 20",
+  ).all(email).map((row) => row.created_at);
+}
+
+export function recordResetRequest(email, createdAt) {
+  db.prepare("INSERT INTO password_reset_requests (email, created_at) VALUES (?, ?)").run(email, createdAt);
+}
+
+export function userIdByEmail(email) {
+  const row = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+  return row ? Number(row.id) : null;
+}
+
+export function savePasswordReset({ userId, tokenHash, expiresAt, createdAt }) {
+  db.prepare(
+    "INSERT INTO password_resets (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)",
+  ).run(userId, tokenHash, expiresAt, createdAt);
+}
+
+export function passwordResetByHash(tokenHash) {
+  return db.prepare(
+    "SELECT id, user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?",
+  ).get(tokenHash) || null;
+}
+
+export function applyPasswordReset({ userId, passwordHash, usedAt }) {
+  transaction(() => {
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(passwordHash, usedAt, userId);
+    db.prepare("UPDATE password_resets SET used_at = ? WHERE user_id = ? AND used_at IS NULL").run(usedAt, userId);
+  });
 }
 
 export function transaction(fn) {

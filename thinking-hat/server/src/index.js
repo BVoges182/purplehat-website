@@ -37,6 +37,12 @@ import db, {
   saveTemplateDocument,
   seedAndyMurrayBot,
   seedBuilderCatalog,
+  applyPasswordReset,
+  passwordResetByHash,
+  recordResetRequest,
+  resetRequestTimes,
+  savePasswordReset,
+  userIdByEmail,
   assignBuilderClientBot,
   assignedGrokBot,
   createGrokBot,
@@ -65,6 +71,20 @@ import {
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
 import { insightLoader } from "./insights.js";
 import { sendSmtpMail } from "./mail.js";
+import {
+  PASSWORD_UPDATED,
+  RESET_INVALID,
+  RESET_MESSAGE,
+  buildResetMessage,
+  deliverResetEmail,
+  hashResetToken,
+  newResetToken,
+  passwordProblem,
+  planResetRequest,
+  resetExpiry,
+  shouldLogResetLink,
+  tokenProblem,
+} from "./passwordReset.js";
 import {
   buildInviteMessage,
   deliverInviteEmail,
@@ -548,6 +568,75 @@ app.post("/api/auth/register", rateLimit, (req, res) => {
       : "Account created. Purple Hat still needs to approve access.",
     user,
   });
+});
+
+app.post("/api/auth/forgot-password", rateLimit, async (req, res) => {
+  const email = clean(req.body.email, 120).toLowerCase();
+  if (!isEmail(email)) {
+    res.status(400).json({ error: "Enter a valid email." });
+    return;
+  }
+  const now = Date.now();
+  const plan = planResetRequest({
+    recentTimestamps: resetRequestTimes(email),
+    userId: userIdByEmail(email),
+    now,
+  });
+  if (plan.record) recordResetRequest(email, new Date(now).toISOString());
+  if (plan.create) {
+    const token = newResetToken();
+    const createdAt = new Date(now).toISOString();
+    savePasswordReset({
+      userId: plan.userId,
+      tokenHash: hashResetToken(token),
+      expiresAt: resetExpiry(now),
+      createdAt,
+    });
+    const origin = requestOrigin(req);
+    const message = buildResetMessage({ origin, token });
+    const config = readMailConfig();
+    if (shouldLogResetLink(origin, config.configured)) {
+      console.log(`Password reset link: ${message.link}`);
+    }
+    await Promise.race([
+      deliverResetEmail({ to: email, message, config, sendSmtp: sendSmtpMail }),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
+  }
+  res.json({ message: RESET_MESSAGE });
+});
+
+app.get("/api/auth/reset-password", (req, res) => {
+  const token = String(req.query.token || "");
+  const row = token ? passwordResetByHash(hashResetToken(token)) : null;
+  const problem = tokenProblem(row);
+  if (problem) {
+    res.status(400).json({ error: RESET_INVALID });
+    return;
+  }
+  res.json({ ok: true });
+});
+
+app.post("/api/auth/reset-password", rateLimit, (req, res) => {
+  const token = String(req.body.token || "");
+  const password = String(req.body.password || "");
+  const confirm = String(req.body.confirm ?? "");
+  const problem = passwordProblem(password, confirm);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const row = token ? passwordResetByHash(hashResetToken(token)) : null;
+  if (tokenProblem(row)) {
+    res.status(400).json({ error: RESET_INVALID });
+    return;
+  }
+  applyPasswordReset({
+    userId: row.user_id,
+    passwordHash: bcrypt.hashSync(password, 10),
+    usedAt: nowIso(),
+  });
+  res.json({ message: PASSWORD_UPDATED });
 });
 
 app.post("/api/auth/login", rateLimit, (req, res) => {
@@ -1725,6 +1814,8 @@ function sendManagementReportPdf(res, user, month) {
 function isAppPath(pathname) {
   const name = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
   return name === "/login"
+    || name === "/forgot-password"
+    || name === "/reset-password"
     || name === "/dashboard"
     || name === "/register"
     || name === "/billing"
