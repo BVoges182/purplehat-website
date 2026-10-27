@@ -260,7 +260,7 @@ export function plasYnGroveFinancialPosition(report) {
   const totalAssets = cents(nonCurrentAssets + currentAssets);
   const totalEquityAndLiabilities = cents(equity + nonCurrentLiabilities + currentLiabilities);
   const difference = cents(totalAssets - totalEquityAndLiabilities);
-  const line = (key, label, value, strong = false) => ({ key, label, value, format: "money2", strong });
+  const line = (key, label, value, strong = false) => ({ key, label, value, format: "money", strong });
   return {
     column: String(balance.columns?.[columnIndex] || ""),
     rows: [
