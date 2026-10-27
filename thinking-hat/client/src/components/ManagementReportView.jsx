@@ -8,6 +8,14 @@ function amountClass(value, strong) {
   return strong ? "font-display font-extrabold text-neutral-950" : "text-neutral-950";
 }
 
+function mobileFigure(value, format, unit) {
+  const text = reportFigure(value, format);
+  const symbol = format === "percent" || format === "percent2" || format === "number" || format === "number2" ? "" : String(unit || "");
+  if (!symbol || text === "—") return text;
+  if (text.startsWith("(") && text.endsWith(")")) return `(${symbol}${text.slice(1, -1)})`;
+  return `${symbol}${text}`;
+}
+
 function subtitleLine(section) {
   if (!section?.subtitle) return null;
   return <p className="mt-1 text-sm text-neutral-500">{section.subtitle}</p>;
@@ -119,12 +127,9 @@ export function Statement({ section }) {
               <p className={`whitespace-pre-wrap ${emphasizedRow(row) ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`} style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>
               <dl className="mt-2 space-y-1 text-sm">
                 {columns.map((column, columnIndex) => (
-                  <div key={`${column}-${columnIndex}`} className="flex justify-between gap-3">
-                    <dt className="text-neutral-500">
-                      <span className="block w-max text-center">{column}</span>
-                      {section.units?.[columnIndex] ? <span className="block text-center tracking-normal text-neutral-800">{section.units[columnIndex]}</span> : null}
-                    </dt>
-                    <dd className={`tabular-nums ${amountClass(row.values?.[columnIndex], emphasizedRow(row))}`}>{reportFigure(row.values?.[columnIndex], row.formats?.[columnIndex])}</dd>
+                  <div key={`${column}-${columnIndex}`} className="flex items-baseline justify-between gap-3">
+                    <dt className="text-neutral-500">{column}</dt>
+                    <dd className={`whitespace-nowrap text-right tabular-nums ${amountClass(row.values?.[columnIndex], emphasizedRow(row))}`}>{mobileFigure(row.values?.[columnIndex], row.formats?.[columnIndex], section.units?.[columnIndex])}</dd>
                   </div>
                 ))}
               </dl>
@@ -213,7 +218,7 @@ export function Donut({ title, slices }) {
     };
   });
   return (
-    <svg className="mx-auto h-72 w-72" viewBox="0 0 200 200" role="img" aria-label={title}>
+    <svg className="mx-auto h-auto w-full max-w-64 md:h-72 md:w-72 md:max-w-none" viewBox="0 0 200 200" role="img" aria-label={title}>
       {paths.filter((path) => path.d).map((path) => (
         <path key={path.key} d={path.d} fill={path.colour} stroke="#ffffff" strokeWidth="2.5" />
       ))}
