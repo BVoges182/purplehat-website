@@ -40,11 +40,11 @@ function visibleNote(note) {
   return String(note || "").split(" · ").filter((part) => !/grouped into other/i.test(part)).join(" · ");
 }
 
-function columnHeading(column, unit) {
+function columnHeading(column, unit, hideUnitBelowMd = false) {
   return (
     <div className="ml-auto w-max text-center">
       <div>{column}</div>
-      {unit ? <div className="mt-0.5 normal-case tracking-normal text-neutral-800">{unit}</div> : null}
+      {unit ? <div className={`mt-0.5 normal-case tracking-normal text-neutral-800${hideUnitBelowMd ? " max-md:hidden" : ""}`}>{unit}</div> : null}
     </div>
   );
 }
@@ -78,6 +78,7 @@ function displayTitle(section) {
 
 export function Statement({ section }) {
   const columns = section.columns || [];
+  const executiveSummary = /executive summary/i.test(String(section.title || ""));
   return (
     <Card>
       <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
@@ -90,7 +91,7 @@ export function Statement({ section }) {
               <th className="w-[34%] pb-2 pr-4 text-left font-bold">{section.labelHeader || ""}</th>
               {columns.map((column, columnIndex) => (
                 <th key={`${column}-${columnIndex}`} className="pb-2 align-bottom font-bold">
-                  {columnHeading(column, section.units?.[columnIndex])}
+                  {columnHeading(column, section.units?.[columnIndex], executiveSummary)}
                 </th>
               ))}
             </tr>
@@ -129,7 +130,7 @@ export function Statement({ section }) {
                 {columns.map((column, columnIndex) => (
                   <div key={`${column}-${columnIndex}`} className="flex items-baseline justify-between gap-3">
                     <dt className="text-neutral-500">{column}</dt>
-                    <dd className={`whitespace-nowrap text-right tabular-nums ${amountClass(row.values?.[columnIndex], emphasizedRow(row))}`}>{mobileFigure(row.values?.[columnIndex], row.formats?.[columnIndex], section.units?.[columnIndex])}</dd>
+                    <dd className={`whitespace-nowrap text-right tabular-nums ${amountClass(row.values?.[columnIndex], emphasizedRow(row))}`}>{executiveSummary ? reportFigure(row.values?.[columnIndex], row.formats?.[columnIndex]) : mobileFigure(row.values?.[columnIndex], row.formats?.[columnIndex], section.units?.[columnIndex])}</dd>
                   </div>
                 ))}
               </dl>
