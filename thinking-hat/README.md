@@ -16,7 +16,7 @@ npm.cmd run install:all
 - App: http://localhost:5173/login
 - API: http://localhost:8787
 
-The Purple Hat landing page button “Thinking Hat Login” opens the app login.
+The Purple Hat landing page button “Client login” opens the app login.
 
 The admin email and password are in `server/.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`). The password is applied to that admin account when the server starts. Change it in `.env` before you share the machine.
 
@@ -93,6 +93,6 @@ After the records are visible, click Verify in Resend. Sending from `info@purple
 
 ## Figures
 
-New clients start with sample figures so the dashboard is not empty. Replace them on the person’s admin page. The client dashboard reads those figures from Thinking Hat and refreshes every few seconds. Xero and QuickBooks stay the system of record. This app does not connect to them, and it does not take card payments.
+New clients start with sample figures so the dashboard is not empty. Replace them on the person’s admin page. The client dashboard reads those figures from Thinking Hat and refreshes every few seconds. This app does not connect to an outside ledger, and it does not take card payments.
 
 Uploads are limited to JPG, PNG, or WebP under 2 MB.

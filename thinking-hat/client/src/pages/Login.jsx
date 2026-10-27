@@ -34,7 +34,7 @@ export default function Login() {
   }
 
   return (
-    <AuthFrame title="Sign in" lede="Client dashboard for approved Purple Hat clients." homeLink>
+    <AuthFrame title="Sign in" lede="Your monthly reports and dashboard, on any device." homeLink>
       <form className="space-y-4" onSubmit={onSubmit}>
         {notice ? <Alert tone="ok">{notice}</Alert> : null}
         {error ? <Alert>{error}</Alert> : null}
