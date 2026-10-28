@@ -762,12 +762,13 @@ app.get("/api/me/insights", requireAuth, async (req, res) => {
       bot_name: bot?.name || "",
       bot_source: bot?.source || "",
     });
+    console.info(`[insights] user=${req.user.id} step=response configured=${result.configured} insights=${result.insights ? "yes" : "no"} error=${result.error ? "yes" : "no"}`);
     res.set("Cache-Control", "no-store");
     res.json({ ...result, currency: bot?.currency || "" });
   } catch (error) {
-    console.error(error);
+    console.error(`[insights] user=${req.user.id} step=route-failed ${error instanceof Error ? error.message : "unknown error"}`);
     res.set("Cache-Control", "no-store");
-    res.json({ configured: false, botName: null, insights: null, currency: "" });
+    res.json({ configured: true, botName: null, insights: null, currency: "", error: "Couldn't load insights" });
   }
 });
 

@@ -168,15 +168,60 @@ export function insightSource(user) {
   return cleanText(user?.bot_source, 500);
 }
 
+export function businessNameKey(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+export function chooseInsightClient(user, rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const userId = Number(user?.id);
+  const linked = list.find((row) => Number(row?.user_id) === userId) || null;
+  const templateId = Number(user?.template_client_id);
+  const template = templateId ? list.find((row) => Number(row?.client_id) === templateId) || null : null;
+  const nameKey = businessNameKey(user?.business_name || user?.name);
+  const named = nameKey
+    ? list.filter((row) => businessNameKey(row?.client_name) === nameKey)
+    : [];
+  const usable = (row) => {
+    if (!row || !cleanText(row.insights_source, 500)) return false;
+    if (row.user_id == null || row.user_id === "") return true;
+    return Number(row.user_id) === userId;
+  };
+  const chosen = [usable(linked) ? linked : null, usable(template) ? template : null, named.find(usable) || null].find(Boolean) || linked || null;
+  let via = "none";
+  if (chosen && chosen === linked) via = "user";
+  else if (chosen && chosen === template) via = "template";
+  else if (chosen) via = "name";
+  return { chosen, via, linkedId: linked?.client_id ?? null, templateId: template?.client_id ?? null };
+}
+
 function botNameOf(user) {
   return cleanText(user?.bot_name, 80) || null;
 }
 
+const LOAD_ERROR = "Couldn't load insights";
+
+function emptyRead(message) {
+  const error = new Error(message);
+  error.empty = true;
+  return error;
+}
+
 async function readJsonResponse(response) {
-  if (!response.ok) throw new Error("Insights file could not be read.");
   const text = await response.text();
+  console.info(`[insights] step=download status=${response.status} type=${response.headers.get("content-type") || ""} bytes=${text.length} json=${text.trim().startsWith("{")}`);
+  if (response.status === 404 || !text.trim()) throw emptyRead("Insights file is empty.");
+  if (!response.ok) throw new Error("Insights file could not be read.");
   if (/^\s*</.test(text)) throw new Error("Insights file was not JSON.");
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Insights file was not JSON.");
+  }
+}
+
+function keySet() {
+  return Boolean(process.env.GOOGLE_DRIVE_API_KEY || process.env.GOOGLE_API_KEY);
 }
 
 function driveReadUrl(fileId) {
@@ -216,28 +261,36 @@ export function createInsightLoader({
   const cache = new Map();
   const pending = new Map();
 
+  function ready(botName, insights, error = "") {
+    return { configured: true, botName, insights, error };
+  }
+
   async function load(user) {
     const source = insightSource(user);
     const botName = botNameOf(user);
-    if (!source) return { configured: false, botName: null, insights: null };
+    if (!source) return { configured: false, botName: null, insights: null, error: "" };
     const key = `${user?.id ?? ""}:${source}`;
     const fromDrive = Boolean(driveFileId(source));
     const hit = fromDrive ? null : cache.get(key);
-    if (hit && now() - hit.at < cacheMs) return { configured: true, botName, insights: hit.insights };
+    if (hit && now() - hit.at < cacheMs) return ready(botName, hit.insights);
     if (pending.has(key)) return pending.get(key);
 
     const job = (async () => {
+      console.info(`[insights] user=${user?.id ?? ""} step=fetch drive=${fromDrive ? "yes" : "no"} key=${keySet() ? "yes" : "no"}`);
       const raw = source.startsWith("sample:") ? readSample(source) : await readRemote(source, fetchImpl);
       const insights = parse(raw);
       if (!fromDrive) cache.set(key, { at: now(), insights });
-      return { configured: true, botName, insights };
+      console.info(`[insights] user=${user?.id ?? ""} step=parse ok title=${insights?.title ? "yes" : "no"} financial=${insights?.financial ? "yes" : "no"}`);
+      return ready(botName, insights);
     })();
     pending.set(key, job);
     try {
       return await job;
     } catch (error) {
-      console.error(`Insights file could not be read: ${error instanceof Error ? error.message : "unknown error"}`);
-      return { configured: true, botName, insights: null };
+      const message = error instanceof Error ? error.message : "unknown error";
+      console.error(`[insights] user=${user?.id ?? ""} step=failed ${message}`);
+      if (error?.empty) return ready(botName, null);
+      return ready(botName, null, LOAD_ERROR);
     } finally {
       pending.delete(key);
     }

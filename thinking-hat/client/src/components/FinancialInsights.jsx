@@ -81,21 +81,22 @@ function Brief({ financial, currency }) {
   );
 }
 
-function EmptyBrief() {
+function EmptyBrief({ error }) {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Financial insights</p>
-      <h3 className="mt-2 font-display text-lg font-extrabold text-ink">No brief here yet</h3>
+      <h3 className="mt-2 font-display text-lg font-extrabold text-ink">{error ? "Couldn't load insights" : "No brief here yet"}</h3>
     </div>
   );
 }
 
-export default function FinancialInsights({ status = "loading", financial = null, currency = "" }) {
+export default function FinancialInsights({ status = "loading", financial = null, currency = "", error = "" }) {
+  const showBrief = status === "ready" && financial && !error;
   return (
     <Card className="flex h-full flex-col">
       {status === "loading" ? <p className="text-sm text-mute">Loading the brief…</p> : null}
-      {status === "ready" && financial ? <Brief financial={financial} currency={currency} /> : null}
-      {status === "ready" && !financial ? <EmptyBrief /> : null}
+      {showBrief ? <Brief financial={financial} currency={currency} /> : null}
+      {status === "ready" && !showBrief ? <EmptyBrief error={error} /> : null}
     </Card>
   );
 }
