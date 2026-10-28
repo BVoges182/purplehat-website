@@ -200,6 +200,24 @@
     #shot-dialog::backdrop { background: rgba(42, 21, 72, 0.72); }
     .shot-lightbox { position: relative; }
     #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 7rem); object-fit: contain; border-radius: 0.85rem; background: #f7f4ff; }
+    #shot-dialog img.is-hidden { display: none; }
+    .shot-viewport .shot-live { height: 100%; overflow: hidden; background: #f7f4ff; }
+    @media (max-width: 767px) {
+      .shot-viewport:has(.shot-slide.is-active .shot-live) {
+        aspect-ratio: auto; height: auto; overflow: visible;
+      }
+      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-slide.is-active {
+        position: relative; inset: auto; height: auto;
+      }
+      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-live {
+        height: auto; overflow: visible;
+      }
+    }
+    .shot-live-full {
+      display: none; max-height: calc(92vh - 7rem); overflow: auto;
+      border-radius: 0.85rem; background: #f7f4ff;
+    }
+    .shot-live-full.is-open { display: block; }
     #shot-caption { min-height: 1.5rem; margin: 0.65rem 0 0; text-align: center; color: #5c5470; }
     .shot-close {
       display: inline-flex; align-items: center; justify-content: center;
@@ -411,29 +429,29 @@
                   <button type="button" class="shot-dot" aria-label="Show slide 3 of 3"></button>
                 </div>
                 <div class="shot-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Real-time dashboard">
-                  <figure class="shot-slide is-active" data-caption="Cash, revenue, and Purple Hat insights.">
+                  <figure class="shot-slide is-active" data-caption="Top income, top expenses, and what is owed.">
                     <picture>
-                      <source srcset="images/app/dashboard-overview.webp" type="image/webp">
-                      <img src="images/app/dashboard-overview.png" alt="PurpleHat Demo dashboard with cash, revenue, expenses, receivables, payables, financial insights, and Purple Hat insights." width="1440" height="900" decoding="async">
+                      <source srcset="images/app/dashboard-mix.webp" type="image/webp">
+                      <img src="images/app/dashboard-mix.png" alt="PurpleHat Demo top income, top expenses, aged receivables, and aged payables." width="1440" height="900" decoding="async">
                     </picture>
                   </figure>
-                  <figure class="shot-slide" data-caption="Advertising spend set against sales.">
+                  <figure class="shot-slide" data-caption="Return on ad spend, cost, and the trend.">
                     <picture>
-                      <source data-srcset="images/app/dashboard-ads.webp" type="image/webp">
-                      <img data-src="images/app/dashboard-ads.png" alt="PurpleHat Demo chart comparing advertising spend with sales from January to December." width="1440" height="900" loading="lazy" decoding="async">
+                      <source data-srcset="images/app/report-kpis.webp" type="image/webp">
+                      <img data-src="images/app/report-kpis.png" alt="PurpleHat Demo e-commerce overview with return on ad spend 4.97, cost per acquisition, the trend chart, and advertising spend against sales." width="1440" height="900" loading="lazy" decoding="async">
                     </picture>
                   </figure>
-                  <figure class="shot-slide" data-caption="Top income, top expenses, and what is owed.">
+                  <figure class="shot-slide" data-caption="Cash, revenue, and Purple Hat insights.">
                     <picture>
-                      <source data-srcset="images/app/dashboard-mix.webp" type="image/webp">
-                      <img data-src="images/app/dashboard-mix.png" alt="PurpleHat Demo top income, top expenses, aged receivables, and aged payables." width="1440" height="900" loading="lazy" decoding="async">
+                      <source data-srcset="images/app/dashboard-overview.webp" type="image/webp">
+                      <img data-src="images/app/dashboard-overview.png" alt="PurpleHat Demo dashboard with cash, revenue, expenses, receivables, payables, financial insights, and Purple Hat insights." width="1440" height="900" loading="lazy" decoding="async">
                     </picture>
                   </figure>
                   <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 </div>
               </div>
-              <p class="shot-caption">Cash, revenue, and Purple Hat insights.</p>
+              <p class="shot-caption">Top income, top expenses, and what is owed.</p>
               <button type="button" class="shot-enlarge">View larger</button>
             </div>
             <div class="reveal">
@@ -459,17 +477,14 @@
                       <img src="images/app/report-summary.png" alt="Executive summary for PurpleHat Demo for December 2026, with cash and profit for December, November, October, and the year to date." width="1440" height="900" decoding="async">
                     </picture>
                   </figure>
-                  <figure class="shot-slide" data-caption="December charts for income and expenses.">
+                  <figure class="shot-slide" data-caption="Tailored analysis of income and expenses">
                     <picture>
                       <source data-srcset="images/app/report-charts.webp" type="image/webp">
                       <img data-src="images/app/report-charts.png" alt="December 2026 top expenses and top income charts for PurpleHat Demo." width="1440" height="900" loading="lazy" decoding="async">
                     </picture>
                   </figure>
-                  <figure class="shot-slide" data-caption="KPIs, trends, and a short commentary.">
-                    <picture>
-                      <source data-srcset="images/app/report-kpis.webp" type="image/webp">
-                      <img data-src="images/app/report-kpis.png" alt="PurpleHat Demo e-commerce KPIs and trends, with return on ad spend, cost per acquisition, and a short commentary." width="1440" height="900" loading="lazy" decoding="async">
-                    </picture>
+                  <figure class="shot-slide" data-caption="Income statement and balance sheet, three months side by side.">
+                    <div class="shot-live" data-statements></div>
                   </figure>
                   <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -521,7 +536,7 @@
             <div class="reveal">
               <p class="pill mb-4">Periodic</p>
               <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Financial reporting &amp; statements</h3>
-              <p class="mt-4 max-w-xl leading-relaxed">Top income and top expenses for the month. Profit and loss, balance sheet, and cash flow, when a lender or partner asks.</p>
+              <p class="mt-4 max-w-xl leading-relaxed">Full sets of financial statements, prepared in line with the regulatory framework for your region.</p>
             </div>
           </article>
           <article class="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
@@ -657,6 +672,7 @@
     <div class="shot-lightbox">
       <button type="button" class="shot-arrow shot-prev" id="shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <img id="shot-full" alt="">
+      <div id="shot-live" class="shot-live-full" data-statements></div>
       <button type="button" class="shot-arrow shot-next" id="shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <p id="shot-caption"></p>
@@ -767,6 +783,7 @@
         const img = slide.querySelector("img");
         if (source && source.dataset.srcset && !source.getAttribute("srcset")) source.srcset = source.dataset.srcset;
         if (img && img.dataset.src && !img.getAttribute("src")) img.src = img.dataset.src;
+        if (slide.querySelector("[data-statements]")) window.mountHomepageStatements?.();
       }
 
       function activeSlide(root) {
@@ -797,13 +814,24 @@
         return next;
       }
 
+      const shotLive = document.getElementById("shot-live");
+
       function fillLightbox(root) {
         const slide = activeSlide(root);
+        const live = Boolean(slide && slide.querySelector("[data-statements]"));
+        if (shotCaption) shotCaption.textContent = slide?.dataset.caption || "";
+        if (live) {
+          shotFull.classList.add("is-hidden");
+          shotLive?.classList.add("is-open");
+          window.mountHomepageStatements?.();
+          return;
+        }
+        shotLive?.classList.remove("is-open");
+        shotFull.classList.remove("is-hidden");
         const img = slide && slide.querySelector("img");
         if (!img) return;
         shotFull.src = img.currentSrc || img.src;
         shotFull.alt = img.alt || "";
-        if (shotCaption) shotCaption.textContent = slide.dataset.caption || "";
       }
 
       if (shotDialog && shotFull) {
@@ -891,8 +919,10 @@
         });
         shotDialog.addEventListener("close", () => {
           const root = openCarousel;
+          shotFull.classList.remove("is-hidden");
           shotFull.removeAttribute("src");
           shotFull.alt = "";
+          shotLive?.classList.remove("is-open");
           if (shotCaption) shotCaption.textContent = "";
           openCarousel = null;
           root?.resumeIfIdle();
@@ -900,5 +930,6 @@
       }
     })();
   </script>
+  <script type="module" src="/statements-preview.js"></script>
 </body>
 </html>
