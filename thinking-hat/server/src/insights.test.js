@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   botInsightsTitle,
+  chooseInsightClient,
   createInsightLoader,
   driveFileId,
   grokBotInput,
@@ -145,6 +146,58 @@ test("names the card from the assigned bot and accepts a Drive file id", () => {
   assert.equal(grokBotInput({ name: "Andy Murray", fileId: "not an id" }).error, "Enter a Google Drive file ID.");
 });
 
+test("a signed-in client uses the builder client that has the bot", () => {
+  const plas = {
+    client_id: 3,
+    user_id: null,
+    client_name: "Plas yn Grove Farm",
+    grok_bot_id: 1,
+    name: "Andy Murray",
+    insights_source: "drive:1i8mJ2vnpwpK8Z0m0XUjwkF6ecfDkUWDO",
+    currency: "GBP",
+  };
+  const duplicate = {
+    client_id: 9,
+    user_id: 24,
+    client_name: "Plas-Yn-Grove Farm",
+    grok_bot_id: null,
+    name: null,
+    insights_source: "",
+    currency: "GBP",
+  };
+  const demo = {
+    client_id: 2,
+    user_id: 6,
+    client_name: "PurpleHat Demo, LLC",
+    grok_bot_id: 3,
+    name: "Purple Hat",
+    insights_source: "drive:1HhuQmZx_kqSzQJrkBWll6M2QmmqeQnkL",
+    currency: "USD",
+  };
+  const other = {
+    client_id: 4,
+    user_id: 30,
+    client_name: "Plas-Yn-Grove Farm",
+    grok_bot_id: 8,
+    name: "Someone",
+    insights_source: "drive:otherfile123456",
+    currency: "GBP",
+  };
+  const user = { id: 24, business_name: "Plas-Yn-Grove Farm", template_client_id: 3 };
+  const choice = chooseInsightClient(user, [duplicate, plas, demo, other]);
+  assert.equal(choice.via, "template");
+  assert.equal(choice.chosen.client_id, 3);
+  assert.equal(choice.chosen.insights_source, plas.insights_source);
+
+  const byName = chooseInsightClient({ id: 24, business_name: "Plas-Yn-Grove Farm" }, [duplicate, plas, demo, other]);
+  assert.equal(byName.via, "name");
+  assert.equal(byName.chosen.client_id, 3);
+
+  const own = chooseInsightClient({ id: 6, business_name: "PurpleHat Demo, LLC" }, [duplicate, plas, demo, other]);
+  assert.equal(own.via, "user");
+  assert.equal(own.chosen.client_id, 2);
+});
+
 test("caches a fetched brief for an hour and keeps clients apart", async () => {
   let clock = 1_000;
   const calls = [];
@@ -203,7 +256,7 @@ test("a missing file stays empty without inventing a brief", async () => {
     },
   });
   const missing = await loader.load({ id: 24, business_name: "Plas-Yn-Grove Farm" });
-  assert.deepEqual(missing, { configured: false, botName: null, insights: null });
+  assert.deepEqual(missing, { configured: false, botName: null, insights: null, error: "" });
 
   const broken = createInsightLoader({
     fetchImpl: async () => new Response("<html>sign in</html>", { status: 200 }),
@@ -212,6 +265,14 @@ test("a missing file stays empty without inventing a brief", async () => {
   assert.equal(failed.configured, true);
   assert.equal(failed.botName, "Andy Murray");
   assert.equal(failed.insights, null);
+  assert.equal(failed.error, "Couldn't load insights");
+
+  const empty = createInsightLoader({
+    fetchImpl: async () => new Response("", { status: 404 }),
+  });
+  const blank = await empty.load({ id: 6, bot_name: "Andy Murray", bot_source: "https://files.example/missing.json" });
+  assert.equal(blank.insights, null);
+  assert.equal(blank.error, "");
 });
 
 test("parses a financial insights file and drops blank lines", () => {

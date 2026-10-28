@@ -334,6 +334,7 @@ function DemoDashboard({ user }) {
                 status={brief.status}
                 financial={brief.insights?.financial || null}
                 currency={brief.currency}
+                error={brief.error}
               />
             </div>
             <div className="flex min-w-0 flex-col gap-4">

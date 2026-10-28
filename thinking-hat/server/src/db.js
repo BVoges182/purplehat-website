@@ -20,7 +20,7 @@ import {
   validateClient,
 } from "./templateBuilder.js";
 import { applySectionAction, normalizeEditorSections, sectionTypeChoices } from "./templateSections.js";
-import { grokBotInput, insightsFileLabel } from "./insights.js";
+import { chooseInsightClient, grokBotInput, insightsFileLabel } from "./insights.js";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 dotenv.config({ path: path.join(rootDir, ".env") });
@@ -1147,16 +1147,40 @@ export function listGrokBots() {
 }
 
 export function assignedGrokBot(userId) {
-  const row = db.prepare(
-    `SELECT grok_bots.name AS name,
+  const user = db.prepare("SELECT id, business_name, name, template_id FROM users WHERE id = ?").get(userId);
+  const template = user?.template_id
+    ? db.prepare("SELECT builder_client_id FROM client_templates WHERE id = ?").get(user.template_id)
+    : null;
+  const rows = db.prepare(
+    `SELECT builder_clients.id AS client_id,
+            builder_clients.user_id AS user_id,
+            builder_clients.name AS client_name,
+            builder_clients.grok_bot_id AS grok_bot_id,
+            grok_bots.name AS name,
             grok_bots.insights_source AS insights_source,
             builder_clients.currency AS currency
      FROM builder_clients
-     LEFT JOIN grok_bots ON grok_bots.id = builder_clients.grok_bot_id
-     WHERE builder_clients.user_id = ?`,
-  ).get(userId);
-  if (!row) return null;
-  return { name: row.name || "", source: row.insights_source || "", currency: row.currency || "" };
+     LEFT JOIN grok_bots ON grok_bots.id = builder_clients.grok_bot_id`,
+  ).all();
+  const choice = chooseInsightClient(
+    {
+      id: userId,
+      business_name: user?.business_name || "",
+      name: user?.name || "",
+      template_client_id: template?.builder_client_id || null,
+    },
+    rows,
+  );
+  const chosen = choice.chosen;
+  console.info(`[insights] user=${userId} step=client via=${choice.via} linked=${choice.linkedId ?? "none"} template=${choice.templateId ?? "none"} chosen=${chosen?.client_id ?? "none"} bot=${chosen?.grok_bot_id ?? "none"} file=${chosen?.insights_source ? "yes" : "no"}`);
+  if (!chosen) return null;
+  return {
+    name: chosen.name || "",
+    source: chosen.insights_source || "",
+    currency: chosen.currency || "",
+    clientId: Number(chosen.client_id),
+    botId: chosen.grok_bot_id ? Number(chosen.grok_bot_id) : null,
+  };
 }
 
 export function createGrokBot(input) {

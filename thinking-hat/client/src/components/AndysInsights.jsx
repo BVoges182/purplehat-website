@@ -104,22 +104,19 @@ function Brief({ insights, title, open, onToggle }) {
   );
 }
 
-function EmptyBrief({ configured, title }) {
+function EmptyBrief({ title, error }) {
   return (
     <div>
       {title ? <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p> : null}
-      <h3 className={`font-display text-lg font-extrabold text-ink ${title ? "mt-2" : ""}`}>This week's brief is not here yet.</h3>
-      <p className="mt-2 text-sm leading-5 text-mute">
-        {configured
-          ? "The insights file is saved for this client, but it could not be read."
-          : "A weekly note will show up here once a Grok bot is assigned to this client."}
-      </p>
+      <h3 className={`font-display text-lg font-extrabold text-ink ${title ? "mt-2" : ""}`}>
+        {error ? "Couldn't load insights" : "No brief here yet"}
+      </h3>
     </div>
   );
 }
 
-export function useClientBrief({ missingOnError = false } = {}) {
-  const [state, setState] = useState({ status: "loading", configured: false, botName: "", insights: null, currency: "" });
+export function useClientBrief() {
+  const [state, setState] = useState({ status: "loading", configured: false, botName: "", insights: null, currency: "", error: "" });
 
   useEffect(() => {
     let stop = false;
@@ -132,25 +129,26 @@ export function useClientBrief({ missingOnError = false } = {}) {
           botName: data.botName || "",
           insights: data.insights || null,
           currency: data.currency || "",
+          error: data.error || "",
         });
       })
       .catch(() => {
         if (!stop) {
-          setState({ status: "ready", configured: !missingOnError, botName: "", insights: null, currency: "" });
+          setState({ status: "ready", configured: true, botName: "", insights: null, currency: "", error: "Couldn't load insights" });
         }
       });
     return () => { stop = true; };
-  }, [missingOnError]);
+  }, []);
 
   return state;
 }
 
 function InsightsView({ always = false, fallback = null, state }) {
   const [open, setOpen] = useState(false);
-  if (state.status === "ready" && !always && !state.configured) return fallback;
-  const showBrief = state.status === "ready" && state.insights;
-  const showEmpty = state.status === "ready" && !state.insights;
-  const title = "Purple Hat insights";
+  if (state.status === "ready" && !always && !state.configured && !state.error) return fallback;
+  const showBrief = state.status === "ready" && state.insights && !state.error;
+  const showEmpty = state.status === "ready" && !showBrief;
+  const title = showBrief && state.insights.title ? publicCopy(state.insights.title) : "Purple Hat insights";
 
   return (
     <Card className="flex h-full flex-col">
@@ -161,7 +159,7 @@ function InsightsView({ always = false, fallback = null, state }) {
         </div>
       ) : null}
       {showBrief ? <Brief insights={state.insights} title={title} open={open} onToggle={() => setOpen((value) => !value)} /> : null}
-      {showEmpty ? <EmptyBrief configured={state.configured} title={title} /> : null}
+      {showEmpty ? <EmptyBrief title={title} error={state.error} /> : null}
       {showBrief && state.insights.joke ? (
         <p className="mt-auto pt-5 text-xs italic leading-5 text-mute">{publicCopy(state.insights.joke)}</p>
       ) : null}
@@ -170,7 +168,7 @@ function InsightsView({ always = false, fallback = null, state }) {
 }
 
 function OwnInsights(props) {
-  const state = useClientBrief({ missingOnError: true });
+  const state = useClientBrief();
   return <InsightsView {...props} state={state} />;
 }
 
