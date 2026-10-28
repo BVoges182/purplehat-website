@@ -9,6 +9,12 @@ function cleanText(value, max) {
   return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
+function clientFacing(value, max) {
+  return cleanText(value, max)
+    .replaceAll("John McEnroe's insights", "Purple Hat insights")
+    .replaceAll("John McEnroe", "Purple Hat");
+}
+
 function httpUrl(value) {
   try {
     const url = new URL(String(value || "").trim());
@@ -41,20 +47,20 @@ export function parseInsights(value) {
   }
   const updated = cleanText(value.updated, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(updated)) throw new Error("Insights need an updated date.");
-  const headline = cleanText(value.headline, 280);
+  const headline = clientFacing(value.headline, 280);
   if (!headline) throw new Error("Insights need a headline.");
   const findings = (Array.isArray(value.findings) ? value.findings : []).slice(0, 12).flatMap((item) => {
-    const title = cleanText(item?.title, 140);
-    const detail = cleanText(item?.detail, 600);
+    const title = clientFacing(item?.title, 140);
+    const detail = clientFacing(item?.detail, 600);
     if (!title && !detail) return [];
     return [{ title, detail, sourceUrl: httpUrl(item?.source_url) }];
   });
   const actions = (Array.isArray(value.actions) ? value.actions : [])
-    .map((item) => cleanText(item, 240))
+    .map((item) => clientFacing(item, 240))
     .filter(Boolean)
     .slice(0, 8);
-  const title = cleanText(value.title, 80);
-  const joke = cleanText(value.joke, 400);
+  const title = clientFacing(value.title, 80);
+  const joke = clientFacing(value.joke, 400);
   let financial = null;
   if (value.financial != null) {
     try {
@@ -65,7 +71,7 @@ export function parseInsights(value) {
   }
   return {
     updated,
-    client: cleanText(value.client, 120),
+    client: clientFacing(value.client, 120),
     ...(title ? { title } : {}),
     headline,
     findings,
@@ -93,7 +99,7 @@ export function insightsFileLabel(source) {
 export function botInsightsTitle(name) {
   const text = cleanText(name, 80);
   if (!text) return "";
-  return `${text}'s insights`;
+  return "Purple Hat insights";
 }
 
 function moneyValue(value) {
@@ -105,7 +111,7 @@ function moneyValue(value) {
 
 function bulletList(value) {
   return (Array.isArray(value) ? value : []).slice(0, 8).flatMap((item) => {
-    const text = cleanText(typeof item === "string" ? item : item?.text || item?.detail || item?.title, 500);
+    const text = clientFacing(typeof item === "string" ? item : item?.text || item?.detail || item?.title, 500);
     return text ? [text] : [];
   });
 }
@@ -114,7 +120,7 @@ function moneySide(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const total = moneyValue(value.total);
   const overdue = moneyValue(value.overdue);
-  const note = cleanText(value.note, 800);
+  const note = clientFacing(value.note, 800);
   if (total == null && overdue == null && !note) return null;
   return {
     ...(total == null ? {} : { total }),
@@ -129,9 +135,9 @@ export function parseFinancialInsights(value) {
   }
   const updated = cleanText(value.updated, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(updated)) throw new Error("Financial insights need an updated date.");
-  const headline = cleanText(value.headline, 500);
-  const title = cleanText(value.title, 80);
-  const period = cleanText(value.period, 80);
+  const headline = clientFacing(value.headline, 500);
+  const title = clientFacing(value.title, 80);
+  const period = clientFacing(value.period, 80);
   const receivables = moneySide(value.receivables);
   const payables = moneySide(value.payables);
   const currentMonth = bulletList(value.current_month);

@@ -133,39 +133,74 @@
       transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
     .card:hover { transform: translateY(-4px); box-shadow: 0 22px 46px rgba(76, 29, 149, 0.12); }
-    .shot-open {
-      display: block; width: 100%; margin: 0; padding: 0; border: 0;
-      background: transparent; text-align: left; cursor: zoom-in; color: inherit;
-    }
+    .shot-carousel { display: block; width: 100%; }
     .shot {
       display: block; overflow: hidden; background: #fff;
       border-radius: 1.25rem;
       box-shadow: 0 18px 44px rgba(76, 29, 149, 0.1);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
-    .shot-open:hover .shot { transform: translateY(-3px); box-shadow: 0 22px 48px rgba(76, 29, 149, 0.16); }
     .shot-chrome {
-      display: flex; align-items: center; gap: 0.4rem;
+      display: flex; align-items: center; gap: 0.45rem;
       height: 2.25rem; padding: 0 0.9rem; background: #f6f3ff;
       border-bottom: 1px solid rgba(109, 40, 217, 0.08);
     }
-    .shot-chrome span { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: #ddd6fe; }
-    .shot-chrome span:first-child { background: #c4b5fd; }
-    .shot-chrome span:nth-child(2) { background: #a78bfa; }
-    .shot img { display: block; width: 100%; height: auto; }
+    .shot-dot {
+      width: 0.55rem; height: 0.55rem; padding: 0; border: 0; border-radius: 999px;
+      background: #ddd6fe; cursor: pointer;
+    }
+    .shot-dot.is-active { background: #6d28d9; }
+    .shot-viewport {
+      position: relative; aspect-ratio: 1440 / 900; overflow: hidden; background: #f7f4ff;
+      outline: none;
+    }
+    .shot-viewport:focus-visible { box-shadow: inset 0 0 0 2px #6d28d9; }
+    .shot-slide {
+      position: absolute; inset: 0; margin: 0;
+      opacity: 0; visibility: hidden;
+      transition: opacity 450ms ease;
+    }
+    .shot-slide.is-active { opacity: 1; visibility: visible; z-index: 1; }
+    .shot-slide img { display: block; width: 100%; height: 100%; object-fit: contain; background: #f7f4ff; }
+    .shot-caption {
+      min-height: 2.75rem; margin: 0.7rem 0 0; text-align: center;
+      font-size: 0.92rem; line-height: 1.35; color: #5c5470;
+    }
+    .shot-arrow {
+      position: absolute; top: 50%; z-index: 2; transform: translateY(-50%);
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9); color: #4c1d95;
+      box-shadow: 0 4px 14px rgba(76, 29, 149, 0.14); cursor: pointer; opacity: 0.45;
+    }
+    .shot-arrow svg { width: 1.05rem; height: 1.05rem; }
+    .shot-viewport:hover .shot-arrow, .shot-arrow:focus-visible, .shot-lightbox:hover .shot-arrow { opacity: 1; }
+    .shot-prev { left: 0.55rem; }
+    .shot-next { right: 0.55rem; }
+    .shot-enlarge {
+      display: block; width: 100%; margin-top: 0.75rem; padding: 0; border: 0;
+      background: transparent; cursor: zoom-in; text-align: center; color: #6d28d9;
+      font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.75rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
     .shot-phone {
-      width: min(100%, 17.5rem); margin-inline: auto; padding: 0.55rem;
+      width: min(100%, 17.5rem); margin-inline: auto; padding: 0.55rem 0.55rem 0.7rem;
       border-radius: 2rem; background: linear-gradient(180deg, #3b2468 0%, #2a1548 100%);
       box-shadow: 0 18px 44px rgba(42, 21, 72, 0.22);
     }
-    .shot-phone img { border-radius: 1.45rem; }
+    .shot-phone .shot-chrome {
+      height: 1.7rem; margin: 0 0.15rem; padding: 0 0.75rem;
+      border: 0; border-radius: 0.95rem 0.95rem 0 0; background: #f6f3ff;
+    }
+    .shot-phone .shot-viewport { aspect-ratio: 390 / 844; border-radius: 0 0 1.15rem 1.15rem; }
     #shot-dialog {
       width: min(96vw, 72rem); max-height: 92vh; margin: auto; padding: 0.75rem;
       border: 0; border-radius: 1.25rem; background: #fff;
       box-shadow: 0 24px 60px rgba(42, 21, 72, 0.28);
     }
     #shot-dialog::backdrop { background: rgba(42, 21, 72, 0.72); }
-    #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 4.5rem); object-fit: contain; border-radius: 0.85rem; }
+    .shot-lightbox { position: relative; }
+    #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 7rem); object-fit: contain; border-radius: 0.85rem; background: #f7f4ff; }
+    #shot-caption { min-height: 1.5rem; margin: 0.65rem 0 0; text-align: center; color: #5c5470; }
     .shot-close {
       display: inline-flex; align-items: center; justify-content: center;
       min-height: 2.5rem; margin: 0 0 0.5rem auto; padding: 0.35rem 0.9rem;
@@ -173,6 +208,7 @@
       font-family: Nunito, sans-serif; font-weight: 800;
     }
     .shot-close:hover { background: #ede9fe; }
+    #shot-dialog .shot-arrow { opacity: 0.8; }
     .pill {
       display: inline-flex; align-items: center; gap: 0.45rem;
       border-radius: 999px; background: #fff; color: #6d28d9;
@@ -197,7 +233,7 @@
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       .reveal { opacity: 1; transform: none; animation: none; }
-      .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover, .shot-open:hover .shot { animation: none; transform: none; }
+      .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover, .shot-slide { animation: none; transition: none; }
     }
   </style>
 </head>
@@ -367,16 +403,39 @@
         </div>
         <div class="mt-14 space-y-16 md:mt-16 md:space-y-24">
           <article id="thinking-hat" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
-            <button type="button" class="shot-open reveal" data-shot aria-label="Enlarge the real-time dashboard">
-              <span class="shot">
-                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
-                <picture>
-                  <source srcset="images/app/dashboard.webp" type="image/webp">
-                  <img src="images/app/dashboard.png" alt="PurpleHat Demo dashboard with cash, revenue, expenses, receivables, payables, financial insights, a Grok Bot insight, and a six-month revenue chart." width="1600" height="1842" loading="lazy" decoding="async">
-                </picture>
-              </span>
-              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
-            </button>
+            <div class="shot-carousel reveal" data-carousel>
+              <div class="shot">
+                <div class="shot-chrome">
+                  <button type="button" class="shot-dot is-active" aria-label="Show slide 1 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 2 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 3 of 3"></button>
+                </div>
+                <div class="shot-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Real-time dashboard">
+                  <figure class="shot-slide is-active" data-caption="Cash, revenue, and Purple Hat insights.">
+                    <picture>
+                      <source srcset="images/app/dashboard-overview.webp" type="image/webp">
+                      <img src="images/app/dashboard-overview.png" alt="PurpleHat Demo dashboard with cash, revenue, expenses, receivables, payables, financial insights, and Purple Hat insights." width="1440" height="900" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Advertising spend set against sales.">
+                    <picture>
+                      <source data-srcset="images/app/dashboard-ads.webp" type="image/webp">
+                      <img data-src="images/app/dashboard-ads.png" alt="PurpleHat Demo chart comparing advertising spend with sales from January to December." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Top income, top expenses, and what is owed.">
+                    <picture>
+                      <source data-srcset="images/app/dashboard-mix.webp" type="image/webp">
+                      <img data-src="images/app/dashboard-mix.png" alt="PurpleHat Demo top income, top expenses, aged receivables, and aged payables." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+              </div>
+              <p class="shot-caption">Cash, revenue, and Purple Hat insights.</p>
+              <button type="button" class="shot-enlarge">View larger</button>
+            </div>
             <div class="reveal">
               <p class="pill mb-4">Thinking Hat</p>
               <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Real-time dashboards</h3>
@@ -386,16 +445,39 @@
             </div>
           </article>
           <article id="management-reports" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
-            <button type="button" class="shot-open reveal lg:order-2" data-shot aria-label="Enlarge the executive summary">
-              <span class="shot">
-                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
-                <picture>
-                  <source srcset="images/app/executive-summary.webp" type="image/webp">
-                  <img src="images/app/executive-summary.png" alt="Executive summary for PurpleHat Demo for the month ended 31 December 2026, with cash and profit for December, November, October, and the year to date." width="1600" height="1016" loading="lazy" decoding="async">
-                </picture>
-              </span>
-              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
-            </button>
+            <div class="shot-carousel reveal lg:order-2" data-carousel>
+              <div class="shot">
+                <div class="shot-chrome">
+                  <button type="button" class="shot-dot is-active" aria-label="Show slide 1 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 2 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 3 of 3"></button>
+                </div>
+                <div class="shot-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Monthly management reports">
+                  <figure class="shot-slide is-active" data-caption="Executive summary for the month and the year.">
+                    <picture>
+                      <source srcset="images/app/report-summary.webp" type="image/webp">
+                      <img src="images/app/report-summary.png" alt="Executive summary for PurpleHat Demo for December 2026, with cash and profit for December, November, October, and the year to date." width="1440" height="900" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="December charts for income and expenses.">
+                    <picture>
+                      <source data-srcset="images/app/report-charts.webp" type="image/webp">
+                      <img data-src="images/app/report-charts.png" alt="December 2026 top expenses and top income charts for PurpleHat Demo." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="KPIs, trends, and a short commentary.">
+                    <picture>
+                      <source data-srcset="images/app/report-kpis.webp" type="image/webp">
+                      <img data-src="images/app/report-kpis.png" alt="PurpleHat Demo e-commerce KPIs and trends, with return on ad spend, cost per acquisition, and a short commentary." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+              </div>
+              <p class="shot-caption">Executive summary for the month and the year.</p>
+              <button type="button" class="shot-enlarge">View larger</button>
+            </div>
             <div class="reveal lg:order-1">
               <p class="pill mb-4">Monthly</p>
               <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Monthly management reports</h3>
@@ -403,16 +485,39 @@
             </div>
           </article>
           <article id="financial-statements" class="scroll-mt-28 grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
-            <button type="button" class="shot-open reveal" data-shot aria-label="Enlarge the income and expenses charts">
-              <span class="shot">
-                <span class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span></span>
-                <picture>
-                  <source srcset="images/app/top-income-expenses.webp" type="image/webp">
-                  <img src="images/app/top-income-expenses.png" alt="December 2026 top income and top expenses for PurpleHat Demo, listing customers and suppliers with amounts and share of the total." width="1600" height="1212" loading="lazy" decoding="async">
-                </picture>
-              </span>
-              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
-            </button>
+            <div class="shot-carousel reveal" data-carousel>
+              <div class="shot">
+                <div class="shot-chrome">
+                  <button type="button" class="shot-dot is-active" aria-label="Show slide 1 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 2 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 3 of 3"></button>
+                </div>
+                <div class="shot-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Financial statements">
+                  <figure class="shot-slide is-active" data-caption="Financial position at the month end.">
+                    <picture>
+                      <source srcset="images/app/statement-position.webp" type="image/webp">
+                      <img src="images/app/statement-position.png" alt="Financial position for PurpleHat Demo at 31 December 2026." width="1440" height="900" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Profit and loss for the year to date.">
+                    <picture>
+                      <source data-srcset="images/app/statement-income.webp" type="image/webp">
+                      <img data-src="images/app/statement-income.png" alt="Profit and loss for PurpleHat Demo for the year to date." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Cash coming in and going out.">
+                    <picture>
+                      <source data-srcset="images/app/statement-cash.webp" type="image/webp">
+                      <img data-src="images/app/statement-cash.png" alt="Statement of cash flows for PurpleHat Demo." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+              </div>
+              <p class="shot-caption">Financial position at the month end.</p>
+              <button type="button" class="shot-enlarge">View larger</button>
+            </div>
             <div class="reveal">
               <p class="pill mb-4">Periodic</p>
               <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Financial reporting &amp; statements</h3>
@@ -420,15 +525,39 @@
             </div>
           </article>
           <article class="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
-            <button type="button" class="shot-open reveal lg:order-2" data-shot aria-label="Enlarge the phone dashboard">
-              <span class="shot shot-phone">
-                <picture>
-                  <source srcset="images/app/dashboard-mobile.webp" type="image/webp">
-                  <img src="images/app/dashboard-mobile.png" alt="Phone view of the PurpleHat Demo executive summary, with December, November, October, and year-to-date period buttons and the change from the previous month." width="780" height="1688" loading="lazy" decoding="async">
-                </picture>
-              </span>
-              <span class="mt-3 block text-center font-display text-xs font-extrabold uppercase tracking-[0.12em] text-plum">View larger</span>
-            </button>
+            <div class="shot-carousel reveal lg:order-2" data-carousel>
+              <div class="shot shot-phone">
+                <div class="shot-chrome">
+                  <button type="button" class="shot-dot is-active" aria-label="Show slide 1 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 2 of 3"></button>
+                  <button type="button" class="shot-dot" aria-label="Show slide 3 of 3"></button>
+                </div>
+                <div class="shot-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Phone dashboard">
+                  <figure class="shot-slide is-active" data-caption="The dashboard on a phone.">
+                    <picture>
+                      <source srcset="images/app/mobile-dashboard.webp" type="image/webp">
+                      <img src="images/app/mobile-dashboard.png" alt="Phone view of the PurpleHat Demo dashboard, with cash, revenue, expenses, receivables, and payables." width="390" height="844" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Switch the month, or look at the year to date.">
+                    <picture>
+                      <source data-srcset="images/app/mobile-summary.webp" type="image/webp">
+                      <img data-src="images/app/mobile-summary.png" alt="Phone view of the PurpleHat Demo executive summary, with December, November, October, and year-to-date buttons." width="390" height="844" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <figure class="shot-slide" data-caption="Receivables and payables by age.">
+                    <picture>
+                      <source data-srcset="images/app/mobile-aging.webp" type="image/webp">
+                      <img data-src="images/app/mobile-aging.png" alt="Phone view of aged receivables and aged payables for PurpleHat Demo, with age-bucket buttons." width="390" height="844" loading="lazy" decoding="async">
+                    </picture>
+                  </figure>
+                  <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+              </div>
+              <p class="shot-caption">The dashboard on a phone.</p>
+              <button type="button" class="shot-enlarge">View larger</button>
+            </div>
             <div class="reveal lg:order-1">
               <p class="pill mb-4">Any device</p>
               <h3 class="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Check your numbers from anywhere</h3>
@@ -525,7 +654,12 @@
     <form method="dialog" class="flex">
       <button type="submit" class="shot-close" aria-label="Close">Close</button>
     </form>
-    <img id="shot-full" alt="">
+    <div class="shot-lightbox">
+      <button type="button" class="shot-arrow shot-prev" id="shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <img id="shot-full" alt="">
+      <button type="button" class="shot-arrow shot-next" id="shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <p id="shot-caption"></p>
   </dialog>
 
   <noscript>
@@ -623,22 +757,145 @@
 
       const shotDialog = document.getElementById("shot-dialog");
       const shotFull = document.getElementById("shot-full");
+      const shotCaption = document.getElementById("shot-caption");
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let openCarousel = null;
+
+      function loadSlide(slide) {
+        if (!slide) return;
+        const source = slide.querySelector("source");
+        const img = slide.querySelector("img");
+        if (source && source.dataset.srcset && !source.getAttribute("srcset")) source.srcset = source.dataset.srcset;
+        if (img && img.dataset.src && !img.getAttribute("src")) img.src = img.dataset.src;
+      }
+
+      function activeSlide(root) {
+        return root.querySelector(".shot-slide.is-active");
+      }
+
+      function showSlide(root, index) {
+        const slides = [...root.querySelectorAll(".shot-slide")];
+        const dots = [...root.querySelectorAll(".shot-dot")];
+        const next = (index + slides.length) % slides.length;
+        slides.forEach((slide, slideIndex) => {
+          const on = slideIndex === next;
+          slide.classList.toggle("is-active", on);
+          slide.setAttribute("aria-hidden", on ? "false" : "true");
+          if (on) loadSlide(slide);
+        });
+        loadSlide(slides[(next + 1) % slides.length]);
+        dots.forEach((dot, dotIndex) => {
+          const on = dotIndex === next;
+          dot.classList.toggle("is-active", on);
+          if (on) dot.setAttribute("aria-current", "true");
+          else dot.removeAttribute("aria-current");
+        });
+        const caption = root.querySelector(".shot-caption");
+        const text = slides[next].dataset.caption || "";
+        if (caption) caption.textContent = text;
+        if (openCarousel === root && shotDialog && shotDialog.open) fillLightbox(root);
+        return next;
+      }
+
+      function fillLightbox(root) {
+        const slide = activeSlide(root);
+        const img = slide && slide.querySelector("img");
+        if (!img) return;
+        shotFull.src = img.currentSrc || img.src;
+        shotFull.alt = img.alt || "";
+        if (shotCaption) shotCaption.textContent = slide.dataset.caption || "";
+      }
+
       if (shotDialog && shotFull) {
-        document.querySelectorAll("[data-shot]").forEach((button) => {
-          button.addEventListener("click", () => {
-            const img = button.querySelector("img");
-            if (!img) return;
-            shotFull.src = img.currentSrc || img.src;
-            shotFull.alt = img.alt;
+        document.querySelectorAll("[data-carousel]").forEach((root, index) => {
+          const slides = [...root.querySelectorAll(".shot-slide")];
+          let current = 0;
+          let timer = 0;
+          let paused = false;
+          slides.forEach((slide, slideIndex) => slide.setAttribute("aria-hidden", slideIndex === 0 ? "false" : "true"));
+          root.querySelector(".shot-dot")?.setAttribute("aria-current", "true");
+
+          function go(next) {
+            current = showSlide(root, next);
+          }
+          function arm(first) {
+            window.clearTimeout(timer);
+            if (reduceMotion || paused || slides.length < 2 || shotDialog.open) return;
+            timer = window.setTimeout(() => {
+              go(current + 1);
+              arm(false);
+            }, first ? 5000 + index * 1200 : 5000);
+          }
+          function pause() {
+            paused = true;
+            window.clearTimeout(timer);
+          }
+          function resume() {
+            if (shotDialog.open && openCarousel === root) return;
+            paused = false;
+            arm(false);
+          }
+          root.step = function (delta) { go(current + delta); };
+          root.resumeIfIdle = function () {
+            if (root.matches(":hover") || root.contains(document.activeElement)) return;
+            resume();
+          };
+
+          root.querySelectorAll(".shot-dot").forEach((dot, dotIndex) => {
+            dot.addEventListener("click", () => go(dotIndex));
+          });
+          root.querySelector(".shot-prev")?.addEventListener("click", () => go(current - 1));
+          root.querySelector(".shot-next")?.addEventListener("click", () => go(current + 1));
+          root.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+            event.preventDefault();
+            go(current + (event.key === "ArrowRight" ? 1 : -1));
+          });
+          root.addEventListener("mouseenter", pause);
+          root.addEventListener("mouseleave", resume);
+          root.addEventListener("focusin", pause);
+          root.addEventListener("focusout", (event) => {
+            if (shotDialog.open) return;
+            if (!root.contains(event.relatedTarget)) resume();
+          });
+          let touchX = 0;
+          root.addEventListener("touchstart", (event) => {
+            pause();
+            touchX = event.changedTouches[0].clientX;
+          }, { passive: true });
+          root.addEventListener("touchend", (event) => {
+            const delta = event.changedTouches[0].clientX - touchX;
+            if (Math.abs(delta) > 40) go(current + (delta < 0 ? 1 : -1));
+            resume();
+          }, { passive: true });
+          root.querySelector(".shot-enlarge")?.addEventListener("click", () => {
+            openCarousel = root;
+            pause();
+            fillLightbox(root);
             shotDialog.showModal();
           });
+          window.setTimeout(() => loadSlide(slides[1]), 400);
+          arm(true);
+        });
+
+        document.getElementById("shot-prev")?.addEventListener("click", () => openCarousel?.step(-1));
+        document.getElementById("shot-next")?.addEventListener("click", () => openCarousel?.step(1));
+        shotDialog.addEventListener("keydown", (event) => {
+          if (!openCarousel) return;
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          openCarousel.step(event.key === "ArrowRight" ? 1 : -1);
         });
         shotDialog.addEventListener("click", (event) => {
           if (event.target === shotDialog) shotDialog.close();
         });
         shotDialog.addEventListener("close", () => {
+          const root = openCarousel;
           shotFull.removeAttribute("src");
           shotFull.alt = "";
+          if (shotCaption) shotCaption.textContent = "";
+          openCarousel = null;
+          root?.resumeIfIdle();
         });
       }
     })();

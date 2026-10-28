@@ -3,6 +3,12 @@ import { Card } from "./ui";
 
 const CURRENCY_SYMBOL = { USD: "$", GBP: "£", EUR: "€", ZAR: "R" };
 
+function publicCopy(value) {
+  return String(value || "")
+    .replaceAll("John McEnroe's insights", "Purple Hat insights")
+    .replaceAll("John McEnroe", "Purple Hat");
+}
+
 function formatUpdated(iso) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
   if (!match) return "";
@@ -29,7 +35,7 @@ function SideTile({ label, side, tone, currency }) {
       <p className="font-display text-xl font-extrabold text-ink">{moneyLabel(side?.total, currency)}</p>
       <p className="mt-2 text-xs text-mute">Overdue</p>
       <p className="font-display text-lg font-extrabold text-ink">{moneyLabel(side?.overdue, currency)}</p>
-      {side?.note ? <p className="mt-2 text-xs leading-5 text-mute">{side.note}</p> : null}
+      {side?.note ? <p className="mt-2 text-xs leading-5 text-mute">{publicCopy(side.note)}</p> : null}
     </div>
   );
 }
@@ -41,7 +47,7 @@ function BulletList({ label, items }) {
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
       <ul className="mt-2 space-y-1.5">
         {items.map((item) => (
-          <li key={item} className="text-sm leading-5 text-ink">{item}</li>
+          <li key={item} className="text-sm leading-5 text-ink">{publicCopy(item)}</li>
         ))}
       </ul>
     </div>
@@ -60,7 +66,7 @@ function Brief({ financial, currency }) {
         {updated ? <p className="shrink-0 text-xs text-mute">Updated {updated}</p> : null}
       </div>
       {financial.headline ? (
-        <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{financial.headline}</h3>
+        <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{publicCopy(financial.headline)}</h3>
       ) : null}
       <div className="mt-3 grid grid-cols-2 gap-3">
         <SideTile label="Receivables" side={financial.receivables} tone="bg-[#efe6ff]" currency={currency} />

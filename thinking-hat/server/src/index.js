@@ -36,6 +36,7 @@ import db, {
   replaceBuilderSections,
   saveTemplateDocument,
   seedAndyMurrayBot,
+  renameJohnMcEnroeBot,
   seedBuilderCatalog,
   applyPasswordReset,
   passwordResetByHash,
@@ -1946,6 +1947,7 @@ shortenWealthTechTemplateName();
 linkClientsToTemplates();
 seedBuilderCatalog();
 seedAndyMurrayBot();
+renameJohnMcEnroeBot();
 const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Thinking Hat API on http://localhost:${port}`);
