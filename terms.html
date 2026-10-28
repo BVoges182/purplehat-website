@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms and Conditions — Purple Hat</title>
+  <meta name="description" content="Terms for using Purple Hat, including client responsibilities, uploads, account rules, and how reports are prepared from the data you supply.">
+  <meta name="theme-color" content="#f6f3ff">
+  <link rel="icon" href="logo.png?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: "#2a1548", mute: "#5c5470", plum: "#6d28d9" },
+          fontFamily: { display: ["Nunito", "sans-serif"], sans: ["Outfit", "sans-serif"] },
+          maxWidth: { page: "72rem" }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+    body {
+      margin: 0; overflow-x: clip; color: #4c4560; font-family: Outfit, sans-serif;
+      background:
+        radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
+        radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
+        radial-gradient(680px 420px at 50% 110%, rgba(221, 214, 254, 0.55), transparent 50%),
+        #f7f4ff;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .font-display { font-family: Nunito, sans-serif; }
+    :focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; }
+    .skip { position: absolute; left: 1rem; top: -4rem; z-index: 80; background: #2a1548; color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px; }
+    .skip:focus { top: 1rem; }
+    #nav { background: rgba(247, 244, 255, 0.72); backdrop-filter: blur(16px); }
+    #nav.is-scrolled { background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(109,40,217,.08); box-shadow: 0 10px 30px rgba(76,29,149,.06); }
+    .nav-link { color: #4c4560; font-weight: 500; }
+    .nav-link:hover, .nav-link.is-active { color: #5b21b6; }
+    .nav-item { position: relative; }
+    .nav-item::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0.9rem; }
+    .nav-menu { display: none; position: absolute; top: calc(100% + 0.7rem); left: 50%; translate: -50% 0; min-width: 15rem; padding: 0.4rem; border-radius: 1rem; background: #fff; border: 1px solid rgba(109,40,217,.12); box-shadow: 0 16px 40px rgba(76,29,149,.12); z-index: 60; }
+    .nav-item:hover .nav-menu, .nav-item:focus-within .nav-menu { display: block; }
+    .nav-menu a { display: block; border-radius: 0.75rem; padding: 0.65rem 0.8rem; color: #2a1548; font-weight: 600; }
+    .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: #f5f0ff; color: #5b21b6; }
+    .chev { transition: transform 0.2s ease; }
+    .is-expanded .chev { transform: rotate(180deg); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px; font-family: Nunito, sans-serif; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+    .btn-primary { color: #fff; background: linear-gradient(180deg, #8b5cf6, #6d28d9); box-shadow: 0 10px 24px rgba(109,40,217,.28); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(109,40,217,.34); }
+    .btn-ghost { color: #4c1d95; background: #fff; border: 1px solid rgba(109,40,217,.18); }
+    .btn-ghost:hover { transform: translateY(-2px); background: #f5f3ff; }
+    .card { background: rgba(255,255,255,.86); border: 1px solid rgba(109,40,217,.08); box-shadow: 0 16px 40px rgba(76,29,149,.07); border-radius: 1.5rem; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; background: #fff; color: #6d28d9; border: 1px solid rgba(109,40,217,.12); font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
+    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform .3s ease, top .3s ease, opacity .2s ease; }
+    .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
+    .is-open .line-1 { top: 21px; transform: rotate(45deg); }
+    .is-open .line-2 { opacity: 0; }
+    .is-open .line-3 { top: 21px; transform: rotate(-45deg); }
+    #mobile-nav { background: #f7f4ff; }
+    .policy a { color: #6d28d9; font-weight: 600; }
+    .policy a:hover { color: #5b21b6; }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-primary:hover, .btn-ghost:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header id="nav" class="fixed inset-x-0 top-0 z-50">
+    <div class="mx-auto flex h-[4.5rem] w-full max-w-page items-center justify-between gap-4 px-5 sm:px-8">
+      <a href="index.html" class="flex min-w-0 items-center gap-2.5">
+        <img src="logo.png?v=4" alt="" class="h-11 w-11 object-contain" width="44" height="44">
+        <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
+      </a>
+      <nav class="hidden items-center gap-6 lg:gap-8 md:flex" aria-label="Primary">
+        <a class="nav-link whitespace-nowrap" href="index.html#about">About the Practice</a>
+        <a class="nav-link" href="index.html#practice">What I Do</a>
+        <a class="nav-link" href="index.html#services">Services</a>
+        <div class="nav-item">
+          <a class="nav-link inline-flex items-center gap-1" id="integrations-trigger" href="integrations.html" aria-haspopup="true" aria-expanded="false">
+            Integrations
+            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </a>
+          <div class="nav-menu" role="group" aria-label="Integrations">
+            <a href="integrations.html">Overview</a>
+            <a href="integrations-booking-calendar.html">Booking calendar</a>
+          </div>
+        </div>
+        <a class="nav-link" href="/contact">Contact</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm min-[360px]:inline-flex" href="index.html#book">Book a call</a>
+        <button id="nav-toggle" class="relative h-11 w-11 md:hidden" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span class="line line-1"></span><span class="line line-2"></span><span class="line line-3"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div id="mobile-nav" class="fixed inset-x-0 bottom-0 top-[4.5rem] z-40 hidden flex-col md:hidden" hidden>
+    <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-6 py-8" aria-label="Mobile">
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#about">About the Practice</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#practice">What I Do</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#services">Services</a>
+      <div>
+        <div class="flex items-center">
+          <a class="flex-1 rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="integrations.html">Integrations</a>
+          <button id="mobile-integrations-toggle" class="flex h-11 w-11 items-center justify-center rounded-full text-ink" type="button" aria-expanded="false" aria-controls="mobile-integrations-panel" aria-label="Show Integrations pages">
+            <svg class="chev" width="16" height="16" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div id="mobile-integrations-panel" class="hidden flex-col pb-2 pl-4" hidden>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations.html">Overview</a>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations-booking-calendar.html">Booking calendar</a>
+        </div>
+      </div>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="/contact">Contact</a>
+      <a class="btn btn-primary mt-6 w-full" href="index.html#book">Book a free call</a>
+    </nav>
+  </div>
+
+  <main id="main">
+    <section class="mx-auto w-full max-w-3xl px-5 pb-6 pt-32 sm:px-8 lg:pt-36">
+      <p class="pill mb-5">Terms</p>
+      <h1 class="font-display text-[clamp(2.3rem,4.6vw,4rem)] font-extrabold leading-[1.08] tracking-tight text-ink">Terms and Conditions</h1>
+      <p class="mt-4 text-sm font-semibold text-plum">Last updated <time datetime="2026-10-27">27 October 2026</time></p>
+      <p class="mt-5 text-lg leading-relaxed text-mute">These terms apply to the Purple Hat website and to the client dashboard. Purple Hat prepares dashboards, management reports, insights, and financial statements from the data a client uploads or connects, including data from Xero and QuickBooks. By using the site or an account, you agree to these terms. If you do not agree, do not use the service. How we handle personal information is set out in the <a class="font-semibold text-plum" href="/privacy">Privacy Policy</a>.</p>
+    </section>
+
+    <nav class="mx-auto w-full max-w-3xl px-5 sm:px-8" aria-label="On this page">
+      <ul class="flex flex-wrap gap-2 text-sm font-semibold">
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#responsibilities">Responsibilities</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#uploads">Uploads</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#prohibited">Prohibited use</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#suspension">Suspension</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#disclaimer">Disclaimer</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#liability">Liability</a></li>
+        <li><a class="rounded-full bg-white px-3 py-1.5 text-plum shadow-sm" href="#changes">Changes</a></li>
+      </ul>
+    </nav>
+
+    <article class="policy mx-auto w-full max-w-3xl space-y-4 px-5 py-10 sm:px-8">
+      <section class="card p-6 sm:p-8" id="responsibilities" aria-labelledby="responsibilities-heading">
+        <h2 id="responsibilities-heading" class="font-display text-2xl font-extrabold text-ink">User and client responsibilities</h2>
+        <p class="mt-4 leading-relaxed">You are responsible for the information you give us and for the login we give you.</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 leading-relaxed">
+          <li>Account details, including your name, email address, phone number, and business name, must be accurate and kept up to date.</li>
+          <li>The financial data you upload or connect must be the real data for that business. Tell us if you later find that a figure, file, or period was wrong.</li>
+          <li>Keep your login secure. Choose a password you do not use elsewhere, do not write it where other people can read it, and do not share it.</li>
+          <li>You are responsible for what is done with your login. If you think someone else has used it, email <a href="mailto:info@purplehat.fun">info@purplehat.fun</a> straight away and change the password.</li>
+          <li>Only invite people who are allowed to see that business’s figures. Remove access when someone should no longer have it.</li>
+          <li>Read the reports before you rely on them for a decision, a filing, or a payment.</li>
+        </ul>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="uploads" aria-labelledby="uploads-heading">
+        <h2 id="uploads-heading" class="font-display text-2xl font-extrabold text-ink">Rules for uploading financial data and documents</h2>
+        <p class="mt-4 leading-relaxed">Uploads and connections are how we build the dashboard, management reports, insights, and financial statements. A few rules apply to every file and every connection:</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 leading-relaxed">
+          <li>Upload only data and documents you have the right to give us. That includes reports, ledgers, invoices, and other records for the business on the account.</li>
+          <li>The file should match the business and the period it claims to cover. Do not upload another client’s records, a draft you know is discarded, or a file that mixes in someone else’s private information without a reason for the work.</li>
+          <li>Do not upload viruses, harmful code, or files that are not needed for the accounting work.</li>
+          <li>If you connect Xero or QuickBooks, you confirm that you are allowed to connect that organisation. We use the data those services make available to prepare the reports you asked for.</li>
+          <li>We may refuse a file we cannot read, that does not belong on the account, or that breaks these terms. We may ask you to send a corrected file.</li>
+        </ul>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="prohibited" aria-labelledby="prohibited-heading">
+        <h2 id="prohibited-heading" class="font-display text-2xl font-extrabold text-ink">Prohibited activities</h2>
+        <p class="mt-4 leading-relaxed">You must not misuse the website or the dashboard. In particular, you must not:</p>
+        <ul class="mt-3 list-disc space-y-2 pl-5 leading-relaxed">
+          <li>Use the service to mislead a lender, a tax authority, an investor, or anyone else.</li>
+          <li>Open, copy, or try to open an account, report, or file that is not yours.</li>
+          <li>Share a login, or let someone else sign in as you, unless that person is an authorised user on the same account.</li>
+          <li>Probe, scan, or attack the service, or try to get around a sign-in or permission check.</li>
+          <li>Interfere with the site so that other clients cannot use it.</li>
+          <li>Upload unlawful content, or content you do not have permission to use.</li>
+        </ul>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="suspension" aria-labelledby="suspension-heading">
+        <h2 id="suspension-heading" class="font-display text-2xl font-extrabold text-ink">Suspension and removal</h2>
+        <p class="mt-4 leading-relaxed">We may suspend or close an account, refuse a sign-in, or remove a file or other content if these terms are broken, if we need to protect Purple Hat or another client, or if the law requires it.</p>
+        <p class="mt-4 leading-relaxed">Where we can reasonably do so, we will tell you what we have done and why. We may remove a file that we cannot use, that looks as if it was uploaded by mistake, or that you did not have the right to upload. Suspending an account does not by itself delete records we are required to keep.</p>
+        <p class="mt-4 leading-relaxed">You may ask us to close the account by emailing <a href="mailto:info@purplehat.fun">info@purplehat.fun</a>. We will then stop providing the service, subject to any record the law says we must keep.</p>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="disclaimer" aria-labelledby="disclaimer-heading">
+        <h2 id="disclaimer-heading" class="font-display text-2xl font-extrabold text-ink">Professional services disclaimer</h2>
+        <p class="mt-4 leading-relaxed">Dashboards, management reports, insights, and financial statements are based on the data you supply or connect. If that data is incomplete, late, or wrong, the report will be too.</p>
+        <p class="mt-4 leading-relaxed">These reports are management information. They are not a statutory audit, and they are not a full set of annual financial statements unless we have agreed that piece of work with you. A figure on the dashboard does not replace the underlying ledger.</p>
+        <p class="mt-4 leading-relaxed">Nothing on the website or in the dashboard is legal, tax, or investment advice unless we agree to that advice in writing. You remain responsible for the decisions you make and for the returns and filings you submit.</p>
+        <p class="mt-4 leading-relaxed">A short public version of this note is on the <a class="font-semibold text-plum" href="/disclaimer">Disclaimer</a> page.</p>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="liability" aria-labelledby="liability-heading">
+        <h2 id="liability-heading" class="font-display text-2xl font-extrabold text-ink">Limitation of liability</h2>
+        <p class="mt-4 leading-relaxed">We take care with the work. We are not liable for loss that comes from data you supplied or connected, from a decision you take without checking the source figures, or from Xero, QuickBooks, or another service outside our control.</p>
+        <p class="mt-4 leading-relaxed">We do not exclude liability that the law does not allow us to exclude. That includes liability for fraud, and for death or personal injury caused by negligence.</p>
+        <p class="mt-4 leading-relaxed">Where the law allows a limit, Purple Hat’s total liability for a claim about the service is limited to the fees you paid Purple Hat for that service during the 12 months before the claim. Where the law allows, we are not liable for indirect or consequential loss, including lost profit, lost savings, or loss of goodwill.</p>
+      </section>
+
+      <section class="card p-6 sm:p-8" id="changes" aria-labelledby="changes-heading">
+        <h2 id="changes-heading" class="font-display text-2xl font-extrabold text-ink">Changes to these terms</h2>
+        <p class="mt-4 leading-relaxed">We may update these terms. The date at the top of this page will change when we do. The current version is always published at this address. If you keep using the website or the dashboard after that date, you accept the updated terms.</p>
+        <p class="mt-4 leading-relaxed">If a change materially affects your account, we will email the address we hold for you when we can. If you do not accept a change, stop using the service and ask us to close the account.</p>
+        <p class="mt-4 leading-relaxed">Questions about these terms can be sent to <a href="mailto:info@purplehat.fun">info@purplehat.fun</a>.</p>
+      </section>
+    </article>
+  </main>
+
+  <footer class="bg-[#2a1548] px-5 py-16 text-[#ddd6fe] sm:px-8">
+    <div class="mx-auto grid max-w-page gap-12 sm:grid-cols-2 lg:grid-cols-12">
+      <div class="lg:col-span-4">
+        <a href="index.html" class="inline-flex items-center gap-2.5 text-white">
+          <img src="logo.png?v=4" alt="" class="h-12 w-12 object-contain" width="48" height="48">
+          <span class="font-display text-xl font-extrabold">Purple Hat</span>
+        </a>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed text-[#c4b5fd]">Online accounting for people who work from anywhere.</p>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Services</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="index.html#monthly-accounting">Monthly accounting</a></li>
+          <li><a class="hover:text-white" href="index.html#management-reports">Monthly management reports</a></li>
+          <li><a class="hover:text-white" href="index.html#financial-statements">Financial reporting &amp; statements</a></li>
+          <li><a class="hover:text-white" href="integrations.html">AI integrations</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Contact</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="/contact">Contact us</a></li>
+          <li><a class="hover:text-white" href="mailto:info@purplehat.fun">info@purplehat.fun</a></li>
+          <li>Meetings by appointment</li>
+          <li><a class="hover:text-white" href="index.html#book">Book a free call</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Socials</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a class="hover:text-white" href="https://x.com/" target="_blank" rel="noopener noreferrer">X</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-[#a78bfa] sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 Purple Hat. All rights reserved.</p>
+      <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>Legal &amp; info:</span>
+        <a class="hover:text-white" href="/about">About Us</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/privacy">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/terms" aria-current="page">Terms</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/disclaimer">Disclaimer</a>
+      </span>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      const nav = document.getElementById("nav");
+      const toggle = document.getElementById("nav-toggle");
+      const panel = document.getElementById("mobile-nav");
+      const desktop = window.matchMedia("(min-width: 768px)");
+      const onScroll = () => nav.classList.toggle("is-scrolled", window.scrollY > 8);
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      function closeMenu() {
+        panel.hidden = true; panel.classList.add("hidden"); panel.classList.remove("flex");
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+        document.body.style.overflow = "";
+      }
+      function openMenu() {
+        panel.hidden = false; panel.classList.remove("hidden"); panel.classList.add("flex");
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-label", "Close menu");
+        document.body.style.overflow = "hidden";
+      }
+      toggle.addEventListener("click", () => toggle.getAttribute("aria-expanded") === "true" ? closeMenu() : openMenu());
+      panel.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+      desktop.addEventListener("change", (event) => { if (event.matches) closeMenu(); });
+      const item = document.querySelector(".nav-item");
+      const trigger = document.getElementById("integrations-trigger");
+      const setOpen = (open) => trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      item.addEventListener("mouseenter", () => setOpen(true));
+      item.addEventListener("mouseleave", () => setOpen(false));
+      item.addEventListener("focusin", () => setOpen(true));
+      item.addEventListener("focusout", (event) => { if (!item.contains(event.relatedTarget)) setOpen(false); });
+      const integToggle = document.getElementById("mobile-integrations-toggle");
+      const integPanel = document.getElementById("mobile-integrations-panel");
+      integToggle.addEventListener("click", () => {
+        const open = integToggle.getAttribute("aria-expanded") === "true";
+        integToggle.setAttribute("aria-expanded", open ? "false" : "true");
+        integToggle.classList.toggle("is-expanded", !open);
+        integPanel.hidden = open;
+        integPanel.classList.toggle("hidden", open);
+        integPanel.classList.toggle("flex", !open);
+      });
+    })();
+  </script>
+</body>
+</html>

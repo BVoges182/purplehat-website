@@ -34,7 +34,7 @@ export default function Login() {
   }
 
   return (
-    <AuthFrame title="Sign in" lede="Client dashboard for approved Purple Hat clients.">
+    <AuthFrame title="Sign in" lede="Your monthly reports and dashboard, on any device." homeLink>
       <form className="space-y-4" onSubmit={onSubmit}>
         {notice ? <Alert tone="ok">{notice}</Alert> : null}
         {error ? <Alert>{error}</Alert> : null}
@@ -44,6 +44,9 @@ export default function Login() {
         <Field label="Password">
           <input className={inputClass} type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
         </Field>
+        <p className="text-right">
+          <Link className="text-sm font-semibold text-plum" to="/forgot-password">Forgot password?</Link>
+        </p>
         <Button className="w-full" type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
       </form>
       <p className="mt-6 text-sm text-mute">

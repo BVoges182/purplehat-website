@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact an online accountant | Purple Hat</title>
+  <meta name="description" content="Talk to an online accountant about digital nomad accounting and remote business accounting. Purple Hat works with clients in the UK, the US, and South Africa.">
+  <meta name="theme-color" content="#f6f3ff">
+  <link rel="icon" href="logo.png?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: "#2a1548", mute: "#5c5470", plum: "#6d28d9" },
+          fontFamily: { display: ["Nunito", "sans-serif"], sans: ["Outfit", "sans-serif"] },
+          maxWidth: { page: "72rem" }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
+    body {
+      margin: 0; overflow-x: clip; color: #4c4560; font-family: Outfit, sans-serif;
+      background:
+        radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
+        radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
+        radial-gradient(680px 420px at 50% 110%, rgba(221, 214, 254, 0.55), transparent 50%),
+        #f7f4ff;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .font-display { font-family: Nunito, sans-serif; }
+    :focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; }
+    .skip { position: absolute; left: 1rem; top: -4rem; z-index: 80; background: #2a1548; color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px; }
+    .skip:focus { top: 1rem; }
+    #nav { background: rgba(247, 244, 255, 0.72); backdrop-filter: blur(16px); }
+    #nav.is-scrolled { background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(109,40,217,.08); box-shadow: 0 10px 30px rgba(76,29,149,.06); }
+    .nav-link { color: #4c4560; font-weight: 500; }
+    .nav-link:hover, .nav-link.is-active { color: #5b21b6; }
+    .nav-item { position: relative; }
+    .nav-item::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0.9rem; }
+    .nav-menu { display: none; position: absolute; top: calc(100% + 0.7rem); left: 50%; translate: -50% 0; min-width: 15rem; padding: 0.4rem; border-radius: 1rem; background: #fff; border: 1px solid rgba(109,40,217,.12); box-shadow: 0 16px 40px rgba(76,29,149,.12); z-index: 60; }
+    .nav-item:hover .nav-menu, .nav-item:focus-within .nav-menu { display: block; }
+    .nav-menu a { display: block; border-radius: 0.75rem; padding: 0.65rem 0.8rem; color: #2a1548; font-weight: 600; }
+    .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: #f5f0ff; color: #5b21b6; }
+    .chev { transition: transform 0.2s ease; }
+    .is-expanded .chev { transform: rotate(180deg); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px; font-family: Nunito, sans-serif; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+    .btn-primary { color: #fff; background: linear-gradient(180deg, #8b5cf6, #6d28d9); box-shadow: 0 10px 24px rgba(109,40,217,.28); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(109,40,217,.34); }
+    .btn-primary:disabled { cursor: wait; opacity: 0.7; transform: none; }
+    .btn-ghost { color: #4c1d95; background: #fff; border: 1px solid rgba(109,40,217,.18); }
+    .btn-ghost:hover { transform: translateY(-2px); background: #f5f3ff; }
+    .card { background: rgba(255,255,255,.86); border: 1px solid rgba(109,40,217,.08); box-shadow: 0 16px 40px rgba(76,29,149,.07); border-radius: 1.5rem; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; background: #fff; color: #6d28d9; border: 1px solid rgba(109,40,217,.12); font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
+    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform .3s ease, top .3s ease, opacity .2s ease; }
+    .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
+    .is-open .line-1 { top: 21px; transform: rotate(45deg); }
+    .is-open .line-2 { opacity: 0; }
+    .is-open .line-3 { top: 21px; transform: rotate(-45deg); }
+    #mobile-nav { background: #f7f4ff; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .field span { font-family: Nunito, sans-serif; font-weight: 800; color: #2a1548; }
+    .optional { font-weight: 600; color: #5c5470; }
+    .field input, .field textarea {
+      width: 100%; border-radius: 1rem; border: 1px solid rgba(109,40,217,.18);
+      background: #fff; color: #2a1548; padding: 0.85rem 1rem; font: inherit;
+    }
+    .field textarea { min-height: 9rem; resize: vertical; }
+    .err { min-height: 1.25rem; color: #9f1239; font-size: 0.9rem; }
+    .banner { border-radius: 1rem; padding: 0.85rem 1rem; background: #fff1f2; color: #9f1239; }
+    .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-primary:hover, .btn-ghost:hover { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header id="nav" class="fixed inset-x-0 top-0 z-50">
+    <div class="mx-auto flex h-[4.5rem] w-full max-w-page items-center justify-between gap-4 px-5 sm:px-8">
+      <a href="index.html" class="flex min-w-0 items-center gap-2.5">
+        <img src="logo.png?v=4" alt="" class="h-11 w-11 object-contain" width="44" height="44">
+        <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
+      </a>
+      <nav class="hidden items-center gap-6 lg:gap-8 md:flex" aria-label="Primary">
+        <a class="nav-link whitespace-nowrap" href="index.html#about">About the Practice</a>
+        <a class="nav-link" href="index.html#practice">What I Do</a>
+        <a class="nav-link" href="index.html#services">Services</a>
+        <div class="nav-item">
+          <a class="nav-link inline-flex items-center gap-1" id="integrations-trigger" href="integrations.html" aria-haspopup="true" aria-expanded="false">
+            Integrations
+            <svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </a>
+          <div class="nav-menu" role="group" aria-label="Integrations">
+            <a href="integrations.html">Overview</a>
+            <a href="integrations-booking-calendar.html">Booking calendar</a>
+          </div>
+        </div>
+        <a class="nav-link is-active" href="/contact" aria-current="page">Contact</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm min-[360px]:inline-flex" href="index.html#book">Book a call</a>
+        <button id="nav-toggle" class="relative h-11 w-11 md:hidden" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+          <span class="line line-1"></span><span class="line line-2"></span><span class="line line-3"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div id="mobile-nav" class="fixed inset-x-0 bottom-0 top-[4.5rem] z-40 hidden flex-col md:hidden" hidden>
+    <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-6 py-8" aria-label="Mobile">
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#about">About the Practice</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#practice">What I Do</a>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="index.html#services">Services</a>
+      <div>
+        <div class="flex items-center">
+          <a class="flex-1 rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-ink" href="integrations.html">Integrations</a>
+          <button id="mobile-integrations-toggle" class="flex h-11 w-11 items-center justify-center rounded-full text-ink" type="button" aria-expanded="false" aria-controls="mobile-integrations-panel" aria-label="Show Integrations pages">
+            <svg class="chev" width="16" height="16" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div id="mobile-integrations-panel" class="hidden flex-col pb-2 pl-4" hidden>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations.html">Overview</a>
+          <a class="rounded-xl px-3 py-2 text-lg font-semibold text-ink" href="integrations-booking-calendar.html">Booking calendar</a>
+        </div>
+      </div>
+      <a class="rounded-2xl px-3 py-3 font-display text-2xl font-extrabold text-plum" href="/contact" aria-current="page">Contact</a>
+      <a class="btn btn-primary mt-6 w-full" href="index.html#book">Book a free call</a>
+    </nav>
+  </div>
+
+  <main id="main">
+    <section class="mx-auto w-full max-w-page px-5 pb-4 pt-32 sm:px-8 lg:pt-36">
+      <p class="pill mb-5">Contact us</p>
+      <h1 class="max-w-3xl font-display text-[clamp(2.3rem,4.6vw,4rem)] font-extrabold leading-[1.08] tracking-tight text-ink">Tell us where you're working from.</h1>
+      <p class="mt-5 max-w-2xl text-lg leading-relaxed text-mute">A short note is enough. We read every message and reply from info@purplehat.fun. We work across time zones.</p>
+    </section>
+
+    <section class="mx-auto grid w-full max-w-page gap-8 px-5 pb-20 sm:px-8 lg:grid-cols-[1.3fr_.7fr]">
+      <div class="card p-6 sm:p-8">
+        <div id="contact-thanks" class="hidden" hidden>
+          <h2 class="font-display text-2xl font-extrabold text-ink">Message sent</h2>
+          <p id="thanks-text" class="mt-3 text-lg leading-relaxed" role="status">Thank you. We've received your message and will reply soon.</p>
+          <button id="another" class="btn btn-ghost mt-6" type="button">Send another message</button>
+        </div>
+        <form id="contact-form" novalidate>
+          <h2 class="font-display text-2xl font-extrabold text-ink">Send a message</h2>
+          <p id="form-error" class="banner mt-4 hidden" role="alert"></p>
+          <div class="mt-6 grid gap-4">
+            <label class="field">
+              <span>Name</span>
+              <input id="name" name="name" type="text" autocomplete="name" maxlength="80" required>
+              <span class="err" id="name-error"></span>
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input id="email" name="email" type="email" autocomplete="email" maxlength="120" required>
+              <span class="err" id="email-error"></span>
+            </label>
+            <label class="field">
+              <span>Company <span class="optional">(optional)</span></span>
+              <input id="company" name="company" type="text" autocomplete="organization" maxlength="120">
+              <span class="err" id="company-error"></span>
+            </label>
+            <label class="field">
+              <span>Message</span>
+              <textarea id="message" name="message" maxlength="4000" required></textarea>
+              <span class="err" id="message-error"></span>
+            </label>
+            <div class="hp" aria-hidden="true">
+              <label for="website">Website</label>
+              <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+            </div>
+          </div>
+          <button id="send" class="btn btn-primary mt-2" type="submit">Send message</button>
+          <p class="mt-4 text-sm text-mute">We use your name, email, company, and message only to reply. See the <a class="font-semibold text-plum" href="/privacy">Privacy Policy</a>.</p>
+        </form>
+      </div>
+
+      <aside class="flex flex-col gap-4">
+        <div class="card p-6">
+          <h2 class="font-display text-xl font-extrabold text-ink">Email</h2>
+          <p class="mt-2 leading-relaxed">Prefer your own mail app? Write to us directly.</p>
+          <a class="mt-3 inline-block font-semibold text-plum" href="mailto:info@purplehat.fun">info@purplehat.fun</a>
+          <p class="mt-4 text-sm text-mute">Calls only. No office visits.</p>
+        </div>
+        <div class="card p-6">
+          <h2 class="font-display text-xl font-extrabold text-ink">Socials</h2>
+          <p class="mt-2 text-sm leading-relaxed text-mute">These profile links are placeholders. Replace them when the real pages are ready.</p>
+          <!-- SOCIAL_LINKS: replace these placeholder hrefs -->
+          <ul class="mt-4 space-y-2 font-semibold">
+            <li><a class="text-plum" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            <li><a class="text-plum" href="https://x.com/" target="_blank" rel="noopener noreferrer">X</a></li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="bg-[#2a1548] px-5 py-16 text-[#ddd6fe] sm:px-8">
+    <div class="mx-auto grid max-w-page gap-12 sm:grid-cols-2 lg:grid-cols-12">
+      <div class="lg:col-span-4">
+        <a href="index.html" class="inline-flex items-center gap-2.5 text-white">
+          <img src="logo.png?v=4" alt="" class="h-12 w-12 object-contain" width="48" height="48">
+          <span class="font-display text-xl font-extrabold">Purple Hat</span>
+        </a>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed text-[#c4b5fd]">Online accounting for people who work from anywhere.</p>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Services</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="index.html#monthly-accounting">Monthly accounting</a></li>
+          <li><a class="hover:text-white" href="index.html#management-reports">Monthly management reports</a></li>
+          <li><a class="hover:text-white" href="index.html#financial-statements">Financial reporting &amp; statements</a></li>
+          <li><a class="hover:text-white" href="integrations.html">AI integrations</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-3">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Contact</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a class="hover:text-white" href="/contact" aria-current="page">Contact us</a></li>
+          <li><a class="hover:text-white" href="mailto:info@purplehat.fun">info@purplehat.fun</a></li>
+          <li>Calls only. No office visits.</li>
+          <li><a class="hover:text-white" href="index.html#book">Book a free call</a></li>
+        </ul>
+      </div>
+      <div class="lg:col-span-2">
+        <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Socials</h2>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <!-- SOCIAL_LINKS: replace these placeholder hrefs -->
+          <li><a class="hover:text-white" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          <li><a class="hover:text-white" href="https://x.com/" target="_blank" rel="noopener noreferrer">X</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-[#a78bfa] sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 Purple Hat. All rights reserved.</p>
+      <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>Legal &amp; info:</span>
+        <a class="hover:text-white" href="/about">About Us</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/privacy">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/terms">Terms</a>
+        <span aria-hidden="true">·</span>
+        <a class="hover:text-white" href="/disclaimer">Disclaimer</a>
+      </span>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      const nav = document.getElementById("nav");
+      const toggle = document.getElementById("nav-toggle");
+      const panel = document.getElementById("mobile-nav");
+      const desktop = window.matchMedia("(min-width: 768px)");
+      const onScroll = () => nav.classList.toggle("is-scrolled", window.scrollY > 8);
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      function closeMenu() {
+        panel.hidden = true; panel.classList.add("hidden"); panel.classList.remove("flex");
+        toggle.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+        document.body.style.overflow = "";
+      }
+      function openMenu() {
+        panel.hidden = false; panel.classList.remove("hidden"); panel.classList.add("flex");
+        toggle.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-label", "Close menu");
+        document.body.style.overflow = "hidden";
+      }
+      toggle.addEventListener("click", () => toggle.getAttribute("aria-expanded") === "true" ? closeMenu() : openMenu());
+      panel.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeMenu(); });
+      desktop.addEventListener("change", (event) => { if (event.matches) closeMenu(); });
+      const item = document.querySelector(".nav-item");
+      const trigger = document.getElementById("integrations-trigger");
+      const setOpen = (open) => trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      item.addEventListener("mouseenter", () => setOpen(true));
+      item.addEventListener("mouseleave", () => setOpen(false));
+      item.addEventListener("focusin", () => setOpen(true));
+      item.addEventListener("focusout", (event) => { if (!item.contains(event.relatedTarget)) setOpen(false); });
+      const integToggle = document.getElementById("mobile-integrations-toggle");
+      const integPanel = document.getElementById("mobile-integrations-panel");
+      integToggle.addEventListener("click", () => {
+        const open = integToggle.getAttribute("aria-expanded") === "true";
+        integToggle.setAttribute("aria-expanded", open ? "false" : "true");
+        integToggle.classList.toggle("is-expanded", !open);
+        integPanel.hidden = open;
+        integPanel.classList.toggle("hidden", open);
+        integPanel.classList.toggle("flex", !open);
+      });
+
+      const form = document.getElementById("contact-form");
+      const thanks = document.getElementById("contact-thanks");
+      const thanksText = document.getElementById("thanks-text");
+      const formError = document.getElementById("form-error");
+      const send = document.getElementById("send");
+      const names = ["name", "email", "company", "message"];
+      function problemsOf() {
+        const problems = {};
+        const name = form.name.value.trim();
+        const email = form.email.value.trim();
+        const company = form.company.value.trim();
+        const message = form.message.value.trim();
+        if (!name) problems.name = "Please tell us your name.";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) problems.email = "Enter a valid email so we can reply.";
+        if (company.length > 120) problems.company = "Please use a shorter company name.";
+        if (!message) problems.message = "Please write a short message.";
+        return problems;
+      }
+      function showProblems(problems) {
+        names.forEach((name) => {
+          const problem = problems[name] || "";
+          document.getElementById(name + "-error").textContent = problem;
+          form.elements[name].setAttribute("aria-invalid", problem ? "true" : "false");
+        });
+      }
+      function showBanner(text) {
+        formError.textContent = text || "";
+        formError.classList.toggle("hidden", !text);
+      }
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const problems = problemsOf();
+        showProblems(problems);
+        showBanner("");
+        if (Object.keys(problems).length) {
+          const first = names.find((name) => problems[name]);
+          form.elements[first].focus();
+          return;
+        }
+        send.disabled = true;
+        send.textContent = "Sending…";
+        try {
+          const response = await fetch("/api/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              name: form.name.value,
+              email: form.email.value,
+              company: form.company.value,
+              message: form.message.value,
+              website: form.website.value,
+            }),
+          });
+          const body = await response.json().catch(() => ({}));
+          if (response.ok) {
+            thanksText.textContent = body.message || "Thank you. We've received your message and will reply soon.";
+            form.hidden = true;
+            form.classList.add("hidden");
+            thanks.hidden = false;
+            thanks.classList.remove("hidden");
+            return;
+          }
+          if (body.fields) showProblems(body.fields);
+          showBanner(body.error || "We could not send that just now. Please email info@purplehat.fun.");
+        } catch (error) {
+          showBanner("We could not send that just now. Please email info@purplehat.fun.");
+        } finally {
+          send.disabled = false;
+          send.textContent = "Send message";
+        }
+      });
+      document.getElementById("another").addEventListener("click", () => {
+        form.reset();
+        showProblems({});
+        showBanner("");
+        thanks.hidden = true;
+        thanks.classList.add("hidden");
+        form.hidden = false;
+        form.classList.remove("hidden");
+        form.name.focus();
+      });
+    })();
+  </script>
+</body>
+</html>

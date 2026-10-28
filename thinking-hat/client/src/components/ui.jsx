@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export const inputClass = "w-full rounded-2xl border border-[rgba(109,40,217,0.16)] bg-white px-4 py-3 text-ink outline-none transition focus:border-plum";
 
 export function money(value) {
@@ -77,6 +79,44 @@ export function Button({ children, variant = "primary", className = "", ...props
   );
 }
 
+export function SegmentedPills({ options, value, onChange, label }) {
+  const scroller = useRef(null);
+  useEffect(() => {
+    const track = scroller.current;
+    const active = track?.querySelector("[aria-selected='true']");
+    if (!active || !track) return;
+    const trackBox = track.getBoundingClientRect();
+    const activeBox = active.getBoundingClientRect();
+    let left = track.scrollLeft;
+    if (activeBox.right > trackBox.right - 8) left += activeBox.right - (trackBox.right - 8);
+    if (activeBox.left < trackBox.left + 8) left -= (trackBox.left + 8) - activeBox.left;
+    track.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [value]);
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)]">
+      <div ref={scroller} className="overflow-x-auto" role="tablist" aria-label={label}>
+        <div className="flex w-max gap-1 rounded-full bg-[#f6f3ff] p-1">
+          {options.map((option) => {
+            const active = option.id === value;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${active ? "bg-plum text-white shadow-card" : "text-mute"}`}
+                onClick={() => onChange(option.id)}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Field({ label, hint, children }) {
   return (
     <label className="block">
@@ -114,7 +154,14 @@ export function Avatar({ user, className = "h-10 w-10" }) {
   );
 }
 
-export function AuthFrame({ title, lede, children }) {
+export function marketingHome() {
+  if (typeof window === "undefined") return "/";
+  const { hostname, port } = window.location;
+  if ((hostname === "localhost" || hostname === "127.0.0.1") && port === "5173") return "http://localhost:8787/";
+  return "/";
+}
+
+export function AuthFrame({ title, lede, children, homeLink = false }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <aside className="hidden flex-col justify-between bg-gradient-to-br from-[#6d28d9] to-[#4c1d95] px-12 py-12 text-white lg:flex">
@@ -129,10 +176,13 @@ export function AuthFrame({ title, lede, children }) {
           <p className="max-w-sm font-display text-4xl font-extrabold leading-tight">Your figures, invoices, and build requests.</p>
           <p className="mt-4 max-w-sm text-[#ede9fe]">Approved clients only. Use the invite key Purple Hat sent you.</p>
         </div>
-        <p className="text-sm text-[#ddd6fe]">Xero and QuickBooks stay the system of record.</p>
+        <div className="h-5" aria-hidden="true" />
       </aside>
       <main className="flex items-center justify-center px-5 py-12">
         <div className="w-full max-w-md">
+          {homeLink ? (
+            <a className="mb-6 inline-flex text-sm text-mute transition hover:text-plum" href={marketingHome()}>← Back to website</a>
+          ) : null}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <img src="/logo.png" alt="" className="h-12 w-12 object-contain" />
             <div>

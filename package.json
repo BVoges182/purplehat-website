@@ -8,7 +8,7 @@
     "build": "node thinking-hat/scripts/build-client.mjs",
     "postinstall": "node thinking-hat/scripts/build-client.mjs",
     "start": "node thinking-hat/server/src/index.js",
-    "test": "node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js thinking-hat/server/src/insights.test.js"
+    "test": "node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js thinking-hat/server/src/insights.test.js thinking-hat/server/src/passwordReset.test.js thinking-hat/server/src/contactForm.test.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

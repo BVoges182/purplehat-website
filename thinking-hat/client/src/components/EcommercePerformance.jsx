@@ -104,10 +104,10 @@ function LineChart({ points }) {
   const summary = `ROAS and conversion rate by month. Latest ROAS ${reportFigure(latest?.roas, "number2")}, conversion ${reportFigure(latest?.conversion, "percent2")}.`;
   return (
     <div>
-      <div className="grid grid-cols-[2.25rem_1fr_2.5rem] gap-1">
+      <div className="grid min-w-0 grid-cols-[3.25rem_minmax(0,1fr)_3.75rem] gap-1 md:grid-cols-[2.25rem_1fr_2.5rem]">
         <div className="relative">
           {roasTicks.map((tick) => (
-            <span key={`roas-${tick.toFixed(2)}`} className="absolute right-0 -translate-y-1/2 text-[10px] tabular-nums text-mute" style={{ top: `${yOf(tick, roasDomain.min, roasDomain.max)}%` }}>
+            <span key={`roas-${tick.toFixed(2)}`} className="absolute right-0 -translate-y-1/2 text-sm tabular-nums text-mute md:text-[10px]" style={{ top: `${yOf(tick, roasDomain.min, roasDomain.max)}%` }}>
               {tick.toFixed(1)}
             </span>
           ))}
@@ -141,13 +141,13 @@ function LineChart({ points }) {
         </div>
         <div className="relative">
           {conversionTicks.map((tick) => (
-            <span key={`conv-${tick.toFixed(2)}`} className="absolute left-0 -translate-y-1/2 text-[10px] tabular-nums text-mute" style={{ top: `${yOf(tick, conversionDomain.min, conversionDomain.max)}%` }}>
+            <span key={`conv-${tick.toFixed(2)}`} className="absolute left-0 -translate-y-1/2 whitespace-nowrap text-sm tabular-nums text-mute md:text-[10px]" style={{ top: `${yOf(tick, conversionDomain.min, conversionDomain.max)}%` }}>
               {tick.toFixed(1)}%
             </span>
           ))}
         </div>
       </div>
-      <div className="relative mt-2 h-4 pl-10 pr-11 text-[10px] text-mute">
+      <div className="relative mt-2 h-5 pl-14 pr-16 text-sm text-mute md:h-4 md:pl-10 md:pr-11 md:text-[10px]">
         <div className="relative h-full">
           {points.map((point, index) => (
             <span key={point.month} className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${xOf(index, points.length)}%` }}>
@@ -168,7 +168,7 @@ function BarChart({ points }) {
   return (
     <div>
       <div className="flex gap-2" role="img" aria-label={summary}>
-        <div className="flex h-40 w-9 shrink-0 flex-col justify-between text-right text-[10px] tabular-nums leading-none text-mute">
+        <div className="flex h-40 w-12 shrink-0 flex-col justify-between text-right text-sm tabular-nums leading-none text-mute md:w-9 md:text-[10px]">
           <span>{compactUsd(max)}</span>
           <span>{compactUsd(max / 2)}</span>
           <span>$0</span>
@@ -182,9 +182,12 @@ function BarChart({ points }) {
           ))}
         </div>
       </div>
-      <div className="mt-2 flex justify-between pl-11 text-[10px] text-mute">
+      <div className="mt-2 flex justify-between pl-14 text-sm text-mute md:pl-11 md:text-[10px]">
         {points.map((point) => (
-          <span key={point.month} className="w-0 flex-1 text-center">{shortMonth(point.month)}</span>
+          <span key={point.month} className="w-0 flex-1 text-center">
+            <span className="md:hidden">{shortMonth(point.month).slice(0, 1)}</span>
+            <span className="hidden md:inline">{shortMonth(point.month)}</span>
+          </span>
         ))}
       </div>
     </div>
@@ -254,14 +257,14 @@ export default function EcommercePerformance({ points }) {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-ink">ROAS & Conversion Rate Trend</h3>
           <Legend items={[{ label: "ROAS", swatch: "bg-plum" }, { label: "Conversion rate", swatch: "bg-emerald-600" }]} />
           <div className="mt-4">
             <LineChart points={points} />
           </div>
         </div>
-        <div className="rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-ink">Ad Spend vs Revenue</h3>
           <Legend items={[{ label: "Ad spend", swatch: "bg-plum" }, { label: "Revenue", swatch: "bg-emerald-600" }]} />
           <div className="mt-4">

@@ -128,7 +128,7 @@ export default function FinancialStatements() {
       {!ready && !error ? <p className="text-mute">Loading statements…</p> : null}
       {ready ? (
         <div className="space-y-4">
-          <p className="text-sm text-mute">These are not a full set of annual financial statements. Xero and QuickBooks stay the system of record.</p>
+          <p className="text-sm text-mute">These are not a full set of annual financial statements.</p>
           {plas && months.length > 0 ? (
             <div className="max-w-xs">
               <Field label="Month">

@@ -107,7 +107,7 @@ function ProfileCard({ user, events }) {
 
 function MonthChart({ months, max, fill = false }) {
   const plot = months.map((month) => (
-    <div key={month.month} className="flex h-full min-w-0 flex-1 flex-col justify-end">
+    <div key={month.month} className="flex h-full min-w-0 flex-1 flex-col justify-end overflow-hidden">
       <div className={fill ? "flex h-[calc(100%-1.75rem)] items-end gap-1" : "flex h-36 items-end gap-1"}>
         {typeof month.revenue === "number" ? (
           <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
@@ -121,12 +121,12 @@ function MonthChart({ months, max, fill = false }) {
   ));
   if (fill) {
     return (
-      <div className="relative mt-4 min-h-0 flex-1 pb-4">
+      <div className="relative mt-4 min-h-0 min-w-0 flex-1 overflow-hidden pb-4">
         <div className="absolute inset-x-0 top-0 bottom-4 flex items-end gap-2">{plot}</div>
       </div>
     );
   }
-  return <div className="mt-6 flex h-44 items-end gap-2">{plot}</div>;
+  return <div className="mt-6 flex h-44 min-w-0 items-end gap-2 overflow-hidden">{plot}</div>;
 }
 
 function chartMax(data) {
@@ -340,7 +340,7 @@ function DemoDashboard({ user }) {
               <div ref={insightsRef} className="min-w-0">
                 <AndysInsights always brief={brief} />
               </div>
-              <div ref={chartRef} className="h-64 shrink-0">
+              <div ref={chartRef} className="h-64 min-w-0 shrink-0">
                 <Card className="flex h-full flex-col">
                   <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
                   <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">

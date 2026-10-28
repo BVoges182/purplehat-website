@@ -15,6 +15,7 @@ export async function sendSmtpMail({ to, message, config }) {
   await transporter.sendMail({
     from: formatFrom(config),
     to,
+    replyTo: message.replyTo || undefined,
     subject: message.subject,
     text: message.text,
     html: message.html,

@@ -37,6 +37,12 @@ import db, {
   saveTemplateDocument,
   seedAndyMurrayBot,
   seedBuilderCatalog,
+  applyPasswordReset,
+  passwordResetByHash,
+  recordResetRequest,
+  resetRequestTimes,
+  savePasswordReset,
+  userIdByEmail,
   assignBuilderClientBot,
   assignedGrokBot,
   createGrokBot,
@@ -65,6 +71,30 @@ import {
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
 import { insightLoader } from "./insights.js";
 import { sendSmtpMail } from "./mail.js";
+import {
+  PASSWORD_UPDATED,
+  RESET_INVALID,
+  RESET_MESSAGE,
+  buildResetMessage,
+  deliverResetEmail,
+  hashResetToken,
+  newResetToken,
+  passwordProblem,
+  planResetRequest,
+  resetExpiry,
+  shouldLogResetLink,
+  tokenProblem,
+} from "./passwordReset.js";
+import {
+  CONTACT_SEND_FAILED,
+  CONTACT_SUCCESS,
+  CONTACT_WAIT,
+  buildContactMessage,
+  deliverContactMessage,
+  parseContact,
+  releaseContactSlot,
+  takeContactSlot,
+} from "./contactForm.js";
 import {
   buildInviteMessage,
   deliverInviteEmail,
@@ -114,8 +144,17 @@ function isEmail(value) {
   return isInviteEmail(value);
 }
 
+function configuredAppUrl() {
+  return String(process.env.APP_URL || "").trim().replace(/\/$/, "");
+}
+
+function appLoginHref() {
+  const configured = configuredAppUrl();
+  return configured ? `${configured}/login` : "/login";
+}
+
 function requestOrigin(req) {
-  const configured = String(process.env.APP_URL || "").trim().replace(/\/$/, "");
+  const configured = configuredAppUrl();
   if (configured) return configured;
   const host = String(req.get("x-forwarded-host") || req.get("host") || "").split(",")[0].trim().toLowerCase();
   const proto = String(req.get("x-forwarded-proto") || req.protocol || "https").split(",")[0].trim();
@@ -548,6 +587,103 @@ app.post("/api/auth/register", rateLimit, (req, res) => {
       : "Account created. Purple Hat still needs to approve access.",
     user,
   });
+});
+
+app.post("/api/auth/forgot-password", rateLimit, async (req, res) => {
+  const email = clean(req.body.email, 120).toLowerCase();
+  if (!isEmail(email)) {
+    res.status(400).json({ error: "Enter a valid email." });
+    return;
+  }
+  const now = Date.now();
+  const plan = planResetRequest({
+    recentTimestamps: resetRequestTimes(email),
+    userId: userIdByEmail(email),
+    now,
+  });
+  if (plan.record) recordResetRequest(email, new Date(now).toISOString());
+  if (plan.create) {
+    const token = newResetToken();
+    const createdAt = new Date(now).toISOString();
+    savePasswordReset({
+      userId: plan.userId,
+      tokenHash: hashResetToken(token),
+      expiresAt: resetExpiry(now),
+      createdAt,
+    });
+    const origin = requestOrigin(req);
+    const message = buildResetMessage({ origin, token });
+    const config = readMailConfig();
+    if (shouldLogResetLink(origin, config.configured)) {
+      console.log(`Password reset link: ${message.link}`);
+    }
+    await Promise.race([
+      deliverResetEmail({ to: email, message, config, sendSmtp: sendSmtpMail }),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
+  }
+  res.json({ message: RESET_MESSAGE });
+});
+
+app.get("/api/auth/reset-password", (req, res) => {
+  const token = String(req.query.token || "");
+  const row = token ? passwordResetByHash(hashResetToken(token)) : null;
+  const problem = tokenProblem(row);
+  if (problem) {
+    res.status(400).json({ error: RESET_INVALID });
+    return;
+  }
+  res.json({ ok: true });
+});
+
+app.post("/api/auth/reset-password", rateLimit, (req, res) => {
+  const token = String(req.body.token || "");
+  const password = String(req.body.password || "");
+  const confirm = String(req.body.confirm ?? "");
+  const problem = passwordProblem(password, confirm);
+  if (problem) {
+    res.status(400).json({ error: problem });
+    return;
+  }
+  const row = token ? passwordResetByHash(hashResetToken(token)) : null;
+  if (tokenProblem(row)) {
+    res.status(400).json({ error: RESET_INVALID });
+    return;
+  }
+  applyPasswordReset({
+    userId: row.user_id,
+    passwordHash: bcrypt.hashSync(password, 10),
+    usedAt: nowIso(),
+  });
+  res.json({ message: PASSWORD_UPDATED });
+});
+
+app.post("/api/contact", rateLimit, async (req, res) => {
+  const parsed = parseContact(req.body);
+  if (parsed.spam) {
+    res.json({ message: CONTACT_SUCCESS });
+    return;
+  }
+  if (parsed.fields) {
+    res.status(400).json({ error: "Please check the form.", fields: parsed.fields });
+    return;
+  }
+  if (!takeContactSlot(req.ip)) {
+    res.status(429).json({ error: CONTACT_WAIT });
+    return;
+  }
+  const message = buildContactMessage(parsed);
+  const config = readMailConfig();
+  const delivery = await Promise.race([
+    deliverContactMessage({ message, config, sendSmtp: sendSmtpMail }),
+    new Promise((resolve) => setTimeout(() => resolve({ ok: false }), 8000)),
+  ]);
+  if (!delivery?.ok) {
+    releaseContactSlot(req.ip);
+    res.status(502).json({ error: CONTACT_SEND_FAILED });
+    return;
+  }
+  res.json({ message: CONTACT_SUCCESS });
 });
 
 app.post("/api/auth/login", rateLimit, (req, res) => {
@@ -1700,6 +1836,16 @@ const marketingFiles = {
   "/index.html": "index.html",
   "/integrations.html": "integrations.html",
   "/integrations-booking-calendar.html": "integrations-booking-calendar.html",
+  "/privacy": "privacy.html",
+  "/privacy.html": "privacy.html",
+  "/terms": "terms.html",
+  "/terms.html": "terms.html",
+  "/about": "about.html",
+  "/about.html": "about.html",
+  "/contact": "contact.html",
+  "/contact.html": "contact.html",
+  "/disclaimer": "disclaimer.html",
+  "/disclaimer.html": "disclaimer.html",
   "/logo.png": "logo.png",
 };
 
@@ -1725,6 +1871,8 @@ function sendManagementReportPdf(res, user, month) {
 function isAppPath(pathname) {
   const name = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
   return name === "/login"
+    || name === "/forgot-password"
+    || name === "/reset-password"
     || name === "/dashboard"
     || name === "/register"
     || name === "/billing"
@@ -1738,6 +1886,12 @@ function isAppPath(pathname) {
 }
 
 if (siteRoot) {
+  app.use("/images", express.static(path.join(siteRoot, "images"), {
+    index: false,
+    dotfiles: "deny",
+    fallthrough: false,
+    maxAge: "1h",
+  }));
   app.use((req, res, next) => {
     if (req.method !== "GET" && req.method !== "HEAD") {
       next();
@@ -1751,6 +1905,14 @@ if (siteRoot) {
     const filePath = path.join(siteRoot, fileName);
     if (!fs.existsSync(filePath)) {
       next();
+      return;
+    }
+    if (fileName.endsWith(".html")) {
+      const loginHref = appLoginHref();
+      let html = fs.readFileSync(filePath, "utf8");
+      if (loginHref !== "/login") html = html.replaceAll('href="/login"', `href="${loginHref}"`);
+      res.setHeader("Cache-Control", "no-cache");
+      res.type("html").send(html);
       return;
     }
     res.sendFile(filePath);
@@ -1768,6 +1930,7 @@ if (fs.existsSync(path.join(clientDist, "index.html"))) {
       next();
       return;
     }
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(clientDist, "index.html"));
   });
 }

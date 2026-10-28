@@ -45,3 +45,37 @@ h1, h2, h3, .font-display {
 @media (prefers-reduced-motion: reduce) {
   .live-dot { animation: none; }
 }
+
+@keyframes app-menu-in {
+  from { transform: translateY(-8px); }
+  to { transform: translateY(0); }
+}
+
+.app-menu-panel {
+  animation: app-menu-in 160ms ease-out;
+}
+
+@keyframes app-switch-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.app-switch-in {
+  animation: app-switch-in 160ms ease-out;
+}
+
+@media (max-width: 767px) {
+  .app-shell .text-xs,
+  .app-shell .text-\[10px\] {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .app-shell svg text {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-menu-panel, .app-switch-in { animation: none; }
+}

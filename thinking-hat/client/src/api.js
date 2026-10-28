@@ -32,7 +32,7 @@ async function request(path, { method = "GET", body, cache } = {}) {
     throw new ApiError("Cannot reach Thinking Hat. Start the server and try again.", 0);
   }
   const data = await response.json().catch(() => ({}));
-  if (response.status === 401 && !path.startsWith("/api/auth/login") && !path.startsWith("/api/auth/register")) {
+  if (response.status === 401 && !path.startsWith("/api/auth/")) {
     onUnauthorized();
   }
   if (!response.ok) throw new ApiError(data.error || "Something went wrong.", response.status, data);
@@ -74,6 +74,9 @@ export async function downloadAuthorized(path, filename) {
 export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   register: (body) => request("/api/auth/register", { method: "POST", body }),
+  forgotPassword: (body) => request("/api/auth/forgot-password", { method: "POST", body }),
+  resetPasswordStatus: (token) => request(`/api/auth/reset-password?token=${encodeURIComponent(token)}`),
+  resetPassword: (body) => request("/api/auth/reset-password", { method: "POST", body }),
   me: () => request("/api/auth/me"),
   updateMe: (body) => request("/api/me", { method: "PATCH", body }),
   uploadPhoto: (file) => request("/api/me/photo", { method: "POST", body: photoBody(file) }),
