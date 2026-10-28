@@ -28,6 +28,22 @@ h1, h2, h3, .font-display {
   outline-offset: 3px;
 }
 
+.statements-frame { container-type: inline-size; }
+.statements-board {
+  display: grid;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f7f4ff;
+}
+@container (min-width: 920px) {
+  .statements-board { grid-template-columns: 1fr 1fr; }
+}
+.statements-board table th > div {
+  width: auto;
+  max-width: 5.6rem;
+  white-space: normal;
+}
+
 .live-dot {
   width: 0.55rem;
   height: 0.55rem;
