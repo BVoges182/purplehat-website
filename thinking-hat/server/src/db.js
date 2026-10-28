@@ -1212,6 +1212,14 @@ export function assignBuilderClientBot(clientId, botId) {
   return { clientId: Number(client.id), grokBotId: id };
 }
 
+export function renameJohnMcEnroeBot() {
+  const bot = db.prepare("SELECT * FROM grok_bots WHERE name = ? COLLATE NOCASE").get("John McEnroe");
+  if (!bot) return;
+  const taken = db.prepare("SELECT id FROM grok_bots WHERE name = ? COLLATE NOCASE AND id != ?").get("Purple Hat", bot.id);
+  if (taken) return;
+  db.prepare("UPDATE grok_bots SET name = ?, updated_at = ? WHERE id = ?").run("Purple Hat", nowIso(), bot.id);
+}
+
 export function seedAndyMurrayBot() {
   if (flagValue("grok-bot-andy-assigned")) return;
   const ts = nowIso();

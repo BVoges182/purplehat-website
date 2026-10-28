@@ -4,9 +4,10 @@ import { Card } from "./ui";
 
 const PREVIEW_COUNT = 4;
 
-function botTitle(name) {
-  const text = String(name || "").trim();
-  return text ? `${text}'s insights` : "";
+function publicCopy(value) {
+  return String(value || "")
+    .replaceAll("John McEnroe's insights", "Purple Hat insights")
+    .replaceAll("John McEnroe", "Purple Hat");
 }
 
 function formatUpdated(iso) {
@@ -19,9 +20,9 @@ function formatUpdated(iso) {
 function Finding({ finding, open }) {
   return (
     <li className="border-t border-[rgba(109,40,217,0.08)] pt-3">
-      {finding.title ? <p className="text-sm font-semibold text-ink">{finding.title}</p> : null}
+      {finding.title ? <p className="text-sm font-semibold text-ink">{publicCopy(finding.title)}</p> : null}
       {finding.detail ? (
-        <p className={`mt-1 text-sm leading-5 text-mute ${open ? "" : "line-clamp-2"}`}>{finding.detail}</p>
+        <p className={`mt-1 text-sm leading-5 text-mute ${open ? "" : "line-clamp-2"}`}>{publicCopy(finding.detail)}</p>
       ) : null}
       {finding.sourceUrl ? (
         <a className="mt-1 inline-block text-xs font-semibold text-plum" href={finding.sourceUrl} target="_blank" rel="noreferrer">
@@ -71,7 +72,7 @@ function Brief({ insights, title, open, onToggle }) {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p>
         {updated ? <p className="shrink-0 text-xs text-mute">{updated}</p> : null}
       </div>
-      <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{insights.headline}</h3>
+      <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{publicCopy(insights.headline)}</h3>
       <ClippedBody open={open}>
         {visible.length ? (
           <ol className="mt-4 space-y-3">
@@ -83,7 +84,7 @@ function Brief({ insights, title, open, onToggle }) {
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Actions</p>
             <ul className="mt-2 space-y-1.5">
               {insights.actions.map((action) => (
-                <li key={action} className="text-sm leading-5 text-ink">{action}</li>
+                <li key={action} className="text-sm leading-5 text-ink">{publicCopy(action)}</li>
               ))}
             </ul>
           </div>
@@ -149,15 +150,20 @@ function InsightsView({ always = false, fallback = null, state }) {
   if (state.status === "ready" && !always && !state.configured) return fallback;
   const showBrief = state.status === "ready" && state.insights;
   const showEmpty = state.status === "ready" && !state.insights;
-  const title = botTitle(state.botName) || (showEmpty ? "Insights" : "");
+  const title = "Purple Hat insights";
 
   return (
     <Card className="flex h-full flex-col">
-      {state.status === "loading" ? <p className="text-sm text-mute">Loading the brief…</p> : null}
+      {state.status === "loading" ? (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p>
+          <p className="mt-2 text-sm text-mute">Loading the brief…</p>
+        </div>
+      ) : null}
       {showBrief ? <Brief insights={state.insights} title={title} open={open} onToggle={() => setOpen((value) => !value)} /> : null}
       {showEmpty ? <EmptyBrief configured={state.configured} title={title} /> : null}
       {showBrief && state.insights.joke ? (
-        <p className="mt-auto pt-5 text-xs italic leading-5 text-mute">{state.insights.joke}</p>
+        <p className="mt-auto pt-5 text-xs italic leading-5 text-mute">{publicCopy(state.insights.joke)}</p>
       ) : null}
     </Card>
   );

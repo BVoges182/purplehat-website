@@ -32,6 +32,32 @@ test("parses a weekly insights brief and drops unsafe links", () => {
   assert.deepEqual(parsed.actions, ["Call the customer."]);
 });
 
+test("client-facing brief text does not keep John McEnroe's name", () => {
+  const parsed = parseInsights({
+    ...brief,
+    title: "John McEnroe's insights",
+    headline: "John McEnroe checked the cash.",
+    joke: "John McEnroe would say you cannot be serious.",
+    findings: [{ title: "Note from John McEnroe", detail: "John McEnroe looked at receivables." }],
+    actions: ["Ask John McEnroe to review."],
+    financial: {
+      updated: "2026-10-20",
+      headline: "John McEnroe sees the month.",
+      receivables: { total: 1, note: "John McEnroe: 30 days." },
+      trends: ["John McEnroe: expenses held."],
+    },
+  });
+  assert.equal(parsed.title, "Purple Hat insights");
+  assert.equal(parsed.headline, "Purple Hat checked the cash.");
+  assert.equal(parsed.joke, "Purple Hat would say you cannot be serious.");
+  assert.equal(parsed.findings[0].title, "Note from Purple Hat");
+  assert.equal(parsed.findings[0].detail, "Purple Hat looked at receivables.");
+  assert.deepEqual(parsed.actions, ["Ask Purple Hat to review."]);
+  assert.equal(parsed.financial.headline, "Purple Hat sees the month.");
+  assert.equal(parsed.financial.receivables.note, "Purple Hat: 30 days.");
+  assert.deepEqual(parsed.financial.trends, ["Purple Hat: expenses held."]);
+});
+
 test("reads an optional title and joke, and leaves them out when blank", () => {
   const parsed = parseInsights({
     ...brief,
@@ -107,7 +133,8 @@ test("saves a Drive file id from an id, a prefix, or a share link", () => {
 });
 
 test("names the card from the assigned bot and accepts a Drive file id", () => {
-  assert.equal(botInsightsTitle("Andy Murray"), "Andy Murray's insights");
+  assert.equal(botInsightsTitle("Andy Murray"), "Purple Hat insights");
+  assert.equal(botInsightsTitle("John McEnroe"), "Purple Hat insights");
   assert.equal(botInsightsTitle("  "), "");
   assert.equal(insightSource({ id: 6, bot_source: "drive:abc1234567890", insights_source: "drive:other" }), "drive:abc1234567890");
   assert.equal(insightSource({ id: 3, insights_source: "drive:abc1234567890" }), "");
