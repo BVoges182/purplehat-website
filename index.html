@@ -201,7 +201,18 @@
     .shot-lightbox { position: relative; }
     #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 7rem); object-fit: contain; border-radius: 0.85rem; background: #f7f4ff; }
     #shot-dialog img.is-hidden { display: none; }
-    .shot-viewport .shot-live { height: 100%; overflow: auto; background: #f7f4ff; }
+    .shot-viewport .shot-live { height: 100%; overflow: hidden; background: #f7f4ff; }
+    @media (max-width: 767px) {
+      .shot-viewport:has(.shot-slide.is-active .shot-live) {
+        aspect-ratio: auto; height: auto; overflow: visible;
+      }
+      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-slide.is-active {
+        position: relative; inset: auto; height: auto;
+      }
+      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-live {
+        height: auto; overflow: visible;
+      }
+    }
     .shot-live-full {
       display: none; max-height: calc(92vh - 7rem); overflow: auto;
       border-radius: 0.85rem; background: #f7f4ff;

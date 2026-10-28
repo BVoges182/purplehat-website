@@ -9,8 +9,9 @@ function mountHost(host) {
   const style = document.createElement("style");
   style.textContent = css;
   const app = document.createElement("div");
+  app.style.display = "contents";
   shadow.append(style, app);
-  createRoot(app).render(<HomepageStatements />);
+  createRoot(app).render(<HomepageStatements fit={host.classList.contains("shot-live")} />);
 }
 
 export function mountHomepageStatements() {
