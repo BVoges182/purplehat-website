@@ -845,16 +845,25 @@ function drawStatementHeader(doc, section, y, left, width, style) {
   columns.forEach((column, index) => {
     const x = left + labelWidth + valueWidth * index;
     const unit = units[index];
+    const boxX = x + 3;
+    const boxWidth = valueWidth - 8;
     doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
-    doc.text(headerText(column), x + 3, y + topPad, {
-      width: valueWidth - 8,
+    const heading = headerText(column);
+    const headingWidth = doc.widthOfString(heading);
+    doc.text(heading, boxX, y + topPad, {
+      width: boxWidth,
       align: "right",
       height: headerHeight - topPad - (unit ? 14 : 4),
     });
-    if (unit) {
-      doc.font("Outfit").fontSize(7).fillColor(BRAND.ink);
-      doc.text(unit, x + 3, y + headerHeight - 13, { width: valueWidth - 8, align: "center", lineBreak: false });
-    }
+    if (!unit) return;
+    // Sit the symbol under the middle of the heading. The heading stays right-aligned in the cell.
+    const headingLeft = boxX + boxWidth - headingWidth;
+    doc.font("Outfit").fontSize(7).fillColor(BRAND.ink);
+    const symbolWidth = doc.widthOfString(unit);
+    doc.text(unit, headingLeft + (headingWidth - symbolWidth) / 2, y + headerHeight - 13, {
+      width: symbolWidth,
+      lineBreak: false,
+    });
   });
   return { bottom: y + headerHeight, labelWidth, valueWidth };
 }
