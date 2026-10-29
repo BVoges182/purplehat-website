@@ -6,17 +6,12 @@ import ManagementReportView from "../components/ManagementReportView";
 import { Alert, Button } from "../components/ui";
 import { reportPdfName } from "../reportMoney";
 
-function sameLabel(left, right) {
-  return String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
-}
-
 export default function ReportDocument() {
   const { id, month } = useParams();
   const { user } = useAuth();
   const [report, setReport] = useState(null);
   const [businessName, setBusinessName] = useState("");
   const [reportTemplate, setReportTemplate] = useState("wealth-tech");
-  const [templateName, setTemplateName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -29,7 +24,6 @@ export default function ReportDocument() {
         setReport(data.report);
         setBusinessName(data.businessName || "");
         setReportTemplate(data.reportTemplate === "purple-hat-demo" ? "purple-hat-demo" : "wealth-tech");
-        setTemplateName(data.templateName || "");
       })
       .catch((err) => { if (!stop) setError(err.message); });
     return () => { stop = true; };
@@ -68,11 +62,9 @@ export default function ReportDocument() {
             </div>
             <Button type="button" variant="ghost" disabled={busy} onClick={download}>Download PDF</Button>
           </div>
-          <div className="-mt-2 mb-6">
-            <p className="text-sm font-semibold text-neutral-950">{businessName}</p>
-            {templateName ? <p className="mt-1 text-sm font-semibold text-ink">Template: {templateName}</p> : null}
-            {report.entityName && !sameLabel(report.entityName, businessName) ? <p className="mt-1 text-sm text-neutral-500">{report.entityName}</p> : null}
-          </div>
+          {report.entityName ? (
+            <p className="-mt-2 mb-6 text-sm text-neutral-500">{report.entityName}</p>
+          ) : null}
           <ManagementReportView report={report} template={reportTemplate} />
         </div>
       ) : null}
