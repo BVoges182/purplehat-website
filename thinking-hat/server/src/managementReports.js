@@ -853,7 +853,7 @@ function drawStatementHeader(doc, section, y, left, width, style) {
     });
     if (unit) {
       doc.font("Outfit").fontSize(7).fillColor(BRAND.ink);
-      doc.text(unit, x + 3, y + headerHeight - 13, { width: valueWidth - 8, align: "right", lineBreak: false });
+      doc.text(unit, x + 3, y + headerHeight - 13, { width: valueWidth - 8, align: "center", lineBreak: false });
     }
   });
   return { bottom: y + headerHeight, labelWidth, valueWidth };
