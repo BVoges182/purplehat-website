@@ -28,7 +28,56 @@ dotenv.config({ path: path.join(rootDir, "..", "..", ".env") });
 
 // Hostinger replaces the deploy folder on every build. Keep the database and
 // photos in DATA_DIR, or in the home directory when the app is running from hbuilds.
-function storageRoot() {
+// PURPLEHAT_STAGING=1 refuses to start unless DATA_DIR is an absolute folder
+// outside the live thinking-hat-data directory and TRADER_WARMUP is exactly 0.
+export function liveDataDirectory() {
+  return path.join(os.homedir(), "thinking-hat-data");
+}
+
+export function stagingRequested(env = process.env) {
+  return String(env.PURPLEHAT_STAGING || "").trim() === "1";
+}
+
+function samePath(left, right) {
+  const a = path.resolve(left);
+  const b = path.resolve(right);
+  return process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
+function containsPath(parent, child) {
+  const root = path.resolve(parent);
+  const target = path.resolve(child);
+  const left = process.platform === "win32" ? root.toLowerCase() : root;
+  const right = process.platform === "win32" ? target.toLowerCase() : target;
+  if (left === right) return true;
+  const prefix = left.endsWith(path.sep) ? left : `${left}${path.sep}`;
+  return right.startsWith(prefix);
+}
+
+export function stagingDataError(env = process.env) {
+  if (!stagingRequested(env)) return "";
+  const raw = String(env.DATA_DIR || "").trim();
+  if (!raw || !path.isAbsolute(raw)) {
+    return "Staging requires an absolute DATA_DIR. Read the account home from the staging site's File Manager path bar. Do not use the live thinking-hat-data directory.";
+  }
+  const resolved = path.resolve(raw);
+  const live = liveDataDirectory();
+  if (samePath(resolved, live) || containsPath(live, resolved) || containsPath(resolved, live)) {
+    return "Staging DATA_DIR must not be the live data directory.";
+  }
+  const parts = resolved.split(/[\\/]/).map((part) => part.toLowerCase());
+  if (parts.includes("hbuilds") || parts.includes("public_html")) {
+    return "Staging DATA_DIR must sit outside hbuilds and public_html.";
+  }
+  if (String(env.TRADER_WARMUP ?? "") !== "0") {
+    return "Staging requires TRADER_WARMUP=0.";
+  }
+  return "";
+}
+
+export function storageRoot() {
+  const problem = stagingDataError();
+  if (problem) throw new Error(problem);
   if (process.env.DATA_DIR) return path.resolve(process.env.DATA_DIR);
   const hosted = rootDir.includes(`${path.sep}hbuilds${path.sep}`);
   if (hosted) return path.join(os.homedir(), "thinking-hat-data");

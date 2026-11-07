@@ -34,18 +34,23 @@ Use a Business or Cloud plan. In hPanel: **Websites → Add Website → Node.js 
 
 Add these environment variables in hPanel. Do not commit `server/.env`.
 
-- `JWT_SECRET` — long random string
-- `ADMIN_EMAIL` — `admin@purplehat.fun`
-- `ADMIN_PASSWORD` — the live admin password
-- `DATA_DIR` — optional. Example: `/home/YOURUSER/thinking-hat-data`
-- `APP_URL` — `https://purplehat.fun`
+- `JWT_SECRET` — long random string, at least 16 characters
+- `ADMIN_EMAIL` — `admin@purplehat.fun` on the live site
+- `ADMIN_PASSWORD` — at least 8 characters
+- `DATA_DIR` — optional on the live site. When the app runs from a Hostinger build and this is unset, the database and photos go in `thinking-hat-data` under the account home.
+- `APP_URL` — `https://purplehat.fun` on the live site
 - `EMAIL_API_KEY` — Resend API key
 - `EMAIL_FROM` — `info@purplehat.fun`
 - `EMAIL_FROM_NAME` — `Purple Hat`
+- `GOOGLE_DRIVE_API_KEY` or `GOOGLE_API_KEY` — optional. Reads a Drive file shared as “anyone with the link”.
 
 Invite email uses the Hostinger mailbox when `SMTP_PASSWORD` is set (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASSWORD`). Otherwise it uses Resend with `EMAIL_API_KEY`. Names and example values are in `server/.env.example`. The DNS records for Resend are listed under Invite email below.
 
-Hostinger sets `PORT`. Express hides the build command, so `npm install` builds Thinking Hat itself. The database and photos are stored in `DATA_DIR`, or in `thinking-hat-data` in the home directory when the app is running from a Hostinger build. That folder is outside the deploy, so a later push does not wipe clients or photos.
+Hostinger sets `PORT`. Express hides the build command, so `npm install` builds Thinking Hat itself and installs the pinned Trader package. The database and photos are stored in `DATA_DIR` when that variable is set. On a Hostinger build with `DATA_DIR` unset, they are stored in `thinking-hat-data` under the account home, outside `hbuilds` and `public_html`. Survival of that home folder across a redeploy has not been verified on this account.
+
+A staging website on the same Hostinger account uses the same account home. Before the first staging boot, set `PURPLEHAT_STAGING=1`. Staging then starts only when `DATA_DIR` is an absolute path of a new folder, `TRADER_WARMUP` is `0`, and that folder is outside the live `thinking-hat-data` directory, `hbuilds`, and `public_html`. Obtain the account home from the staging site’s File Manager: click the house icon and read the path bar. With SSH, `printenv HOME` prints the same directory. Create a new folder and copy its full path into `DATA_DIR`. Use new values for `JWT_SECRET`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`, and `BASIC_AUTH_PASSWORD`. Leave the live mail and Drive secrets unset on staging. Saving environment variables in hPanel redeploys that website.
+
+Trader is served at `/trader` when `BASIC_AUTH_PASSWORD` is at least 12 characters. The accounting homepage does not ask for that password. See `docs/trader-integration.md`. The accounting routes, invite email, and Drive insights stay in place.
 
 The brochure and Thinking Hat are the same site. `/` is the brochure. `/login` is Thinking Hat. Pushing to `main` redeploys.
 

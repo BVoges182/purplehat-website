@@ -1,1 +1,7 @@
 node_modules/
+release/
+.env
+**/*.sqlite
+**/*.sqlite-wal
+**/*.sqlite-shm
+

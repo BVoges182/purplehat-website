@@ -6,8 +6,11 @@
   },
   "scripts": {
     "build": "node thinking-hat/scripts/build-client.mjs",
-    "postinstall": "node thinking-hat/scripts/build-client.mjs",
+    "postinstall": "node thinking-hat/scripts/build-client.mjs && node scripts/install-trader.mjs",
     "start": "node thinking-hat/server/src/index.js",
+    "install:trader": "node scripts/install-trader.mjs",
+    "test:combined": "node thinking-hat/server/src/combined-smoke.mjs",
+    "assemble:combined": "node scripts/assemble-combined.mjs",
     "test": "node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js thinking-hat/server/src/insights.test.js thinking-hat/server/src/passwordReset.test.js thinking-hat/server/src/contactForm.test.js thinking-hat/client/src/statementComparison.test.js"
   },
   "dependencies": {

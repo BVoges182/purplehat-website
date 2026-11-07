@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/BVoges182/purplehat-trading.git",
+  "commit": "603b207ffa18cc151701bd79659967bff9779584",
+  "branch": "work/trader-deployment",
+  "package": "vendor/purplehat-trader",
+  "mountPath": "/trader",
+  "apiPath": "/trader/api",
+  "files": {
+    "server/src/app.js": "ca4f7877d9fd3f210747f1e9d8ae4542df867c8ec69d53fc88242a90fd1bb3c0",
+    "dist/index.html": "d2638de8c94b4d49d58d7188a77339258f56ccd1a8cb139ee735ffddaab0a3f2",
+    "package-lock.json": "ec525971a89aa90f6cd6046bab9935719d6f51b00770213d710f9986300eeccc",
+    "package.json": "e4b531d7f6c77146d3dd4966b6582f02cdb6ce72902c6b4f55a2cf8ec48693c6"
+  },
+  "note": "Pinned snapshot. Do not edit vendor/purplehat-trader. The source of truth is purplehat-trading at this commit."
+}

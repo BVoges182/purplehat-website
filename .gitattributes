@@ -1,0 +1,4 @@
+vendor/purplehat-trader/server/src/app.js text eol=lf
+vendor/purplehat-trader/package.json -text
+vendor/purplehat-trader/package-lock.json -text
+vendor/purplehat-trader/dist/index.html -text

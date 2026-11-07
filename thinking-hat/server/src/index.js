@@ -56,6 +56,7 @@ import db, {
   transaction,
   uploadsDir,
 } from "./db.js";
+import { closeTrader, mountWebsiteTrader } from "./trader-mount.js";
 import { parseTemplateFile, templateCsv, templateDownloadName, templateText } from "./templateFile.js";
 import { builderOptions } from "./templateBuilder.js";
 import { parseWorkbook, previewTabs, sectionsFromMapping } from "./templateSections.js";
@@ -117,8 +118,17 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
 
 const app = express();
 app.disable("x-powered-by");
+// Hostinger fronts this process with one proxy. Trust that hop only.
+app.set("trust proxy", 1);
 app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"] }));
-app.use(express.json({ limit: "1mb" }));
+const websiteJson = express.json({ limit: "1mb" });
+app.use((req, res, next) => {
+  if (req.path === "/trader" || req.path.startsWith("/trader/")) {
+    next();
+    return;
+  }
+  websiteJson(req, res, next);
+});
 
 const hits = new Map();
 function rateLimit(req, res, next) {
@@ -1823,6 +1833,16 @@ app.patch("/api/admin/requests/:id", requireAuth, requireAdmin, (req, res) => {
   res.json({ request: publicRequest(next) });
 });
 
+let traderState = { configured: false, file: "" };
+try {
+  traderState = await mountWebsiteTrader(app);
+} catch (error) {
+  console.error("Trader mount failed. The accounting site will keep running.");
+  app.use("/trader", (_req, res) => {
+    res.status(503).json({ error: "Trader is not configured." });
+  });
+}
+
 app.use("/uploads", express.static(uploadsDir, { index: false, dotfiles: "deny" }));
 app.use("/uploads", (req, res) => {
   res.status(404).json({ error: "Not found." });
@@ -1941,6 +1961,22 @@ app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found." });
 });
 
+function sameFile(left, right) {
+  const a = path.resolve(left);
+  const b = path.resolve(right);
+  return process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
+function shouldListen() {
+  if (process.env.THINKING_HAT_NO_LISTEN === "1") return false;
+  const entry = process.argv[1];
+  if (!entry) return false;
+  const serverEntry = fileURLToPath(import.meta.url);
+  const repoRoot = path.resolve(path.dirname(serverEntry), "..", "..", "..");
+  const shim = path.join(repoRoot, "thinking-hat", "thinking-hat", "server", "src", "index.js");
+  return sameFile(entry, serverEntry) || sameFile(entry, shim);
+}
+
 const admin = seedAdmin();
 seedWealthTechTemplate();
 seedPurpleHatDemoTemplate();
@@ -1949,9 +1985,15 @@ linkClientsToTemplates();
 seedBuilderCatalog();
 seedAndyMurrayBot();
 renameJohnMcEnroeBot();
-const port = Number(process.env.PORT || 8787);
-app.listen(port, () => {
-  console.log(`Thinking Hat API on http://localhost:${port}`);
-  console.log(`Admin email: ${admin.email}`);
-  console.log(`Data directory: ${path.dirname(uploadsDir)}`);
-});
+if (shouldListen()) {
+  const port = Number(process.env.PORT || 8787);
+  app.listen(port, () => {
+    console.log(`Thinking Hat API on http://localhost:${port}`);
+    console.log(`Admin email: ${admin.email}`);
+    console.log(`Data directory: ${path.dirname(uploadsDir)}`);
+    if (traderState.configured) console.log(`Trader database: ${traderState.file}`);
+    else console.log("Trader is not configured. /trader returns 503 until BASIC_AUTH_PASSWORD is set on the host.");
+  });
+}
+
+export { app, closeTrader };
