@@ -37,11 +37,13 @@ Add these environment variables in hPanel. Do not commit `server/.env`.
 - `JWT_SECRET` — long random string
 - `ADMIN_EMAIL` — `admin@purplehat.fun`
 - `ADMIN_PASSWORD` — the live admin password
-- `DATA_DIR` — optional. Example: `/home/YOURUSER/thinking-hat-data`
+- `DATA_DIR` — optional. Example: `/home/YOURUSER/thinking-hat-data`. It must sit outside `hbuilds` and `public_html`.
+- `BASIC_AUTH_USER` — Trader login name. Default `purplehat`.
+- `BASIC_AUTH_PASSWORD` — Trader password, at least 12 characters. Set it only in hPanel. If it is missing, `/trader` returns 503 and the accounting homepage stays open.
 
-Hostinger sets `PORT`. Express hides the build command, so `npm install` builds Thinking Hat itself. The database and photos are stored in `DATA_DIR`, or in `thinking-hat-data` in the home directory when the app is running from a Hostinger build. That folder is outside the deploy, so a later push does not wipe clients or photos.
+Hostinger sets `PORT`. Express hides the build command, so `npm install` builds Thinking Hat and installs the pinned Trader package. The intended database folder is `DATA_DIR`, or `thinking-hat-data` in the home directory when the app path contains `hbuilds`. That is outside the deploy tree. Hostinger documents that `hbuilds` and `public_html` are replaced on every deploy, and it does not document a supported local disk for SQLite. Survival across a restart is plausible. Survival across a redeploy is not verified. See `docs/trader-integration.md`.
 
-The brochure and Thinking Hat are the same site. `/` is the brochure. `/login` is Thinking Hat. Pushing to `main` redeploys.
+The brochure and Thinking Hat are the same site. `/` is the brochure. `/login` is Thinking Hat. `/trader` is the pinned trading app. Pushing to `main` redeploys. Do not merge or deploy the Trader integration branch until the storage check in that document has passed.
 
 ## Invite keys
 

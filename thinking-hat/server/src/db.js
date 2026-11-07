@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(rootDir, "..", "..", ".env") });
 
 // Hostinger replaces the deploy folder on every build. Keep the database and
 // photos in DATA_DIR, or in the home directory when the app is running from hbuilds.
-function storageRoot() {
+export function storageRoot() {
   if (process.env.DATA_DIR) return path.resolve(process.env.DATA_DIR);
   const hosted = rootDir.includes(`${path.sep}hbuilds${path.sep}`);
   if (hosted) return path.join(os.homedir(), "thinking-hat-data");
