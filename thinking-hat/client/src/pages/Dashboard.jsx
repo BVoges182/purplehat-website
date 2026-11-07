@@ -110,7 +110,7 @@ export default function Dashboard() {
                   <Link className="text-sm font-semibold text-plum" to="/business">Business photo and details</Link>
                 </div>
               </div>
-              <h3 className="mt-6 font-display text-sm font-extrabold uppercase tracking-[0.12em] text-mute">Recent movements</h3>
+              <h3 className="mt-6 font-display text-sm font-extrabold text-mute">Recent movements (under development)</h3>
               <ul className="mt-3 space-y-3">
                 {data.events.length === 0 ? <li className="text-sm text-mute">No movements yet.</li> : null}
                 {data.events.map((event) => (

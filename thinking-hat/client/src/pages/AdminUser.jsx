@@ -21,7 +21,6 @@ export default function AdminUser() {
   const [access, setAccess] = useState(null);
   const [password, setPassword] = useState("");
   const [figures, setFigures] = useState(null);
-  const [movement, setMovement] = useState({ kind: "receipt", description: "", amount: "" });
   const [invoice, setInvoice] = useState(blankInvoice);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -109,9 +108,7 @@ export default function AdminUser() {
     event.preventDefault();
     setBusy(true);
     try {
-      const body = { ...figures };
-      if (movement.description && movement.amount !== "") body.event = movement;
-      const data = await api.saveFinances(id, body);
+      const data = await api.saveFinances(id, figures);
       setRecord((current) => ({ ...current, finances: data }));
       setFigures({
         cash: data.cash,
@@ -121,7 +118,6 @@ export default function AdminUser() {
         payables: data.payables,
         months: data.months,
       });
-      setMovement({ kind: "receipt", description: "", amount: "" });
       note("Figures saved. The client dashboard will refresh.");
     } catch (err) {
       setError(err.message);
@@ -262,21 +258,6 @@ export default function AdminUser() {
                 <input className={inputClass} type="number" min="0" step="0.01" aria-label={`Expenses ${month.month}`} value={month.expenses} onChange={(event) => setMonth(index, "expenses", event.target.value)} />
               </div>
             ))}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Movement">
-              <select className={inputClass} value={movement.kind} onChange={(event) => setMovement({ ...movement, kind: event.target.value })}>
-                <option value="receipt">Receipt</option>
-                <option value="bill">Bill</option>
-                <option value="adjustment">Adjustment</option>
-              </select>
-            </Field>
-            <Field label="Description">
-              <input className={inputClass} value={movement.description} onChange={(event) => setMovement({ ...movement, description: event.target.value })} />
-            </Field>
-            <Field label="Amount">
-              <input className={inputClass} type="number" step="0.01" value={movement.amount} onChange={(event) => setMovement({ ...movement, amount: event.target.value })} />
-            </Field>
           </div>
           <Button type="submit" disabled={busy}>Save figures</Button>
         </form>
