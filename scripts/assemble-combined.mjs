@@ -38,10 +38,14 @@ function excluded(source) {
   return false;
 }
 
-fs.cpSync(root, dest, {
-  recursive: true,
-  filter: (source) => !excluded(source),
-});
+for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+  if (skipNames.has(entry.name)) continue;
+  const source = path.join(root, entry.name);
+  fs.cpSync(source, path.join(dest, entry.name), {
+    recursive: true,
+    filter: (item) => !excluded(item),
+  });
+}
 
 function git(args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
