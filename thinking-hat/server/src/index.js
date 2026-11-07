@@ -1833,9 +1833,11 @@ app.patch("/api/admin/requests/:id", requireAuth, requireAdmin, (req, res) => {
   res.json({ request: publicRequest(next) });
 });
 
+// Keep this synchronous. Hostinger's lsnode.js loads this file with require(),
+// and a top-level await fails with ERR_REQUIRE_ASYNC_MODULE before listen().
 let traderState = { configured: false, file: "" };
 try {
-  traderState = await mountWebsiteTrader(app);
+  traderState = mountWebsiteTrader(app);
 } catch (error) {
   console.error("Trader mount failed. The accounting site will keep running.");
   app.use("/trader", (_req, res) => {
@@ -1974,6 +1976,9 @@ function shouldListen() {
   const serverEntry = fileURLToPath(import.meta.url);
   const repoRoot = path.resolve(path.dirname(serverEntry), "..", "..", "..");
   const shim = path.join(repoRoot, "thinking-hat", "thinking-hat", "server", "src", "index.js");
+  const base = path.basename(entry).toLowerCase();
+  // LiteSpeed require()s the entry. argv is lsnode.js, not this file.
+  if (base === "lsnode.js" || String(process.env.LSNODE_STARTUP_FILE || "").trim()) return true;
   return sameFile(entry, serverEntry) || sameFile(entry, shim);
 }
 

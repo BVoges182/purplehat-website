@@ -119,6 +119,7 @@ if (process.argv.includes("--serve")) {
       ALERTS_ENABLED: "false",
       ALERTS_CRON_ENABLED: "false",
       EVAL_JOB_SECRET: "",
+      LSNODE_STARTUP_FILE: "",
     };
   }
 
@@ -495,8 +496,94 @@ if (process.argv.includes("--serve")) {
       }
       const direct = await staysListening(indexPath);
       check("production entry listens", direct.code === "up" && direct.output.includes("Thinking Hat API"), direct.output.slice(-500));
-      const shim = await staysListening(path.join(repoRoot, "thinking-hat", "thinking-hat", "server", "src", "index.js"));
+      const shimPath = path.join(repoRoot, "thinking-hat", "thinking-hat", "server", "src", "index.js");
+      const shim = await staysListening(shimPath);
       check("hostinger shim listens", shim.code === "up" && shim.output.includes("Thinking Hat API"), shim.output.slice(-500));
+
+      async function hostingerRequire(entry) {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "purplehat-hostinger-"));
+        const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "purplehat-hostinger-data-"));
+        const launcher = path.join(dir, "lsnode.js");
+        fs.writeFileSync(launcher, [
+          "const http = require('http');",
+          "const original = http.Server.prototype.listen;",
+          "let calls = 0;",
+          "http.Server.prototype.listen = function () {",
+          "  calls += 1;",
+          "  if (calls > 1) {",
+          "    console.error('listen called more than once');",
+          "    process.exit(2);",
+          "  }",
+          "  const server = original.apply(this, arguments);",
+          "  server.on('listening', () => {",
+          "    const address = server.address();",
+          "    console.log('hostinger-ready ' + (address && address.port));",
+          "  });",
+          "  return server;",
+          "};",
+          "require(process.env.HOSTINGER_ENTRY);",
+          "",
+        ].join("\n"));
+        const child = spawn(process.execPath, [launcher], {
+          cwd: repoRoot,
+          env: {
+            ...serverEnv(dataDir, url, password),
+            THINKING_HAT_NO_LISTEN: "0",
+            PORT: "0",
+            TRADER_WARMUP: "0",
+            HOSTINGER_ENTRY: entry,
+            LSNODE_STARTUP_FILE: entry,
+          },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        let output = "";
+        child.stdout.on("data", (chunk) => {
+          output += chunk.toString();
+        });
+        child.stderr.on("data", (chunk) => {
+          output += chunk.toString();
+        });
+        const ready = await new Promise((resolve) => {
+          const timer = setTimeout(() => resolve(0), 20000);
+          child.stdout.on("data", () => {
+            const match = output.match(/hostinger-ready (\d+)/);
+            if (!match) return;
+            clearTimeout(timer);
+            resolve(Number(match[1]));
+          });
+          child.on("exit", () => {
+            clearTimeout(timer);
+            resolve(0);
+          });
+        });
+        const label = path.relative(repoRoot, entry);
+        let homeOk = false;
+        let traderOk = false;
+        let healthOk = false;
+        if (ready) {
+          const home = await ask(ready, "/");
+          const health = await ask(ready, "/api/health");
+          const trader = await ask(ready, "/trader/");
+          homeOk = home.status === 200 && home.text.includes(homeMarker) && !home.auth;
+          healthOk = health.status === 200 && health.json?.ok === true && !health.auth;
+          traderOk = trader.status === 401 && Boolean(trader.auth) && !trader.text.includes(homeMarker);
+        }
+        if (child.exitCode == null) child.kill();
+        await new Promise((resolve) => {
+          if (child.exitCode != null) resolve();
+          else child.once("exit", () => resolve());
+        });
+        fs.rmSync(dir, { recursive: true, force: true });
+        fs.rmSync(dataDir, { recursive: true, force: true });
+        const asyncError = output.includes("ERR_REQUIRE_ASYNC_MODULE");
+        check(
+          `hostinger require ${label}`,
+          ready > 0 && homeOk && healthOk && traderOk && !asyncError,
+          redact(output).slice(-500),
+        );
+      }
+      await hostingerRequire(indexPath);
+      await hostingerRequire(shimPath);
 
       const probeDir = fs.mkdtempSync(path.join(os.tmpdir(), "purplehat-combined-"));
       const probe = spawn(process.execPath, [indexPath], {

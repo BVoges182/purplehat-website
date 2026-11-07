@@ -32,6 +32,8 @@ Use a Business or Cloud plan. In hPanel: **Websites → Add Website → Node.js 
 | Entry file | `thinking-hat/server/src/index.js` |
 | Output directory | leave empty |
 
+Hostinger loads that entry with `require()` from `lsnode.js`. Leave the entry file as `thinking-hat/server/src/index.js`. A top-level await in its module graph stops startup with `ERR_REQUIRE_ASYNC_MODULE`.
+
 Add these environment variables in hPanel. Do not commit `server/.env`.
 
 - `JWT_SECRET` — long random string, at least 16 characters

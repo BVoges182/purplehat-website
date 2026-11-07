@@ -16,6 +16,8 @@ The snapshot lives in `vendor/purplehat-trader`. Do not edit it. `trader.pin.jso
 
 `thinking-hat/server/src/index.js`
 
+Hostinger’s entry file stays `thinking-hat/server/src/index.js`. Its `lsnode.js` loads that file with `require()`, so the module graph has no top-level await.
+
 The UI is `/trader`. The API is `/trader/api`. The accounting homepage, its pages, and its `/api` routes stay on the website.
 
 Trading `main` remains `b0e96af2573dcaa3cbd819b970c70cc9d2320857`. Do not merge `work/trader-deployment` into trading `main`.

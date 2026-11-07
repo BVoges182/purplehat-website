@@ -1,6 +1,9 @@
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { storageRoot } from "./db.js";
+
+const require = createRequire(import.meta.url);
 
 // Pinned snapshot of purplehat-trading at 603b207. Do not edit files in vendor/.
 const vendorRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "vendor", "purplehat-trader");
@@ -17,6 +20,10 @@ let scanBusy = false;
 
 function vendorUrl(relativePath) {
   return pathToFileURL(path.join(vendorRoot, relativePath)).href;
+}
+
+function loadVendor(relativePath) {
+  return require(path.join(vendorRoot, relativePath));
 }
 
 function cappedLimit(name, fallback, max) {
@@ -181,15 +188,17 @@ async function warmTrader(db) {
   }
 }
 
-export async function mountWebsiteTrader(parent) {
+export function mountWebsiteTrader(parent) {
   const file = traderDatabaseFile();
   if (!traderPasswordConfigured()) {
     parent.use("/trader", traderUnavailable);
     return { configured: false, file };
   }
   try {
-    const { mountTrader } = await import(vendorUrl("server/src/app.js"));
-    const { openDatabase } = await import(vendorUrl("server/src/db.js"));
+    // Hostinger require() cannot load a graph with top-level await. These
+    // pinned modules are synchronous, so load them with require().
+    const { mountTrader } = loadVendor("server/src/app.js");
+    const { openDatabase } = loadVendor("server/src/db.js");
     const db = openDatabase(file);
     traderDb = db;
     parent.use("/trader", traderGuards);
