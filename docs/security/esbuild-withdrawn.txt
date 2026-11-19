@@ -1,0 +1,8 @@
+esbuild 0.25.12 and GHSA-gv7w-rqvm-qjhr
+
+The advisory is withdrawn. It applied to esbuild's Deno module, and this app runs on Node.
+npm audit for thinking-hat does not list it.
+
+Vite 6.4.6 is the newest Vite 6 release and depends on esbuild ^0.25.0, which cannot install esbuild 0.28.
+A Vite 6 minor or patch update therefore cannot pull esbuild 0.28.1 or newer.
+esbuild stays at 0.25.12. No package change was made for this advisory.
