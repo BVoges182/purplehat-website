@@ -422,23 +422,26 @@ export function publicUser(row) {
 }
 
 const INFO_ADMIN_EMAIL = "info@purplehat.fun";
+const DEMO_CLIENT_EMAIL = "demo@purplehat.fun";
 
 function ensureAdminAccount(email, password) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (normalized === DEMO_CLIENT_EMAIL) return { email: normalized, created: false };
   const ts = nowIso();
-  const existing = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+  const existing = db.prepare("SELECT * FROM users WHERE email = ?").get(normalized);
   if (!existing) {
     db.prepare(
       `INSERT INTO users (email, password_hash, name, business_name, phone, role, status, created_at, updated_at)
        VALUES (?, ?, 'Purple Hat', 'Purple Hat', '', 'admin', 'active', ?, ?)`,
-    ).run(email, bcrypt.hashSync(password, 10), ts, ts);
-    return { email, created: true };
+    ).run(normalized, bcrypt.hashSync(password, 10), ts, ts);
+    return { email: normalized, created: true };
   }
   if (!bcrypt.compareSync(password, existing.password_hash) || existing.role !== "admin" || existing.status !== "active") {
     db.prepare(
       "UPDATE users SET password_hash = ?, role = 'admin', status = 'active', updated_at = ? WHERE id = ?",
     ).run(bcrypt.hashSync(password, 10), ts, existing.id);
   }
-  return { email, created: false };
+  return { email: normalized, created: false };
 }
 
 export function seedAdmin() {

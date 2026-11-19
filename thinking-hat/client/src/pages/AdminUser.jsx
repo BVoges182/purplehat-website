@@ -364,7 +364,7 @@ export default function AdminUser() {
             <Field label="Business"><input className={inputClass} value={details.businessName} onChange={(event) => setDetails({ ...details, businessName: event.target.value })} /></Field>
             <Field label="Phone"><input className={inputClass} value={details.phone} onChange={(event) => setDetails({ ...details, phone: event.target.value })} /></Field>
             <Field label="New password" hint={record.bootstrap ? "Change ADMIN_PASSWORD in server/.env and restart." : "Leave blank to keep the current password."}>
-              <input className={inputClass} type="password" value={password} disabled={record.bootstrap} onChange={(event) => setPassword(event.target.value)} />
+              <input className={inputClass} type="password" name="new-password" autoComplete="new-password" value={password} disabled={record.bootstrap} onChange={(event) => setPassword(event.target.value)} />
             </Field>
             <Button type="submit" disabled={busy}>Save details</Button>
           </form>

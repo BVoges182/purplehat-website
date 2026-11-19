@@ -196,16 +196,34 @@ const DEFAULT_PROFILE = {
   reportDate: "2027-03-15",
 };
 
+const DEMO_CLIENT_EMAIL = "demo@purplehat.fun";
+
+function demoAutoResetEnabled() {
+  return /^(1|true|yes)$/i.test(String(process.env.DEMO_AUTO_RESET || "").trim());
+}
+
 function ensureDemoClient() {
   const password = String(process.env.DEMO_PASSWORD || "");
+  const existing = db.prepare(
+    "SELECT id, password_hash FROM users WHERE lower(trim(email)) = ?",
+  ).get(DEMO_CLIENT_EMAIL);
+  if (existing) {
+    // A restart must not put the env password back. DEMO_AUTO_RESET=true is the only exception.
+    if (!demoAutoResetEnabled() || password.length < 8) return;
+    if (bcrypt.compareSync(password, existing.password_hash)) return;
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(
+      bcrypt.hashSync(password, 10),
+      nowIso(),
+      existing.id,
+    );
+    return;
+  }
   if (password.length < 8) return;
-  const existing = db.prepare("SELECT id FROM users WHERE lower(trim(email)) = 'demo@purplehat.fun'").get();
-  if (existing) return;
   const ts = nowIso();
   db.prepare(
     `INSERT INTO users (email, password_hash, name, business_name, phone, role, status, created_at, updated_at)
-     VALUES ('demo@purplehat.fun', ?, 'Purple Hat Demo', 'Purple Hat Demo LLC', '', 'client', 'active', ?, ?)`,
-  ).run(bcrypt.hashSync(password, 10), ts, ts);
+     VALUES (?, ?, 'Purple Hat Demo', 'Purple Hat Demo LLC', '', 'client', 'active', ?, ?)`,
+  ).run(DEMO_CLIENT_EMAIL, bcrypt.hashSync(password, 10), ts, ts);
 }
 
 export async function seedAnnualPackage() {
