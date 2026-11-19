@@ -92,7 +92,7 @@ export default function Shell() {
 
   return (
     <div className="app-shell min-h-screen overflow-x-clip">
-      <header ref={headerRef} className="sticky top-0 z-20 border-b border-[rgba(109,40,217,0.08)] bg-[rgba(247,244,255,0.86)] backdrop-blur-md">
+      <header ref={headerRef} className="sticky top-0 z-20 border-b border-[rgba(109,40,217,0.08)] bg-[rgba(247,244,255,0.86)] backdrop-blur-md print:hidden">
         <div className={`mx-auto flex ${frame} flex-col gap-3 px-4 py-3 sm:px-8`}>
           <div className="flex flex-nowrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">

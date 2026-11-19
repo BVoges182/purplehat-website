@@ -17,6 +17,7 @@ import AdminUser from "./pages/AdminUser";
 import AdminInvites from "./pages/AdminInvites";
 import AdminRequests from "./pages/AdminRequests";
 import AdminReports from "./pages/AdminReports";
+import AdminAnnualPreview from "./pages/AdminAnnualPreview";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminTemplateBuilder from "./pages/AdminTemplateBuilder";
 import TemplateBuilderOpen from "./pages/TemplateBuilderOpen";
@@ -65,6 +66,7 @@ export default function App() {
           <Route element={<RequireAdmin />}>
             <Route path="admin" element={<AdminPeople />} />
             <Route path="admin/reports" element={<AdminReports />} />
+            <Route path="admin/annual-statements/:id" element={<AdminAnnualPreview />} />
             <Route path="admin/templates" element={<AdminTemplates />} />
             <Route path="admin/template-builder" element={<AdminTemplateBuilder />} />
             <Route path="admin/template-builder/:clientId/templates/:templateId" element={<TemplateBuilderOpen />} />

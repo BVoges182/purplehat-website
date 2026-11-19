@@ -217,3 +217,94 @@ h1, h2, h3, .font-display {
 @media (prefers-reduced-motion: reduce) {
   .app-menu-panel, .app-switch-in { animation: none; }
 }
+
+.afs-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1.25rem;
+  color: #000;
+  font-family: "Times New Roman", Times, serif;
+}
+.afs-nav {
+  position: sticky;
+  top: 5.5rem;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: calc(100vh - 6.5rem);
+  overflow: auto;
+  font-size: 0.82rem;
+}
+.afs-nav a { color: #1F3864; text-decoration: none; }
+.afs-main { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.afs-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; width: min(100%, 8.5in); }
+.afs-actions button, .afs-page { background: #fff; }
+.afs-actions button {
+  border: 1px solid #1F3864;
+  color: #1F3864;
+  font-family: "Times New Roman", Times, serif;
+  padding: 0.35rem 0.7rem;
+}
+.afs-errors { width: min(100%, 8.5in); color: #7f1d1d; }
+.afs-page {
+  position: relative;
+  width: min(100%, 8.5in);
+  min-height: 8in;
+  padding: 0.7in 0.65in 0.85in;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  color: #000;
+  background: #fff;
+}
+.afs-kicker, .afs-page h2, .afs-unit, .afs-center { text-align: center; }
+.afs-kicker { margin: 0; font-weight: 700; letter-spacing: 0.04em; }
+.afs-page h2 {
+  margin: 0.15rem 0 0.35rem;
+  color: #1F3864;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1.5px solid #1F3864;
+  padding-bottom: 0.25rem;
+}
+.afs-unit, .afs-footer { font-size: 0.85rem; }
+.afs-heading { font-weight: 700; }
+.afs-page p { margin: 0 0 0.55rem; font-size: 10pt; line-height: 12pt; }
+.afs-table { width: 100%; border-collapse: collapse; font-size: 9pt; line-height: 11pt; }
+.afs-table th, .afs-table td { padding: 0.04in 0.04in; vertical-align: bottom; background: #fff; }
+.afs-table thead th { font-weight: 700; border-bottom: 1px solid #000; }
+.afs-table tbody th { text-align: left; font-weight: 400; }
+.afs-bold th, .afs-bold td { font-weight: 700; }
+.afs-table tr.afs-single > th,
+.afs-table tr.afs-single > td { border-top: 1px solid #000; }
+.afs-table tr.afs-double > th,
+.afs-table tr.afs-double > td { border-bottom: 3px double #000; }
+.afs-band th, .afs-band td { background: #CCEEFF; }
+.afs-date, .afs-table thead th, .afs-note { text-align: center; }
+.afs-table td { text-align: right; }
+.afs-money {
+  display: inline-grid;
+  grid-template-columns: 0.55rem 4.8rem 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.afs-num { text-align: right; }
+.afs-paren { text-align: left; }
+.afs-fpage {
+  position: absolute;
+  right: 0.65in;
+  bottom: 0.35in;
+  margin: 0;
+  color: #1F3864;
+  font-size: 9pt;
+}
+.afs-index { list-style: none; padding: 0; margin: 0; }
+.afs-index li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.12rem 0.2rem; }
+.afs-index li:nth-child(even) { background: #CCEEFF; }
+@media (max-width: 800px) {
+  .afs-shell { grid-template-columns: 1fr; }
+  .afs-nav { position: static; max-height: none; }
+}
+@media print {
+  .afs-actions, .afs-nav, header, .app-menu-panel { display: none !important; }
+  .afs-page { box-shadow: none; break-after: page; }
+}

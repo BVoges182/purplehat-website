@@ -53,7 +53,7 @@ function draftFrom(section) {
   };
 }
 
-function SectionEditor({ section, busy, onCancel, onSave }) {
+function SectionEditor({ section, busy, onCancel, onSave, shownLabel = "Show in the management report" }) {
   const [draft, setDraft] = useState(() => draftFrom(section));
   const contacts = draft.presentation === "contacts";
 
@@ -136,7 +136,7 @@ function SectionEditor({ section, busy, onCancel, onSave }) {
       </label>
       <label className="flex items-center gap-3 text-sm font-semibold text-ink">
         <input type="checkbox" checked={!draft.hidden} onChange={(event) => setDraft({ ...draft, hidden: !event.target.checked })} />
-        Show in the management report
+        {shownLabel}
       </label>
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
@@ -200,6 +200,85 @@ function SectionEditor({ section, busy, onCancel, onSave }) {
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
     </form>
+  );
+}
+
+function AnnualProfileCard({ clientId, templateId, profile, clientName, busy, onSaved, onError }) {
+  const [form, setForm] = useState({
+    yearEnd: profile?.yearEnd || "",
+    comparativeYearEnd: profile?.comparativeYearEnd || "",
+    auditStatus: profile?.auditStatus || "Audited",
+    auditorName: profile?.auditorName || "",
+    auditorFirm: profile?.auditorFirm || "",
+    reportDate: profile?.reportDate || "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      yearEnd: profile?.yearEnd || "",
+      comparativeYearEnd: profile?.comparativeYearEnd || "",
+      auditStatus: profile?.auditStatus || "Audited",
+      auditorName: profile?.auditorName || "",
+      auditorFirm: profile?.auditorFirm || "",
+      reportDate: profile?.reportDate || "",
+    });
+  }, [profile]);
+
+  async function save(event) {
+    event.preventDefault();
+    setSaving(true);
+    onError("");
+    try {
+      onSaved(await api.saveAnnualProfile(clientId, templateId, form));
+    } catch (err) {
+      onError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function setField(key) {
+    return (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
+  }
+
+  return (
+    <Card>
+      <h3 className="font-display text-lg font-extrabold text-ink">Annual statement profile</h3>
+      <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={save}>
+        <Field label="Client">
+          <input className={inputClass} value={clientName} readOnly />
+        </Field>
+        <Field label="Framework">
+          <input className={inputClass} value="US GAAP" readOnly />
+        </Field>
+        <Field label="Financial year end" hint="For example, 2026-12-31.">
+          <input className={inputClass} type="date" value={form.yearEnd} onChange={setField("yearEnd")} required />
+        </Field>
+        <Field label="Comparative year">
+          <input className={inputClass} type="date" value={form.comparativeYearEnd} onChange={setField("comparativeYearEnd")} required />
+        </Field>
+        <Field label="Audit status">
+          <select className={inputClass} value={form.auditStatus} onChange={setField("auditStatus")}>
+            <option>Audited</option>
+            <option>Reviewed</option>
+            <option>Compiled</option>
+          </select>
+        </Field>
+        <Field label="Report date">
+          <input className={inputClass} type="date" value={form.reportDate} onChange={setField("reportDate")} required />
+        </Field>
+        <Field label="Auditor name">
+          <input className={inputClass} value={form.auditorName} onChange={setField("auditorName")} required />
+        </Field>
+        <Field label="Auditor firm">
+          <input className={inputClass} value={form.auditorFirm} onChange={setField("auditorFirm")} required />
+        </Field>
+        <div className="sm:col-span-2">
+          <Button type="submit" disabled={busy || saving}>Save annual profile</Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -322,7 +401,9 @@ export default function TemplateBuilderOpen() {
       </Link>
       <PageIntro
         title={view?.template?.name || "Template"}
-        lede="Add sections, import a workbook, and arrange the pages of the management report."
+        lede={view?.template?.period === "annual"
+          ? "Show or hide sections, reorder the notes, and keep the annual statement profile with this template."
+          : "Add sections, import a workbook, and arrange the pages of the management report."}
       >
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={() => setPicker(true)} disabled={!view || busy}>+ Add section</Button>
@@ -345,6 +426,17 @@ export default function TemplateBuilderOpen() {
             </p>
             {view.template.needsReview ? <p className="mt-3 text-sm text-amber-800">{view.template.reviewReason}</p> : null}
           </Card>
+          {view.template.period === "annual" ? (
+            <AnnualProfileCard
+              clientId={clientId}
+              templateId={templateId}
+              profile={view.template.annual}
+              clientName={view.client.name}
+              busy={busy}
+              onSaved={(data) => applyView(data, "Annual profile saved.")}
+              onError={setError}
+            />
+          ) : null}
           <div className="flex w-full flex-wrap gap-2 sm:w-auto" role="tablist" aria-label="Template editor">
             {[["sections", "Sections"], ["layout", "Layout"]].map(([key, label]) => (
               <button
@@ -431,6 +523,7 @@ export default function TemplateBuilderOpen() {
             key={editing.id}
             section={editing}
             busy={busy}
+            shownLabel={view?.template?.period === "annual" ? "Show in the financial statements" : "Show in the management report"}
             onCancel={() => setEditing(null)}
             onSave={async (patch) => {
               const ok = await commit({ action: "update", id: editing.id, patch }, "Sections saved.");

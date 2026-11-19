@@ -73,6 +73,21 @@ export async function downloadAuthorized(path, filename) {
 
 export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
+  annualStatements: () => request("/api/me/annual-statements"),
+  annualStatement: (year) => request(`/api/me/annual-statements/${year}`),
+  adminAnnualStatement: (id) => request(`/api/admin/annual-statements/${id}`),
+  uploadAnnualStatement: (userId, yearEnd, file) => {
+    const body = new FormData();
+    body.append("userId", String(userId));
+    body.append("yearEnd", yearEnd);
+    body.append("file", file);
+    return request("/api/admin/annual-statements", { method: "POST", body });
+  },
+  publishAnnualStatement: (id) => request(`/api/admin/annual-statements/${id}/publish`, { method: "POST" }),
+  saveAnnualProfile: (clientId, templateId, body) => request(
+    `/api/admin/template-builder/clients/${clientId}/templates/${templateId}/annual`,
+    { method: "PATCH", body },
+  ),
   register: (body) => request("/api/auth/register", { method: "POST", body }),
   forgotPassword: (body) => request("/api/auth/forgot-password", { method: "POST", body }),
   resetPasswordStatus: (token) => request(`/api/auth/reset-password?token=${encodeURIComponent(token)}`),

@@ -222,7 +222,7 @@ test("client and template forms reject empty and unknown values", () => {
     currency: "usd",
     yearEnd: "12-31",
     period: "weekly",
-  }).error, "Choose monthly or quarterly reporting.");
+  }).error, "Choose monthly, quarterly, or annual reporting.");
   const ok = validateClient({
     name: "New Co",
     framework: "ifrs",

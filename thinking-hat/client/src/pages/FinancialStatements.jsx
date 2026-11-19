@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../auth";
+import AnnualStatementView from "../components/AnnualStatementView";
 import { Alert, Card, Field, PageIntro, inputClass } from "../components/ui";
 import { isPlasYnGroveFarm, plasYnGroveFinancialPosition, reportFigure, reportMonthLabel, statementCards } from "../reportMoney";
 
@@ -51,6 +52,31 @@ export default function FinancialStatements() {
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
+  const [annualYears, setAnnualYears] = useState(null);
+  const [annualYear, setAnnualYear] = useState("");
+  const [annual, setAnnual] = useState(null);
+
+  useEffect(() => {
+    let stop = false;
+    api.annualStatements()
+      .then((payload) => {
+        if (stop) return;
+        const list = payload.years || [];
+        setAnnualYears(list);
+        setAnnualYear((current) => current || list[0]?.year || "");
+      })
+      .catch(() => { if (!stop) setAnnualYears([]); });
+    return () => { stop = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!annualYear) return undefined;
+    let stop = false;
+    api.annualStatement(annualYear)
+      .then((payload) => { if (!stop) setAnnual(payload.statement); })
+      .catch((err) => { if (!stop) setError(err.message); });
+    return () => { stop = true; };
+  }, [annualYear]);
 
   useEffect(() => {
     if (plas) return undefined;
@@ -116,6 +142,25 @@ export default function FinancialStatements() {
       });
     return () => { stop = true; };
   }, [plas, month]);
+
+  if (annualYears?.length) {
+    return (
+      <div>
+        <PageIntro title="Financial Statements" lede="Audited annual financial statements." />
+        {error ? <Alert>{error}</Alert> : null}
+        {annualYears.length > 1 ? (
+          <div className="mb-4 max-w-xs">
+            <Field label="Year">
+              <select className={inputClass} value={annualYear} onChange={(event) => setAnnualYear(event.target.value)}>
+                {annualYears.map((item) => <option key={item.yearEnd} value={item.year}>FY{item.year}</option>)}
+              </select>
+            </Field>
+          </div>
+        ) : null}
+        {annual ? <AnnualStatementView statement={annual} /> : <p className="text-mute">Loading statements…</p>}
+      </div>
+    );
+  }
 
   const profit = cards?.profit || emptyCard;
   const position = cards?.position || emptyCard;

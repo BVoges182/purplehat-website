@@ -11,7 +11,7 @@
     "postinstall": "node scripts/build-client.mjs",
     "start": "node server/src/index.js",
     "install:all": "npm install --prefix server && npm install --prefix client",
-    "test": "node --test server/src/templateBuilder.test.js server/src/templateSections.test.js server/src/inviteEmail.test.js"
+    "test": "node --test server/src/templateBuilder.test.js server/src/templateSections.test.js server/src/inviteEmail.test.js server/src/annualWorkbook.test.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

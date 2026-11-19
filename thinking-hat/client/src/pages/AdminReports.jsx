@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import AdminReportList from "../components/AdminReportList";
 import { Alert, Button, Card, Field, PageIntro, inputClass } from "../components/ui";
@@ -18,6 +18,11 @@ export default function AdminReports() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [replaceAsk, setReplaceAsk] = useState(null);
+  const annualRef = useRef(null);
+  const [annualUserId, setAnnualUserId] = useState(params.get("client") || "");
+  const [yearEnd, setYearEnd] = useState("2026-12-31");
+  const [annualFile, setAnnualFile] = useState(null);
+  const [annualStatement, setAnnualStatement] = useState(null);
 
   useEffect(() => {
     let stop = false;
@@ -29,6 +34,7 @@ export default function AdminReports() {
         setReports(reportData.reports || []);
         const known = (current) => (nextClients.some((user) => String(user.id) === String(current)) ? current : "");
         setUserId(known);
+        setAnnualUserId(known);
         setListClient(known);
       })
       .catch((err) => { if (!stop) setError(err.message); });
@@ -138,6 +144,58 @@ export default function AdminReports() {
               <Button type="button" variant="ghost" disabled={busy} onClick={() => setReplaceAsk(null)}>Cancel</Button>
             </div>
           </div>
+        ) : null}
+      </Card>
+      <Card className="mt-4">
+        <h2 className="font-display text-xl font-extrabold text-ink">Upload Annual Financial Statements (.xlsx)</h2>
+        <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={async (event) => {
+          event.preventDefault();
+          setError("");
+          setMessage("");
+          if (!annualUserId || !annualFile) {
+            setError("Choose a client and an Excel file.");
+            return;
+          }
+          setBusy(true);
+          try {
+            const data = await api.uploadAnnualStatement(annualUserId, yearEnd, annualFile);
+            setAnnualStatement(data.statement);
+            setAnnualFile(null);
+            if (annualRef.current) annualRef.current.value = "";
+            setMessage(data.statement.errors?.length
+              ? "The workbook was saved as a draft. Fix the validation errors before publishing."
+              : "Draft saved. Preview it, then publish.");
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setBusy(false);
+          }
+        }}>
+          <Field label="Client">
+            <select className={inputClass} value={annualUserId} onChange={(event) => setAnnualUserId(event.target.value)} required>
+              <option value="">Choose a client</option>
+              {(clients || []).map((client) => (
+                <option key={client.id} value={client.id}>{client.businessName || client.name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Financial year end">
+            <input className={inputClass} type="date" value={yearEnd} onChange={(event) => setYearEnd(event.target.value)} required />
+          </Field>
+          <Field label="Excel file" hint="One tab per section, including Cover through Note 14 and Workings & Reconciliations.">
+            <input ref={annualRef} className={inputClass} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => setAnnualFile(event.target.files?.[0] || null)} required />
+          </Field>
+          <div className="flex items-end">
+            <Button type="submit" disabled={busy || !clients}>Upload annual statements</Button>
+          </div>
+        </form>
+        {annualStatement ? (
+          <p className="mt-4 text-sm">
+            <Link className="font-semibold text-plum hover:underline" to={`/admin/annual-statements/${annualStatement.id}`}>
+              Open the preview
+            </Link>
+            {annualStatement.errors?.length ? ` — ${annualStatement.errors[0]}` : ""}
+          </p>
         ) : null}
       </Card>
       <Card className="mt-4">

@@ -1017,7 +1017,16 @@ function clientRecord(row) {
 
 function presentStoredTemplate(template, client) {
   const record = clientRecord(client);
-  return describeTemplate({
+  let annual = null;
+  if (template.afs_json) {
+    try {
+      annual = JSON.parse(template.afs_json);
+    } catch {
+      annual = null;
+    }
+  }
+  return {
+    ...describeTemplate({
     id: template.id,
     name: template.name,
     framework: template.framework || record.framework,
@@ -1029,7 +1038,9 @@ function presentStoredTemplate(template, client) {
     labels: templateLineLabels(template.id),
     reviewRequired: Number(template.review_required) === 1,
     updatedAt: template.updated_at || template.created_at,
-  });
+  }),
+    annual,
+  };
 }
 
 function templateLineLabels(templateId) {
@@ -1337,7 +1348,7 @@ export function builderTemplateView(clientId, templateId) {
     client: describeClient(clientRecord(loaded.client), []),
     template: presentStoredTemplate(loaded.template, loaded.client),
     sections: readEditorSections(loaded.template),
-    sectionTypes: sectionTypeChoices(),
+    sectionTypes: sectionTypeChoices(loaded.template.period),
     layoutSaved: Number(loaded.template.layout_saved) === 1,
   };
 }

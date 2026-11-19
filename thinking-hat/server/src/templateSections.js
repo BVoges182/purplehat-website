@@ -141,12 +141,36 @@ export const SECTION_TYPES = [
       rows: [{ kind: "line", label: "Add a note", indent: 0, values: [], formats: [] }],
     }],
   },
+  ...[
+    ["afs-cover", "Cover"],
+    ["afs-index", "Index to Financial Statements"],
+    ["afs-auditor", "Independent Auditor's Report"],
+    ["afs-balance-sheets", "Balance Sheets"],
+    ["afs-operations", "Statements of Operations"],
+    ["afs-equity", "Statements of Changes in Member's Equity"],
+    ["afs-cash-flows", "Statements of Cash Flows"],
+    ...Array.from({ length: 14 }, (_, index) => [`afs-note-${index + 1}`, `Note ${index + 1}`]),
+  ].map(([key, label]) => ({
+    key,
+    label,
+    parts: [{
+      title: label,
+      subtitle: "",
+      presentation: "table",
+      chart: false,
+      columns: [],
+      rows: [],
+    }],
+  })),
 ];
 
 const TYPE_KEYS = new Set(SECTION_TYPES.map((item) => item.key));
 
-export function sectionTypeChoices() {
-  return SECTION_TYPES.map((item) => ({ key: item.key, label: item.label }));
+export function sectionTypeChoices(period) {
+  const annual = period === "annual";
+  return SECTION_TYPES
+    .filter((item) => item.key.startsWith("afs-") === annual)
+    .map((item) => ({ key: item.key, label: item.label }));
 }
 
 export function sectionType(key) {

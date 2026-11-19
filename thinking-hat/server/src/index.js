@@ -71,6 +71,18 @@ import {
   saveManagementReport,
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
+import { viewerCanReadAnnual } from "./annualWorkbook.js";
+import {
+  annualFile,
+  annualPdf,
+  latestPublished,
+  listPublished,
+  publishAnnual,
+  readAnnual,
+  saveAnnualProfile,
+  saveAnnualUpload,
+  seedAnnualPackage,
+} from "./annualStore.js";
 import { insightLoader } from "./insights.js";
 import { sendSmtpMail } from "./mail.js";
 import {
@@ -1959,6 +1971,140 @@ if (fs.existsSync(path.join(clientDist, "index.html"))) {
   });
 }
 
+app.post("/api/admin/annual-statements", requireAuth, requireAdmin, acceptWorkbook, async (req, res) => {
+  const userId = Number(req.body.userId);
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  if (!user || user.role !== "client") {
+    res.status(400).json({ error: "Choose a client." });
+    return;
+  }
+  if (!req.file || req.file.buffer.subarray(0, 2).toString("utf8") !== "PK") {
+    res.status(400).json({ error: "Upload an Excel .xlsx file." });
+    return;
+  }
+  try {
+    const saved = await saveAnnualUpload({
+      userId: user.id,
+      yearEnd: String(req.body.yearEnd || ""),
+      buffer: req.file.buffer,
+      filename: req.file.originalname,
+    });
+    if (saved.error) {
+      res.status(400).json({ error: saved.error });
+      return;
+    }
+    res.status(201).json(saved);
+  } catch (error) {
+    res.status(400).json({ error: error.message || "Could not read that Excel file." });
+  }
+});
+
+app.get("/api/admin/annual-statements/:id", requireAuth, requireAdmin, (req, res) => {
+  const statement = readAnnual(Number(req.params.id));
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  res.json({ statement });
+});
+
+app.get("/api/admin/annual-statements/:id/pdf", requireAuth, requireAdmin, async (req, res) => {
+  const rendered = await annualPdf(Number(req.params.id));
+  sendAnnual(res, rendered?.statement, "pdf", rendered?.buffer, `annual-financial-statements-${rendered?.statement?.year || "draft"}.pdf`);
+});
+
+app.get("/api/admin/annual-statements/:id/xlsx", requireAuth, requireAdmin, (req, res) => {
+  const file = annualFile(Number(req.params.id));
+  sendAnnual(res, file?.statement, "xlsx", file?.buffer, file?.name || "statements.xlsx");
+});
+
+app.post("/api/admin/annual-statements/:id/publish", requireAuth, requireAdmin, (req, res) => {
+  const result = publishAnnual(Number(req.params.id));
+  if (result.error === "That statement was not found.") {
+    res.status(404).json({ error: result.error });
+    return;
+  }
+  if (result.error) {
+    res.status(400).json(result);
+    return;
+  }
+  res.json(result);
+});
+
+app.patch("/api/admin/template-builder/clients/:clientId/templates/:templateId/annual", requireAuth, requireAdmin, (req, res) => {
+  if (!builderTemplateView(Number(req.params.clientId), Number(req.params.templateId))) {
+    res.status(404).json({ error: "That template was not found." });
+    return;
+  }
+  const result = saveAnnualProfile(Number(req.params.templateId), req.body || {});
+  if (result.error) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.json(builderTemplateView(Number(req.params.clientId), Number(req.params.templateId)));
+});
+
+function sendAnnual(res, statement, kind, buffer, downloadName) {
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  if (kind === "pdf") {
+    res.setHeader("Content-Type", "application/pdf");
+  } else {
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  }
+  res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+  res.send(buffer);
+}
+
+app.get("/api/me/annual-statements", requireAuth, (req, res) => {
+  const requested = req.user.role === "admin" && req.query.userId ? Number(req.query.userId) : req.user.id;
+  if (!viewerCanReadAnnual(req.user, requested)) {
+    res.status(403).json({ error: "You cannot view those statements." });
+    return;
+  }
+  res.json({ years: listPublished(requested) });
+});
+
+app.get("/api/me/annual-statements/:year", requireAuth, (req, res) => {
+  const statement = latestPublished(req.user.id, req.params.year);
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  res.json({ statement });
+});
+
+app.get("/api/me/annual-statements/:year/pdf", requireAuth, async (req, res) => {
+  const statement = latestPublished(req.user.id, req.params.year);
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  const rendered = await annualPdf(statement.id);
+  sendAnnual(res, statement, "pdf", rendered.buffer, `annual-financial-statements-${req.params.year}.pdf`);
+});
+
+app.get("/api/me/annual-statements/:year/xlsx", requireAuth, (req, res) => {
+  const statement = latestPublished(req.user.id, req.params.year);
+  const file = statement ? annualFile(statement.id) : null;
+  if (!file) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  sendAnnual(res, statement, "xlsx", file.buffer, file.name || "statements.xlsx");
+});
+
+app.get("/api/admin/users/:id/annual-statements/:year", requireAuth, requireAdmin, (req, res) => {
+  const statement = latestPublished(Number(req.params.id), req.params.year);
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  res.json({ statement });
+});
+
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found." });
 });
@@ -1988,6 +2134,9 @@ seedPurpleHatDemoTemplate();
 shortenWealthTechTemplateName();
 linkClientsToTemplates();
 seedBuilderCatalog();
+void seedAnnualPackage().catch((error) => {
+  console.error(error && error.message ? error.message : error);
+});
 seedAndyMurrayBot();
 renameJohnMcEnroeBot();
 if (shouldListen()) {

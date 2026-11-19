@@ -10,6 +10,7 @@ export const FRAMEWORKS = [
 export const PERIODS = [
   { key: "monthly", label: "Monthly" },
   { key: "quarterly", label: "Quarterly" },
+  { key: "annual", label: "Annual" },
 ];
 
 export const CURRENCIES = ["USD", "GBP", "EUR", "ZAR"];
@@ -370,7 +371,7 @@ export function validateClient(input = {}) {
   const yearEnd = String(input.yearEnd || input.year_end || "").trim();
   if (!YEAR_END_KEYS.has(yearEnd)) return { error: "Choose a financial year end." };
   const period = String(input.period || "").trim();
-  if (!PERIOD_KEYS.has(period)) return { error: "Choose monthly or quarterly reporting." };
+  if (!PERIOD_KEYS.has(period)) return { error: "Choose monthly, quarterly, or annual reporting." };
   return { value: { name, framework, currency, yearEnd, period } };
 }
 
@@ -380,7 +381,7 @@ export function validateTemplate(input = {}) {
   const framework = String(input.framework || "").trim();
   if (!FRAMEWORK_KEYS.has(framework)) return { error: "Choose an accounting framework." };
   const period = String(input.period || "").trim();
-  if (!PERIOD_KEYS.has(period)) return { error: "Choose monthly or quarterly reporting." };
+  if (!PERIOD_KEYS.has(period)) return { error: "Choose monthly, quarterly, or annual reporting." };
   return { value: { name, framework, period } };
 }
 
