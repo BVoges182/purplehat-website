@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
@@ -11,17 +13,127 @@ import { parseAnnualWorkbook } from "./annualWorkbook.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const previewDir = path.join(repoRoot, "docs", "afs-pdf-preview");
+const serverEntry = path.join(repoRoot, "thinking-hat", "server", "src", "index.js");
+const demoPassword = "annual-pdf-test-password";
+const adminPassword = "annual-pdf-test-admin";
 
-function envValue(file, key) {
-  const text = fs.readFileSync(file, "utf8");
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 0) continue;
-    if (trimmed.slice(0, eq) === key) return trimmed.slice(eq + 1);
+function freePort(start) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", () => {
+      if (start > 8860) reject(new Error("No free port for the annual PDF test."));
+      else resolve(freePort(start + 1));
+    });
+    server.listen(start, "127.0.0.1", () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function startServer(port, dataDir) {
+  const base = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, [serverEntry], {
+    cwd: path.join(repoRoot, "thinking-hat"),
+    env: {
+      ...process.env,
+      NODE_ENV: "production",
+      PORT: String(port),
+      DATA_DIR: dataDir,
+      JWT_SECRET: "annual-pdf-test-secret",
+      ADMIN_PASSWORD: adminPassword,
+      ADMIN_EMAIL: "probe@example.com",
+      DEMO_PASSWORD: demoPassword,
+      DEMO_AUTO_RESET: "",
+      AFS_PRINT_ORIGIN: base,
+      CHROME_PATH: "",
+      PUPPETEER_EXECUTABLE_PATH: "",
+      TRADER_WARMUP: "0",
+      BASIC_AUTH_PASSWORD: "",
+      PURPLEHAT_STAGING: "",
+      THINKING_HAT_NO_LISTEN: "",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let log = "";
+  child.stdout.on("data", (chunk) => {
+    log = `${log}${chunk}`.slice(-4000);
+  });
+  child.stderr.on("data", (chunk) => {
+    log = `${log}${chunk}`.slice(-4000);
+  });
+  return {
+    child,
+    base,
+    safeLog() {
+      return log.replace(/password[^\n]*/gi, "[redacted]");
+    },
+  };
+}
+
+function stopServer(child) {
+  if (child.exitCode != null) return Promise.resolve();
+  child.kill();
+  return new Promise((resolve) => child.once("exit", resolve));
+}
+
+async function waitHealth(base, child) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (child.exitCode != null) return false;
+    try {
+      const response = await fetch(`${base}/api/health`);
+      if (response.status === 200) return true;
+    } catch {
+      // The process is still opening its port.
+    }
+    await sleep(250);
   }
-  return "";
+  return false;
+}
+
+async function loginDemo(base) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const response = await fetch(`${base}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "demo@purplehat.fun", password: demoPassword }),
+    });
+    if (response.status === 200) return response.json();
+    await sleep(250);
+  }
+  throw new Error("demo login did not succeed");
+}
+
+async function waitPublished(base, token) {
+  let last = 0;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const response = await fetch(`${base}/api/me/annual-statements/2026/pdf`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    last = response.status;
+    if (response.status === 200) return response;
+    await response.arrayBuffer().catch(() => {});
+    await sleep(250);
+  }
+  throw new Error(`published PDF was not ready (${last})`);
+}
+
+function seedDemoReport(dataDir) {
+  const db = new DatabaseSync(path.join(dataDir, "data", "thinking-hat.sqlite"));
+  try {
+    const user = db.prepare("SELECT id FROM users WHERE email = ?").get("demo@purplehat.fun");
+    if (!user) throw new Error("The isolated demo user was not created.");
+    db.prepare(
+      `INSERT INTO management_reports (user_id, month, title, period_label, entity_name, content_json, created_at)
+       VALUES (?, '2026-01', 'January 2026', 'Month ended 31 January 2026', 'Purple Hat Demo LLC', ?, ?)`,
+    ).run(user.id, JSON.stringify({ sections: [] }), new Date().toISOString());
+  } finally {
+    db.close();
+  }
 }
 
 function run(command, args) {
@@ -38,25 +150,23 @@ test("the PDF name uses the entity and year", () => {
 });
 
 test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }, async () => {
-  const password = envValue(path.join(repoRoot, "thinking-hat", "server", ".env"), "DEMO_PASSWORD");
-  const login = await fetch("http://127.0.0.1:8787/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "demo@purplehat.fun", password }),
-  });
-  const session = await login.json();
-  assert.equal(login.status, 200);
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "afs-pdf-layout-"));
+  const port = await freePort(8821);
+  const server = startServer(port, dataDir);
+  const file = path.join(dataDir, "statement.pdf");
+  try {
+  assert.equal(await waitHealth(server.base, server.child), true, server.safeLog());
+  const session = await loginDemo(server.base);
   const headers = { Authorization: `Bearer ${session.token}` };
-  const excel = await fetch("http://127.0.0.1:8787/api/me/annual-statements/2026/xlsx", { headers });
+  const response = await waitPublished(server.base, session.token);
+  const excel = await fetch(`${server.base}/api/me/annual-statements/2026/xlsx`, { headers });
   assert.equal(excel.status, 200);
   const workbook = Buffer.from(await excel.arrayBuffer());
   assert.equal(workbook.subarray(0, 2).toString("utf8"), "PK");
 
-  const response = await fetch("http://127.0.0.1:8787/api/me/annual-statements/2026/pdf", { headers });
   const pdf = Buffer.from(await response.arrayBuffer());
   assert.equal(response.status, 200, pdf.toString("utf8").slice(0, 180));
   assert.match(response.headers.get("content-disposition") || "", /PurpleHatDemo_Audited_FS_FY2026\.pdf/);
-  const file = path.join(os.tmpdir(), "purplehat-demo-afs.pdf");
   fs.writeFileSync(file, pdf);
 
   const info = run("pdfinfo", [file]);
@@ -227,6 +337,10 @@ test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }
     const name = `page-${String(page).padStart(2, "0")}`;
     run("pdftoppm", ["-f", String(page), "-l", String(page), "-png", "-r", "80", "-singlefile", file, path.join(round4, name)]);
   }
+  } finally {
+    await stopServer(server.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
 });
 
 function chromeExecutable() {
@@ -238,25 +352,36 @@ function chromeExecutable() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || "";
 }
 
-test("statement text is one size and the download buttons match management reports", { timeout: 120000 }, async () => {
-  const password = envValue(path.join(repoRoot, "thinking-hat", "server", ".env"), "DEMO_PASSWORD");
+test("statement text is one size and the download buttons match management reports", { timeout: 180000 }, async () => {
+  assert.ok(
+    fs.existsSync(path.join(repoRoot, "thinking-hat", "client", "dist", "index.html")),
+    "Build the client before the on-screen PDF test.",
+  );
   const executablePath = chromeExecutable();
   assert.ok(executablePath, "Chrome is required for the on-screen check");
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "afs-pdf-screen-"));
+  const port = await freePort(8841);
+  const server = startServer(port, dataDir);
   const browser = await puppeteer.launch({
     executablePath,
     headless: true,
     args: ["--disable-gpu", "--font-render-hinting=none"],
   });
   try {
+    assert.equal(await waitHealth(server.base, server.child), true, server.safeLog());
+    seedDemoReport(dataDir);
+    const session = await loginDemo(server.base);
+    await (await waitPublished(server.base, session.token)).arrayBuffer();
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1100 });
-    await page.goto("http://localhost:5173/login", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(`${server.base}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.type('input[type="email"]', "demo@purplehat.fun");
-    await page.type('input[type="password"]', password);
+    await page.type('input[type="password"]', demoPassword);
     await page.click('button[type="submit"]');
     await page.waitForFunction(() => window.location.pathname !== "/login", { timeout: 30000 });
-    await page.goto("http://localhost:5173/statements", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(`${server.base}/statements`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForSelector("#note-6 tbody tr", { timeout: 30000 });
+    await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({ content: "header { position: static !important; }" });
     const measured = await page.evaluate(() => {
       function sample(selector) {
@@ -329,7 +454,7 @@ test("statement text is one size and the download buttons match management repor
     await page.$("#note-6").then((node) => node.screenshot({ path: path.join(round4, "screen-note-6.png") }));
     const statementsButton = await page.evaluateHandle(() => [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF")?.closest("section"));
     await statementsButton.asElement().screenshot({ path: path.join(round4, "screen-buttons-statements.png") });
-    await page.goto("http://localhost:5173/reports", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto(`${server.base}/reports`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForFunction(() => [...document.querySelectorAll("button")].some((node) => node.textContent.trim() === "Download PDF"), { timeout: 30000 });
     const reports = await page.evaluate(() => {
       const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF");
@@ -359,5 +484,7 @@ test("statement text is one size and the download buttons match management repor
     assert.doesNotMatch(measured.button.fontFamily, /Tinos|Times/);
   } finally {
     await browser.close();
+    await stopServer(server.child);
+    fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });

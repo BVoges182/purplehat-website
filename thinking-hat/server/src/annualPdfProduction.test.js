@@ -9,18 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const serverEntry = path.join(repoRoot, "thinking-hat", "server", "src", "index.js");
-
-function envValue(file, key) {
-  const text = fs.readFileSync(file, "utf8");
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 0) continue;
-    if (trimmed.slice(0, eq) === key) return trimmed.slice(eq + 1);
-  }
-  return "";
-}
+const demoPassword = "production-pdf-test-demo";
 
 function freePort(start) {
   return new Promise((resolve, reject) => {
@@ -41,8 +30,6 @@ function sleep(ms) {
 }
 
 test("the production PDF endpoint works without Chromium", { timeout: 120000 }, async () => {
-  const password = envValue(path.join(repoRoot, "thinking-hat", "server", ".env"), "DEMO_PASSWORD");
-  assert.ok(password.length >= 8, "DEMO_PASSWORD is missing from server/.env");
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "afs-pdf-prod-"));
   const port = await freePort(8794);
   const child = spawn(process.execPath, [serverEntry], {
@@ -55,7 +42,9 @@ test("the production PDF endpoint works without Chromium", { timeout: 120000 }, 
       JWT_SECRET: "production-pdf-test-secret",
       ADMIN_PASSWORD: "production-pdf-test-admin",
       ADMIN_EMAIL: "probe@example.com",
-      DEMO_PASSWORD: password,
+      DEMO_PASSWORD: demoPassword,
+      DEMO_AUTO_RESET: "",
+      AFS_PRINT_ORIGIN: `http://127.0.0.1:${port}`,
       CHROME_PATH: "",
       PUPPETEER_EXECUTABLE_PATH: "",
       TRADER_WARMUP: "0",
@@ -96,7 +85,7 @@ test("the production PDF endpoint works without Chromium", { timeout: 120000 }, 
       const login = await fetch(`${base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "demo@purplehat.fun", password }),
+        body: JSON.stringify({ email: "demo@purplehat.fun", password: demoPassword }),
       });
       if (login.status === 200) {
         token = (await login.json()).token;
