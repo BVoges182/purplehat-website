@@ -496,6 +496,42 @@ function indexEntries(rows) {
   return entries;
 }
 
+function isDemoLine(text) {
+  return /^illustrative demo\b/i.test(String(text || "").trim());
+}
+
+function bannerText(row) {
+  const texts = row.cells.map((cell) => cell.text).filter(Boolean);
+  if (texts.length > 1 && texts.every((text) => text === texts[0])) return texts[0];
+  return "";
+}
+
+function orderColumns(columns) {
+  const over = columns.filter((column) => /over\s*60/i.test(column.header));
+  const total = columns.filter((column) => /^total$/i.test(column.header.trim()));
+  const rest = columns.filter((column) => !over.includes(column) && !total.includes(column));
+  return [...rest, ...over, ...total];
+}
+
+function tableColumns(row) {
+  const banner = bannerText(row);
+  if (banner) return null;
+  const hits = [];
+  row.cells.forEach((cell, index) => {
+    const text = String(cell.text || "").replace(/\u2013|\u2014/g, "-").trim();
+    if (!text || text.length > 48) return;
+    if (/^purple hat demo/i.test(text) || /^\(in whole dollars\)$/i.test(text)) return;
+    hits.push({ index, header: text });
+  });
+  const years = hits.filter((hit) => /^(19|20)\d{2}$/.test(hit.header));
+  if (years.length >= 2 && hits.every((hit) => years.includes(hit) || /december 31/i.test(hit.header))) return years;
+  const buckets = hits.filter((hit) => !/^(19|20)\d{2}$/.test(hit.header) && !/december 31/i.test(hit.header));
+  if (buckets.length >= 2 && buckets.some((hit) => /total|current|days|amount|cost|net/i.test(hit.header))) {
+    return orderColumns(buckets);
+  }
+  return null;
+}
+
 function noteDocument(rows, fallback) {
   const blocks = [];
   let table = null;
@@ -504,43 +540,47 @@ function noteDocument(rows, fallback) {
     table = null;
   }
   const heading = rows.find((row) => /^\d+\.\s+/.test(row.cells[0]?.text || ""))?.cells[0]?.text || fallback;
-  for (const row of rows) {
-    const label = row.cells[0]?.text || "";
-    const located = yearColumns([row]);
-    const yearHits = located && located.columns.every((column) => /^(19|20)\d{2}$/.test(column.year))
-      ? located.columns
-      : null;
-    if (yearHits && yearHits.length >= 2) {
+  rows.forEach((row, rowIndex) => {
+    const banner = bannerText(row);
+    const label = banner || row.cells[0]?.text || "";
+    if (isDemoLine(label) || isDemoLine(banner)) return;
+    const columns = tableColumns(row);
+    const next = rows[rowIndex + 1];
+    const nextHasNumbers = columns && next && columns.some((column) => numberOf(next.cells[column.index]?.item) != null);
+    if (columns && nextHasNumbers) {
       closeTable();
       table = {
         type: "table",
-        headers: yearHits.map((column) => column.year),
-        indexes: yearHits.map((column) => column.index),
+        headers: columns.map((column) => column.header),
+        indexes: columns.map((column) => column.index),
+        paired: columns.every((column) => /^(19|20)\d{2}$/.test(column.header)) || columns.length <= 3,
         rows: [],
       };
-      continue;
+      return;
     }
     if (table) {
       const values = table.indexes.map((index) => numberOf(row.cells[index]?.item));
       const numeric = values.some((value) => value != null);
-      const prose = label.length > 90 || (!numeric && Boolean(row.cells[0]?.bold));
+      const prose = Boolean(banner) || label.length > 90 || (!numeric && Boolean(row.cells[0]?.bold));
       if (!prose && (label || numeric)) {
+        const labelIndex = table.indexes.includes(0) ? row.cells.findIndex((cell, index) => !table.indexes.includes(index) && cell.text) : 0;
         table.rows.push({
-          label,
-          indent: row.cells[0]?.indent || 0,
+          label: row.cells[labelIndex]?.text || label,
+          indent: row.cells[labelIndex]?.indent || row.cells[0]?.indent || 0,
           bold: Boolean(row.cells[0]?.bold),
           rule: ruleFor(row.cells[table.indexes[0]] || row.cells[0], label),
           values,
         });
-        continue;
+        return;
       }
       closeTable();
     }
-    if (!label) continue;
-    if (/^purple hat demo llc$/i.test(label) || /^\(in whole dollars\)$/i.test(label)) continue;
-    if (label === heading) continue;
-    blocks.push({ type: row.cells[0]?.bold ? "h" : "p", text: label });
-  }
+    if (!label) return;
+    if (/^purple hat demo llc$/i.test(label) || /^\(in whole dollars\)$/i.test(label)) return;
+    if (label === heading) return;
+    const title = label.length <= 90 && (row.cells[0]?.bold || banner);
+    blocks.push({ type: title ? "h" : "p", text: label });
+  });
   closeTable();
   const number = Number((heading.match(/^(\d+)\./) || [])[1] || fallback.replace(/\D/g, ""));
   return { number, title: heading, blocks };
@@ -649,7 +689,7 @@ export async function parseAnnualWorkbook(buffer) {
   const document = {
     cover: { lines: narrativeBlocks(sheetRows("Cover")) },
     index: { entries: indexEntries(sheetRows("Index")) },
-    auditor: { blocks: narrativeBlocks(sheetRows("Auditor's Report")) },
+    auditor: { blocks: narrativeBlocks(sheetRows("Auditor's Report")).filter((block) => !isDemoLine(block.text)) },
     statements,
     notes,
     checks: checksFrom(sheetRows("Workings & Reconciliations")),

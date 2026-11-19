@@ -84,6 +84,45 @@ test("tabs that lost their apostrophes still parse", async () => {
   assert.ok(document.auditor.blocks.some((block) => /benjamin voges/i.test(block.text)));
 });
 
+test("note 4 ages both years, ties to the balance sheet, and keeps the demo line on the cover", async () => {
+  const document = await parseAnnualWorkbook(fs.readFileSync(fixture));
+  assert.deepEqual(document.errors, []);
+  const note = document.notes.find((item) => item.number === 4);
+  const narrative = note.blocks.find((block) => /ASC 326/.test(block.text || ""));
+  assert.equal(narrative.type, "p");
+  assert.match(narrative.text, /30-day terms/);
+  assert.match(narrative.text, /zero at both year-ends/);
+  const collected = note.blocks.find((block) => /collected in January 2027/.test(block.text || ""));
+  assert.equal(collected.type, "p");
+  const summary = note.blocks.find((block) => block.type === "table" && block.rows.some((row) => row.label === "December 31, 2026") && block.rows.some((row) => row.label === "December 31, 2025"));
+  assert.deepEqual(summary.headers, ["Current", "1-30 days past due", "31-60 days past due", "Over 60 days", "Total"]);
+  const year2026 = summary.rows.find((row) => row.label === "December 31, 2026");
+  const year2025 = summary.rows.find((row) => row.label === "December 31, 2025");
+  assert.deepEqual(year2026.values, [10600, 1700, 200, 0, 12500]);
+  assert.deepEqual(year2025.values, [8500, 1300, 200, 0, 10000]);
+  const balance = document.statements.find((item) => item.key === "balance-sheets");
+  const receivable = balance.rows.find((row) => /^accounts receivable$/i.test(row.label));
+  assert.equal(year2026.values[4], receivable.values[0]);
+  assert.equal(year2025.values[4], receivable.values[1]);
+  const rollforward = note.blocks.find((block) => block.type === "table" && block.rows.some((row) => row.label === "Ending balance"));
+  for (const row of rollforward.rows) assert.deepEqual(row.values, [0, 0]);
+  const customers = note.blocks.filter((block) => block.type === "table" && block.rows.some((row) => row.label === "Northwind Buyers"));
+  assert.equal(customers.length, 2);
+  assert.deepEqual(customers[0].rows.at(-1).values, [10600, 1700, 200, 0, 12500]);
+  assert.deepEqual(customers[1].rows.at(-1).values, [8500, 1300, 200, 0, 10000]);
+  for (const item of document.notes) {
+    for (const block of item.blocks) {
+      if (block.type !== "table") continue;
+      for (const row of block.rows) assert.ok(row.values.some((value) => value != null), `${item.number} ${row.label}`);
+    }
+  }
+  assert.ok(document.checks.some((check) => check.label === "Note 4 aging buckets total 10,000, 2025" && check.ok));
+  assert.ok(document.checks.some((check) => check.label === "Note 13 wages equal the face, 2026" && check.ok));
+  const phrase = "Illustrative demo: fictitious entity";
+  assert.equal(document.cover.lines.filter((line) => line.text === phrase).length, 1);
+  assert.equal(JSON.stringify({ notes: document.notes, auditor: document.auditor }).includes(phrase), false);
+});
+
 test("another client cannot read a published set", () => {
   assert.equal(viewerCanReadAnnual({ id: 6, role: "client" }, 6), true);
   assert.equal(viewerCanReadAnnual({ id: 24, role: "client" }, 6), false);

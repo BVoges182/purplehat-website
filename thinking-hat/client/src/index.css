@@ -268,7 +268,7 @@ h1, h2, h3, .font-display {
   font-size: 0.82rem;
 }
 .afs-nav a { color: #1F3864; text-decoration: none; }
-.afs-main { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.afs-main { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; width: min(100%, 8.5in); margin: 0 auto; }
 .afs-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; width: min(100%, 8.5in); }
 .afs-actions button, .afs-page { background: #fff; }
 .afs-actions button {
@@ -280,9 +280,11 @@ h1, h2, h3, .font-display {
 .afs-errors { width: min(100%, 8.5in); color: #7f1d1d; }
 .afs-page {
   position: relative;
-  width: min(100%, 8.5in);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
   min-height: 8in;
-  padding: 0.7in 0.65in 0.85in;
+  padding: 1in;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   color: #000;
   background: #fff;
@@ -299,9 +301,11 @@ h1, h2, h3, .font-display {
   padding-bottom: 0.25rem;
 }
 .afs-unit, .afs-footer { font-size: 0.85rem; }
-.afs-heading { font-weight: 700; }
-.afs-page p { margin: 0 0 0.55rem; font-size: 10pt; line-height: 12pt; }
-.afs-table { width: 100%; border-collapse: collapse; font-size: 9pt; line-height: 11pt; }
+.afs-heading { display: block; margin: 10pt 0 4pt; font-weight: 700; }
+.afs-part-notes > h2,
+.afs-part-flow > h2 { margin: 18pt 0 6pt; }
+.afs-page p { margin: 0 0 6pt; font-size: 10pt; line-height: 12pt; }
+.afs-table { width: 100%; margin: 0 0 8pt; border-collapse: collapse; table-layout: fixed; font-size: 9pt; line-height: 11pt; }
 .afs-table th, .afs-table td { padding: 0.04in 0.04in; vertical-align: bottom; background: #fff; }
 .afs-table thead th { font-weight: 700; }
 .afs-table thead tr:last-child th { border-bottom: 1px solid #000; }
@@ -316,14 +320,12 @@ h1, h2, h3, .font-display {
 .afs-date, .afs-table thead th, .afs-note { text-align: center; }
 .afs-table td { text-align: right; }
 .afs-table td.afs-dollar {
-  width: 0.16in;
   padding-right: 0;
-  padding-left: 0.06in;
+  padding-left: 0.04in;
   text-align: left;
   font-variant-numeric: tabular-nums;
 }
 .afs-table td.afs-amt {
-  width: 0.72in;
   padding-left: 0;
   text-align: right;
   white-space: nowrap;
@@ -337,8 +339,10 @@ h1, h2, h3, .font-display {
   color: #1F3864;
   font-size: 9pt;
 }
-.afs-index { list-style: none; padding: 0; margin: 0; }
-.afs-index li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.12rem 0.2rem; }
+.afs-index { list-style: none; width: 100%; padding: 0; margin: 0; }
+.afs-index li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.12rem 0; }
+.afs-index li.afs-index-note { padding-left: 0.3in; }
+.afs-index-page { margin-left: auto; text-align: right; }
 .afs-index li:nth-child(even) { background: #CCEEFF; }
 @media (max-width: 800px) {
   .afs-shell { grid-template-columns: 1fr; }
@@ -369,7 +373,8 @@ body:has(.afs-print) {
   .afs-print .afs-shell { display: block; }
   .afs-print .afs-main { gap: 0; }
   .afs-print .afs-page {
-    width: auto;
+    width: 100%;
+    max-width: none;
     padding: 0;
     min-height: 0;
     break-before: page;
@@ -383,10 +388,16 @@ body:has(.afs-print) {
   .afs-print .afs-part-cover { padding-top: 1.5in; }
   .afs-print .afs-page:not(.afs-part-cover) > .afs-kicker { display: none; }
   .afs-print .afs-page h2,
-  .afs-print .afs-heading { break-after: avoid; page-break-after: avoid; }
-  .afs-print .afs-page h2 { margin: 0 0 4pt; font-size: 12pt; }
-  .afs-print .afs-page p { font-size: 10pt; line-height: 12pt; margin: 0 0 4pt; }
-  .afs-print .afs-table { font-size: 9pt; line-height: 11pt; }
+  .afs-print .afs-heading,
+  .afs-print .afs-unit { break-after: avoid; page-break-after: avoid; }
+  .afs-print .afs-page h2 { margin: 0 0 6pt; font-size: 12pt; }
+  .afs-print .afs-part-notes > h2,
+  .afs-print .afs-part-flow > h2 { margin: 18pt 0 6pt; }
+  .afs-print .afs-heading { margin: 10pt 0 4pt; }
+  .afs-print .afs-page p { font-size: 10pt; line-height: 12pt; margin: 0 0 6pt; }
+  .afs-print .afs-table { width: 100%; margin: 0 0 8pt; font-size: 9pt; line-height: 11pt; break-inside: avoid; page-break-inside: avoid; }
+  .afs-print .afs-table-flow { break-inside: auto; page-break-inside: auto; }
+  .afs-print .afs-table thead { display: table-header-group; }
   .afs-print tr { break-inside: avoid; page-break-inside: avoid; }
   .afs-band th, .afs-band td, .afs-index li:nth-child(even) {
     -webkit-print-color-adjust: exact;

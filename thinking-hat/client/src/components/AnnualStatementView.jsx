@@ -34,13 +34,39 @@ function dollarRows(rows) {
   return marks;
 }
 
+function tableWidths(paired, notes, count) {
+  if (!paired) {
+    const caption = 28;
+    return { caption, each: (100 - caption) / Math.max(count, 1) };
+  }
+  const note = notes ? 6 : 0;
+  const natural = 100 - note - count * 18;
+  if (natural >= 40) return { caption: natural, note, dollar: 3, amount: 15 };
+  const pair = (100 - note - 40) / Math.max(count, 1);
+  const dollar = pair * (3 / 18);
+  return { caption: 40, note, dollar, amount: pair - dollar };
+}
+
 function StatementTable({ statement, showNotes = true }) {
-  const years = statement.columns.every((column) => /^\d{4}$/.test(column));
+  const years = statement.columns.every((column) => /^\d{4}$/.test(String(column)));
   const notes = showNotes && years;
+  const paired = statement.paired !== false && (years || statement.columns.length <= 3);
   const dollars = dollarRows(statement.rows);
   const span = statement.columns.length * 2;
+  const widths = tableWidths(paired, notes, statement.columns.length);
+  const flowing = statement.rows.length > 14;
   return (
-    <table className="afs-table">
+    <table className={`afs-table${flowing ? " afs-table-flow" : ""}`}>
+      <colgroup>
+        <col style={{ width: `${widths.caption}%` }} />
+        {notes ? <col style={{ width: `${widths.note}%` }} /> : null}
+        {paired
+          ? statement.columns.flatMap((column) => [
+            <col key={`${column}-dollar`} style={{ width: `${widths.dollar}%` }} />,
+            <col key={`${column}-amount`} style={{ width: `${widths.amount}%` }} />,
+          ])
+          : statement.columns.map((column) => <col key={column} style={{ width: `${widths.each}%` }} />)}
+      </colgroup>
       <thead>
         {years ? (
           <tr>
@@ -52,7 +78,7 @@ function StatementTable({ statement, showNotes = true }) {
         <tr>
           <th />
           {notes ? <th>Note</th> : null}
-          {statement.columns.map((column) => <th key={column} colSpan={2}>{column}</th>)}
+          {statement.columns.map((column) => <th key={column} colSpan={paired ? 2 : 1}>{column}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -60,9 +86,13 @@ function StatementTable({ statement, showNotes = true }) {
           <tr key={`${row.label}-${index}`} className={`${index % 2 ? "afs-band" : ""} ${row.bold ? "afs-bold" : ""} ${row.rule === "double" ? "afs-double afs-single" : ""} ${row.rule === "single" ? "afs-single" : ""}`}>
             <th style={{ paddingLeft: `${0.15 * (row.indent || 0)}in` }}>{row.label}</th>
             {notes ? <td className="afs-note">{row.note}</td> : null}
-            {row.values.map((value, valueIndex) => (
-              <AmountCells key={statement.columns[valueIndex] || valueIndex} value={value} dollar={dollars[index]} />
-            ))}
+            {paired
+              ? row.values.map((value, valueIndex) => (
+                <AmountCells key={statement.columns[valueIndex] || valueIndex} value={value} dollar={dollars[index]} />
+              ))
+              : row.values.map((value, valueIndex) => (
+                <td key={statement.columns[valueIndex] || valueIndex} className="afs-amt">{moneyParts(value, false).amount}</td>
+              ))}
           </tr>
         ))}
       </tbody>
@@ -137,9 +167,9 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
             {document.index.entries.map((entry) => {
               const id = anchorFor(entry.title);
               return (
-                <li key={`${entry.title}-${entry.page}`} style={{ paddingLeft: `${0.25 * (entry.indent || 0)}in` }}>
+                <li key={`${entry.title}-${entry.page}`} className={entry.indent ? "afs-index-note" : ""}>
                   {id ? <a href={`#${id}`}>{entry.title}</a> : <span>{entry.title}</span>}
-                  <span>{entry.page}</span>
+                  <span className="afs-index-page">{entry.page}</span>
                 </li>
               );
             })}
@@ -162,7 +192,7 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
             {note.blocks.some((block) => block.type === "table") ? <p className="afs-unit">(in whole dollars)</p> : null}
             {note.blocks.map((block, index) => (
               block.type === "table" ? (
-                <StatementTable key={index} statement={{ columns: block.headers, rows: block.rows }} showNotes={false} />
+                <StatementTable key={index} statement={{ columns: block.headers, rows: block.rows, paired: block.paired }} showNotes={false} />
               ) : <p key={index} className={block.type === "h" ? "afs-heading" : ""}>{block.text}</p>
             ))}
           </Page>

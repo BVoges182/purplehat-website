@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { annualHeaderName, annualPdfFilename } from "./annualPrint.js";
+import { parseAnnualWorkbook } from "./annualWorkbook.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const previewDir = path.join(repoRoot, "docs", "afs-pdf-preview");
@@ -95,7 +96,7 @@ test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }
   const wanted = [
     ["01-cover", 1],
     ["03-page-3", 3],
-    ["auditor", pagesText.findIndex((text) => text.includes("Independent Auditor's Report")) + 1],
+    ["auditor", pagesText.findIndex((text) => text.includes("We have audited")) + 1],
     ["balance-sheet", balancePage + 1],
     ["operations", pagesText.findIndex((text) => text.includes("STATEMENTS OF OPERATIONS")) + 1],
     ["cash-flows", pagesText.findIndex((text) => text.includes("STATEMENTS OF CASH FLOWS")) + 1],
@@ -104,5 +105,80 @@ test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }
   for (const [name, page] of wanted) {
     assert.ok(page > 0, name);
     run("pdftoppm", ["-f", String(page), "-l", String(page), "-png", "-r", "80", "-singlefile", file, path.join(previewDir, name)]);
+  }
+
+  const phrase = "Illustrative demo: fictitious entity";
+  assert.equal(pagesText[0].split(phrase).length - 1, 1);
+  pagesText.slice(1).forEach((text, index) => assert.equal(text.includes(phrase), false, `page ${index + 2}`));
+  const receivableAt = pagesText.findIndex((text) => text.includes("4. ACCOUNTS RECEIVABLE"));
+  assert.ok(receivableAt >= 0);
+  const receivablePage = `${pagesText[receivableAt]}\n${pagesText[receivableAt + 1] || ""}`;
+  for (const amount of ["10,600", "1,700", "8,500", "1,300", "12,500", "10,000"]) {
+    assert.ok(receivablePage.includes(amount), amount);
+  }
+  const parsed = await parseAnnualWorkbook(workbook);
+  for (const note of parsed.notes) {
+    for (const block of note.blocks) {
+      if (block.type !== "table") continue;
+      for (const row of block.rows) {
+        assert.ok(row.values.some((value) => value != null), `${note.number} ${row.label}`);
+        for (const value of row.values) {
+          const rounded = Math.round(Number(value));
+          if (!Number.isFinite(rounded) || Math.abs(rounded) < 100) continue;
+          const shown = Math.abs(rounded).toLocaleString("en-US");
+          assert.ok(whole.includes(shown), `note ${note.number} ${row.label} ${shown}`);
+        }
+      }
+    }
+  }
+
+  const boxes = run("pdftotext", ["-bbox", file, "-"]);
+  const boxedPages = boxes.split(/<page /).slice(1).map((chunk) => {
+    const words = [];
+    const pattern = /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([^<]*)<\/word>/g;
+    let match = pattern.exec(chunk);
+    while (match) {
+      words.push({
+        xMin: Number(match[1]),
+        yMin: Number(match[2]),
+        xMax: Number(match[3]),
+        yMax: Number(match[4]),
+        text: match[5],
+      });
+      match = pattern.exec(chunk);
+    }
+    return words;
+  });
+  function span(words) {
+    const body = words.filter((word) => word.yMin >= 68 && word.yMax <= 730 && word.text.trim());
+    return {
+      min: Math.min(...body.map((word) => word.xMin)),
+      max: Math.max(...body.map((word) => word.xMax)),
+    };
+  }
+  const widePages = [
+    ["index", pagesText.findIndex((text) => text.includes("INDEX TO FINANCIAL STATEMENTS"))],
+    ["auditor", pagesText.findIndex((text) => text.includes("We have audited"))],
+    ["balance", pagesText.findIndex((text) => text.includes("BALANCE SHEETS") && text.includes("Total assets"))],
+    ["operations", pagesText.findIndex((text) => text.includes("STATEMENTS OF OPERATIONS"))],
+    ["equity", pagesText.findIndex((text) => text.includes("STATEMENTS OF CHANGES IN MEMBER'S EQUITY"))],
+    ["cash", pagesText.findIndex((text) => text.includes("STATEMENTS OF CASH FLOWS"))],
+  ];
+  for (const [name, index] of widePages) {
+    assert.ok(index >= 0, name);
+    const range = span(boxedPages[index]);
+    assert.ok(range.min <= 90 && range.max >= 522, `${name} x ${range.min.toFixed(1)}-${range.max.toFixed(1)}`);
+  }
+  pagesText.forEach((text, index) => {
+    const lines = text.split(/\n/).map((line) => line.trim()).filter((line) => line && line !== "Purple Hat Demo LLC" && !/^F-\d+$/.test(line));
+    const last = lines.at(-1) || "";
+    assert.equal(/^\d+\.\s+[A-Z]/.test(last), false, `orphaned heading on page ${index + 1}: ${last}`);
+  });
+
+  const round3 = path.join(previewDir, "round3");
+  fs.mkdirSync(round3, { recursive: true });
+  for (let page = 1; page <= pages; page += 1) {
+    const name = `page-${String(page).padStart(2, "0")}`;
+    run("pdftoppm", ["-f", String(page), "-l", String(page), "-png", "-r", "80", "-singlefile", file, path.join(round3, name)]);
   }
 });
