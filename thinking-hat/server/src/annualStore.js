@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import bcrypt from "bcryptjs";
 import db, { nowIso, uploadsDir } from "./db.js";
 import { normalizeEditorSections } from "./templateSections.js";
 import { parseAnnualWorkbook } from "./annualWorkbook.js";
@@ -195,7 +196,20 @@ const DEFAULT_PROFILE = {
   reportDate: "2027-03-15",
 };
 
+function ensureDemoClient() {
+  const password = String(process.env.DEMO_PASSWORD || "");
+  if (password.length < 8) return;
+  const existing = db.prepare("SELECT id FROM users WHERE lower(trim(email)) = 'demo@purplehat.fun'").get();
+  if (existing) return;
+  const ts = nowIso();
+  db.prepare(
+    `INSERT INTO users (email, password_hash, name, business_name, phone, role, status, created_at, updated_at)
+     VALUES ('demo@purplehat.fun', ?, 'Purple Hat Demo', 'Purple Hat Demo LLC', '', 'client', 'active', ?, ?)`,
+  ).run(bcrypt.hashSync(password, 10), ts, ts);
+}
+
 export async function seedAnnualPackage() {
+  ensureDemoClient();
   const user = db.prepare("SELECT * FROM users WHERE lower(trim(email)) = 'demo@purplehat.fun'").get();
   if (!user) return;
   const client = db.prepare("SELECT * FROM builder_clients WHERE user_id = ?").get(user.id);

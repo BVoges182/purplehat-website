@@ -155,6 +155,15 @@ export default function FinancialStatements() {
     return () => { stop = true; };
   }, [plas, month]);
 
+  async function downloadAnnual(path, filename) {
+    setError("");
+    try {
+      await downloadAuthorized(path, filename);
+    } catch (err) {
+      setError(err.message || "Could not download the file.");
+    }
+  }
+
   if (annualYears?.length) {
     return (
       <div>
@@ -179,8 +188,8 @@ export default function FinancialStatements() {
                   <p className="mt-1 text-sm text-mute">Year ended {yearEndedLabel(annual.yearEnd)}</p>
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button type="button" variant="navy" onClick={() => downloadAuthorized(`/api/me/annual-statements/${annual.year}/pdf`, `annual-financial-statements-${annual.year}.pdf`)}>Download PDF</Button>
-                  <Button type="button" variant="navy" onClick={() => downloadAuthorized(`/api/me/annual-statements/${annual.year}/xlsx`, annual.sourceName || "statements.xlsx")}>Download Excel</Button>
+                  <Button type="button" variant="navy" onClick={() => downloadAnnual(`/api/me/annual-statements/${annual.year}/pdf`, `annual-financial-statements-${annual.year}.pdf`)}>Download PDF</Button>
+                  <Button type="button" variant="navy" onClick={() => downloadAnnual(`/api/me/annual-statements/${annual.year}/xlsx`, annual.sourceName || "statements.xlsx")}>Download Excel</Button>
                 </div>
               </div>
             </Card>

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -132,6 +133,12 @@ const app = express();
 app.disable("x-powered-by");
 // Hostinger fronts this process with one proxy. Trust that hop only.
 app.set("trust proxy", 1);
+app.use((req, res, next) => {
+  const incoming = String(req.get("x-request-id") || "").trim().slice(0, 80);
+  req.id = incoming || crypto.randomUUID();
+  res.setHeader("X-Request-Id", req.id);
+  next();
+});
 app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"] }));
 const websiteJson = express.json({ limit: "1mb" });
 app.use((req, res, next) => {
@@ -2015,7 +2022,7 @@ app.get("/api/admin/annual-statements/:id", requireAuth, requireAdmin, (req, res
 
 app.get("/api/admin/annual-statements/:id/pdf", requireAuth, requireAdmin, async (req, res) => {
   const statement = readAnnual(Number(req.params.id));
-  await sendPrintedAnnual(res, statement);
+  await sendPrintedAnnual(req, res, statement);
 });
 
 app.get("/api/admin/annual-statements/:id/xlsx", requireAuth, requireAdmin, (req, res) => {
@@ -2049,7 +2056,7 @@ app.patch("/api/admin/template-builder/clients/:clientId/templates/:templateId/a
   res.json(builderTemplateView(Number(req.params.clientId), Number(req.params.templateId)));
 });
 
-async function sendPrintedAnnual(res, statement) {
+async function sendPrintedAnnual(req, res, statement) {
   if (!statement) {
     res.status(404).json({ error: "That statement was not found." });
     return;
@@ -2058,8 +2065,9 @@ async function sendPrintedAnnual(res, statement) {
     const buffer = await renderAnnualPdf(statement);
     sendAnnual(res, statement, "pdf", buffer, annualPdfFilename(statement));
   } catch (error) {
-    console.error(error && error.message ? error.message : error);
-    if (!res.headersSent) res.status(500).json({ error: "Could not prepare the PDF." });
+    const requestId = req.id || "unknown";
+    console.error(`request ${requestId}: ${error && error.message ? error.message : error}`);
+    if (!res.headersSent) res.status(500).json({ error: `Could not prepare the PDF. Reference ${requestId}.` });
   }
 }
 
@@ -2074,6 +2082,7 @@ function sendAnnual(res, statement, kind, buffer, downloadName) {
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   }
   res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+  res.setHeader("Content-Length", buffer.length);
   res.send(buffer);
 }
 
@@ -2097,7 +2106,7 @@ app.get("/api/me/annual-statements/:year", requireAuth, (req, res) => {
 
 app.get("/api/me/annual-statements/:year/pdf", requireAuth, async (req, res) => {
   const statement = latestPublished(req.user.id, req.params.year);
-  await sendPrintedAnnual(res, statement);
+  await sendPrintedAnnual(req, res, statement);
 });
 
 app.get("/api/print/annual-statements/:userId/:year", (req, res) => {

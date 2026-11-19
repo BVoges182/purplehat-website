@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { downloadAuthorized } from "../api";
-import { Button } from "./ui";
+import { Alert, Button } from "./ui";
 
 function moneyParts(value, dollar) {
   if (value == null || Number.isNaN(Number(value))) return { dollar: "", amount: "" };
@@ -161,6 +162,15 @@ function Page({ id, kicker, title, page, part = "section", children }) {
 }
 
 export default function AnnualStatementView({ statement, preview = false, onPublish, busy = false, files, printable = false, actions = true }) {
+  const [downloadError, setDownloadError] = useState("");
+  async function downloadFile(path, filename) {
+    setDownloadError("");
+    try {
+      await downloadAuthorized(path, filename);
+    } catch (err) {
+      setDownloadError(err.message || "Could not download the file.");
+    }
+  }
   const document = statement?.document;
   if (!document) return null;
   const entity = document.cover.lines[0]?.text || "";
@@ -181,8 +191,9 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
     <div className="afs-shell">
       <div className="afs-main">
         {printable || !actions ? null : <div className="afs-actions">
-          <Button type="button" variant="navy" onClick={() => downloadAuthorized(files?.pdf || `/api/me/annual-statements/${year}/pdf`, files?.pdfName || `annual-financial-statements-${year}.pdf`)}>Download PDF</Button>
-          <Button type="button" variant="navy" onClick={() => downloadAuthorized(files?.xlsx || `/api/me/annual-statements/${year}/xlsx`, files?.xlsxName || statement.sourceName || "statements.xlsx")}>Download Excel</Button>
+          {downloadError ? <Alert>{downloadError}</Alert> : null}
+          <Button type="button" variant="navy" onClick={() => downloadFile(files?.pdf || `/api/me/annual-statements/${year}/pdf`, files?.pdfName || `annual-financial-statements-${year}.pdf`)}>Download PDF</Button>
+          <Button type="button" variant="navy" onClick={() => downloadFile(files?.xlsx || `/api/me/annual-statements/${year}/xlsx`, files?.xlsxName || statement.sourceName || "statements.xlsx")}>Download Excel</Button>
           {preview && statement.status !== "published" ? (
             <Button type="button" variant="navy" onClick={onPublish} disabled={busy || Boolean(statement.errors?.length)}>Publish</Button>
           ) : null}

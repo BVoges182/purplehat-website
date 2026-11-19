@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import jwt from "jsonwebtoken";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { renderAnnualPdfLib } from "./annualPdfLib.js";
 
 export function annualHeaderName(entity) {
   const words = String(entity || "").match(/[A-Za-z0-9]+/g) || [];
@@ -36,18 +37,17 @@ export function readAnnualPrintToken(token) {
   return payload;
 }
 
-function chromePath() {
-  const candidates = [
-    process.env.CHROME_PATH,
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-  ].filter(Boolean);
-  return candidates.find((candidate) => fs.existsSync(candidate)) || "";
+function configuredBrowserPath() {
+  const configured = String(process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || "").trim();
+  if (!configured || !fs.existsSync(configured)) return "";
+  return configured;
+}
+
+const pdfCache = new Map();
+
+function pdfCacheKey(statement) {
+  if (!statement?.id || statement.status !== "published") return "";
+  return `${statement.id}:${statement.version}:${statement.publishedAt || ""}`;
 }
 
 function escapeHtml(value) {
@@ -108,9 +108,7 @@ async function mergePdf(cover, rest) {
   return Buffer.from(await merged.save());
 }
 
-export async function renderAnnualPdf(statement) {
-  const executablePath = chromePath();
-  if (!executablePath) throw new Error("Install Google Chrome to prepare the PDF.");
+async function renderWithChromium(statement, executablePath) {
   let puppeteer;
   try {
     ({ default: puppeteer } = await import("puppeteer-core"));
@@ -154,4 +152,26 @@ export async function renderAnnualPdf(statement) {
   } finally {
     await browser.close();
   }
+}
+
+export async function renderAnnualPdf(statement) {
+  const key = pdfCacheKey(statement);
+  if (key && pdfCache.has(key)) return pdfCache.get(key);
+  const executablePath = configuredBrowserPath();
+  let buffer;
+  if (executablePath) {
+    try {
+      buffer = await renderWithChromium(statement, executablePath);
+    } catch (error) {
+      console.error(error && error.message ? error.message : error);
+      buffer = await renderAnnualPdfLib(statement);
+    }
+  } else {
+    buffer = await renderAnnualPdfLib(statement);
+  }
+  if (key) {
+    pdfCache.set(key, buffer);
+    if (pdfCache.size > 8) pdfCache.delete(pdfCache.keys().next().value);
+  }
+  return buffer;
 }
