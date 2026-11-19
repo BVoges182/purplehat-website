@@ -1,0 +1,242 @@
+npm audit round 2 before
+Captured before package changes on work/trader-integration-current.
+
+===== . npm audit =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+5 vulnerabilities (4 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1
+
+===== . npm ls =====
+purplehat-website@ C:\Users\Ben\purplehat-website
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.16.0 deduped
+| `-- qs@6.16.0
++-- react-router-dom@6.30.6
+| `-- react-router@6.30.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.4 deduped
+| `-- postcss-selector-parser@6.1.4
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat npm audit =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+5 vulnerabilities (4 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1
+
+===== thinking-hat npm ls =====
+thinking-hat@ C:\Users\Ben\purplehat-website\thinking-hat
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.16.0 deduped
+| `-- qs@6.16.0
++-- react-router-dom@6.30.6
+| `-- react-router@6.30.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.4 deduped
+| `-- postcss-selector-parser@6.1.4
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat/client npm audit =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+source-map-js  1.0.0 - 1.2.1
+Severity: high
+source-map-js allows event-loop denial of service through indexed source-map section offsets - https://github.com/advisories/GHSA-68fv-2mgg-jv7q
+fix available via `npm audit fix`
+node_modules/source-map-js
+
+4 vulnerabilities (3 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+EXIT 1
+
+===== thinking-hat/client npm ls =====
+thinking-hat-client@ C:\Users\Ben\purplehat-website\thinking-hat\client
++-- react-router-dom@6.30.6
+| `-- react-router@6.30.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.4 deduped
+| `-- postcss-selector-parser@6.1.4
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat/server npm audit =====
+# npm audit report
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+1 moderate severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+EXIT 1
+
+===== thinking-hat/server npm ls =====
+thinking-hat-server@ C:\Users\Ben\purplehat-website\thinking-hat\server
+`-- express@4.22.3
+  +-- body-parser@1.20.9
+  | `-- qs@6.16.0 deduped
+  `-- qs@6.16.0
+
+
+EXIT 0
+
+===== thinking-hat/thinking-hat npm audit =====
+No package-lock.json in this folder. npm audit was not run.
+
+===== vendor/purplehat-trader npm audit =====
+# npm audit report
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+EXIT 1
+
+===== vendor/purplehat-trader npm ls =====
+purplehat-trading@ C:\Users\Ben\purplehat-website\vendor\purplehat-trader
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.16.2 deduped
+| `-- qs@6.16.2
+`-- react-router-dom@6.30.6
+  `-- react-router@6.30.6
+
+
+EXIT 0
