@@ -1,0 +1,125 @@
+Captured 2026-11-19 after dependency upgrades.
+Hostinger package: thinking-hat.
+
+Resolved versions:
+multer 2.5.0
+body-parser 1.20.9 (express 4.22.3)
+vite 6.4.6 (esbuild 0.25.12 unchanged; the withdrawn Deno advisory did not appear)
+zod 4.6.7 via puppeteer-core 25.18.1 -> chromium-bidi 157.0.8090-0
+basic-ftp is no longer in the tree
+nodemailer 10.6.0
+uuid 11.1.1 via an override for exceljs 4.4.0
+
+Remaining high: xlsx (SheetJS). npm reports no fixed release. It was not in the Hostinger HIGH list. The app uses it to read management-template workbooks, including .xls.
+Moderates still listed: postcss-selector-parser, qs, react-router. They were not part of the requested HIGH fixes.
+
+===== thinking-hat npm ls =====
+thinking-hat@ C:\Users\Ben\purplehat-website\thinking-hat
++-- @vitejs/plugin-react@4.7.0
+| `-- vite@6.4.6 deduped
++-- exceljs@4.4.0
+| `-- uuid@11.1.1 overridden
++-- express@4.22.3
+| `-- body-parser@1.20.9
++-- multer@2.5.0
++-- nodemailer@10.6.0
++-- puppeteer-core@25.18.1
+| `-- chromium-bidi@157.0.8090-0
+|   `-- zod@4.6.7
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat npm audit --omit=dev =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+5 vulnerabilities (4 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1
+
+===== thinking-hat npm audit =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+5 vulnerabilities (4 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1

@@ -1,0 +1,836 @@
+Captured 2026-11-19 before dependency upgrades.
+Commit 2b49d74a3fcfea217f34ebdde5d202664ff24b7b on work/trader-integration-current.
+Hostinger installs thinking-hat/package.json. thinking-hat/server is inventoried because it has its own lockfile.
+
+===== root npm ls =====
+purplehat-website@ C:\Users\Ben\purplehat-website
++-- @vitejs/plugin-react@4.7.0
+| `-- vite@6.4.3 deduped
++-- exceljs@4.4.0
+| `-- uuid@8.3.2
++-- express@4.22.3
+| `-- body-parser@1.20.8
++-- multer@2.4.0
++-- nodemailer@7.0.6
++-- puppeteer-core@24.36.1
+| +-- @puppeteer/browsers@2.11.2
+| | `-- proxy-agent@6.5.0
+| |   `-- pac-proxy-agent@7.2.0
+| |     `-- get-uri@6.0.5
+| |       `-- basic-ftp@5.3.1
+| `-- chromium-bidi@13.0.1
+|   `-- zod@3.25.76
+`-- vite@6.4.3
+  `-- esbuild@0.25.12
+
+LS_DONE 0
+
+===== root npm audit --omit=dev =====
+# npm audit report
+
+basic-ftp  <=6.2.3
+Severity: high
+basic-ftp: Quadratic-time CPU denial of service in Client.list() Unix directory-listing parser (RE_LINE backtracking) - https://github.com/advisories/GHSA-c475-qrg2-pj4r
+basic-ftp: Uncaught TypeError in MLSD directory-listing parser via __proto__ fact name causes DoS in Client.list() - https://github.com/advisories/GHSA-5pm8-86m8-9m6r
+basic-ftp: Uncaught exception crashes the Node.js process when a password (or resumed-download path) contains CR/LF - https://github.com/advisories/GHSA-r4jh-29pc-gfqr
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/basic-ftp
+  get-uri  5.0.0 - 8.0.1
+  Depends on vulnerable versions of basic-ftp
+  node_modules/get-uri
+    pac-proxy-agent  6.0.0 - 9.1.0
+    Depends on vulnerable versions of get-uri
+    node_modules/pac-proxy-agent
+      proxy-agent  6.0.0 - 8.0.2
+      Depends on vulnerable versions of pac-proxy-agent
+      node_modules/proxy-agent
+        @puppeteer/browsers  <=2.13.2
+        Depends on vulnerable versions of extract-zip
+        Depends on vulnerable versions of proxy-agent
+        node_modules/@puppeteer/browsers
+          puppeteer-core  19.8.4 - 25.12.0
+          Depends on vulnerable versions of @puppeteer/browsers
+          Depends on vulnerable versions of chromium-bidi
+          node_modules/puppeteer-core
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+extract-zip  *
+Severity: high
+extract-zip unvalidated symlink path traversal - https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+extract-zip allows arbitrary file writes through symlink archive entries - https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/extract-zip
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer: Email to an unintended domain can occur due to Interpretation Conflict - https://github.com/advisories/GHSA-mm7p-fcc7-pg87
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+NodemailerΓÇÖs addressparser is vulnerable to DoS caused by recursive calls - https://github.com/advisories/GHSA-rcmh-qjqh-p98v
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install exceljs@3.4.0, which is a breaking change
+node_modules/uuid
+  exceljs  >=3.5.0
+  Depends on vulnerable versions of uuid
+  node_modules/exceljs
+
+vite  <=6.4.3
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+Vite: Cross origin script execution through Vite custom middleware - https://github.com/advisories/GHSA-9jrq-w75r-8gcw
+Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine - https://github.com/advisories/GHSA-rq7h-c2jc-7f22
+fix available via `npm audit fix`
+node_modules/vite
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/zod
+  chromium-bidi  0.5.13 - 157.0.8081-0
+  Depends on vulnerable versions of zod
+  node_modules/chromium-bidi
+
+20 vulnerabilities (6 moderate, 14 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+AUDIT_PROD_DONE 1
+
+===== root npm audit =====
+# npm audit report
+
+basic-ftp  <=6.2.3
+Severity: high
+basic-ftp: Quadratic-time CPU denial of service in Client.list() Unix directory-listing parser (RE_LINE backtracking) - https://github.com/advisories/GHSA-c475-qrg2-pj4r
+basic-ftp: Uncaught TypeError in MLSD directory-listing parser via __proto__ fact name causes DoS in Client.list() - https://github.com/advisories/GHSA-5pm8-86m8-9m6r
+basic-ftp: Uncaught exception crashes the Node.js process when a password (or resumed-download path) contains CR/LF - https://github.com/advisories/GHSA-r4jh-29pc-gfqr
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/basic-ftp
+  get-uri  5.0.0 - 8.0.1
+  Depends on vulnerable versions of basic-ftp
+  node_modules/get-uri
+    pac-proxy-agent  6.0.0 - 9.1.0
+    Depends on vulnerable versions of get-uri
+    node_modules/pac-proxy-agent
+      proxy-agent  6.0.0 - 8.0.2
+      Depends on vulnerable versions of pac-proxy-agent
+      node_modules/proxy-agent
+        @puppeteer/browsers  <=2.13.2
+        Depends on vulnerable versions of extract-zip
+        Depends on vulnerable versions of proxy-agent
+        node_modules/@puppeteer/browsers
+          puppeteer-core  19.8.4 - 25.12.0
+          Depends on vulnerable versions of @puppeteer/browsers
+          Depends on vulnerable versions of chromium-bidi
+          node_modules/puppeteer-core
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+extract-zip  *
+Severity: high
+extract-zip unvalidated symlink path traversal - https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+extract-zip allows arbitrary file writes through symlink archive entries - https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/extract-zip
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer: Email to an unintended domain can occur due to Interpretation Conflict - https://github.com/advisories/GHSA-mm7p-fcc7-pg87
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+NodemailerΓÇÖs addressparser is vulnerable to DoS caused by recursive calls - https://github.com/advisories/GHSA-rcmh-qjqh-p98v
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install exceljs@3.4.0, which is a breaking change
+node_modules/uuid
+  exceljs  >=3.5.0
+  Depends on vulnerable versions of uuid
+  node_modules/exceljs
+
+vite  <=6.4.3
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+Vite: Cross origin script execution through Vite custom middleware - https://github.com/advisories/GHSA-9jrq-w75r-8gcw
+Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine - https://github.com/advisories/GHSA-rq7h-c2jc-7f22
+fix available via `npm audit fix`
+node_modules/vite
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/zod
+  chromium-bidi  0.5.13 - 157.0.8081-0
+  Depends on vulnerable versions of zod
+  node_modules/chromium-bidi
+
+20 vulnerabilities (6 moderate, 14 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+AUDIT_FULL_DONE 1
+
+===== thinking-hat npm ls =====
+thinking-hat@ C:\Users\Ben\purplehat-website\thinking-hat
++-- @vitejs/plugin-react@4.7.0
+| `-- vite@6.4.3 deduped
++-- exceljs@4.4.0
+| `-- uuid@8.3.2
++-- express@4.22.3
+| `-- body-parser@1.20.8
++-- multer@2.4.0
++-- nodemailer@7.0.13
++-- puppeteer-core@24.36.1
+| +-- @puppeteer/browsers@2.11.2
+| | `-- proxy-agent@6.5.0
+| |   `-- pac-proxy-agent@7.2.0
+| |     `-- get-uri@6.0.5
+| |       `-- basic-ftp@5.3.1
+| `-- chromium-bidi@13.0.1
+|   `-- zod@3.25.76
+`-- vite@6.4.3
+  `-- esbuild@0.25.12
+
+LS_DONE 0
+
+===== thinking-hat npm audit --omit=dev =====
+# npm audit report
+
+basic-ftp  <=6.2.3
+Severity: high
+basic-ftp: Quadratic-time CPU denial of service in Client.list() Unix directory-listing parser (RE_LINE backtracking) - https://github.com/advisories/GHSA-c475-qrg2-pj4r
+basic-ftp: Uncaught TypeError in MLSD directory-listing parser via __proto__ fact name causes DoS in Client.list() - https://github.com/advisories/GHSA-5pm8-86m8-9m6r
+basic-ftp: Uncaught exception crashes the Node.js process when a password (or resumed-download path) contains CR/LF - https://github.com/advisories/GHSA-r4jh-29pc-gfqr
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/basic-ftp
+  get-uri  5.0.0 - 8.0.1
+  Depends on vulnerable versions of basic-ftp
+  node_modules/get-uri
+    pac-proxy-agent  6.0.0 - 9.1.0
+    Depends on vulnerable versions of get-uri
+    node_modules/pac-proxy-agent
+      proxy-agent  6.0.0 - 8.0.2
+      Depends on vulnerable versions of pac-proxy-agent
+      node_modules/proxy-agent
+        @puppeteer/browsers  <=2.13.2
+        Depends on vulnerable versions of extract-zip
+        Depends on vulnerable versions of proxy-agent
+        node_modules/@puppeteer/browsers
+          puppeteer-core  19.8.4 - 25.12.0
+          Depends on vulnerable versions of @puppeteer/browsers
+          Depends on vulnerable versions of chromium-bidi
+          node_modules/puppeteer-core
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+extract-zip  *
+Severity: high
+extract-zip unvalidated symlink path traversal - https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+extract-zip allows arbitrary file writes through symlink archive entries - https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/extract-zip
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install exceljs@3.4.0, which is a breaking change
+node_modules/uuid
+  exceljs  >=3.5.0
+  Depends on vulnerable versions of uuid
+  node_modules/exceljs
+
+vite  <=6.4.3
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+Vite: Cross origin script execution through Vite custom middleware - https://github.com/advisories/GHSA-9jrq-w75r-8gcw
+Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine - https://github.com/advisories/GHSA-rq7h-c2jc-7f22
+fix available via `npm audit fix`
+node_modules/vite
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/zod
+  chromium-bidi  0.5.13 - 157.0.8081-0
+  Depends on vulnerable versions of zod
+  node_modules/chromium-bidi
+
+20 vulnerabilities (6 moderate, 14 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+AUDIT_PROD_DONE 1
+
+===== thinking-hat npm audit =====
+# npm audit report
+
+basic-ftp  <=6.2.3
+Severity: high
+basic-ftp: Quadratic-time CPU denial of service in Client.list() Unix directory-listing parser (RE_LINE backtracking) - https://github.com/advisories/GHSA-c475-qrg2-pj4r
+basic-ftp: Uncaught TypeError in MLSD directory-listing parser via __proto__ fact name causes DoS in Client.list() - https://github.com/advisories/GHSA-5pm8-86m8-9m6r
+basic-ftp: Uncaught exception crashes the Node.js process when a password (or resumed-download path) contains CR/LF - https://github.com/advisories/GHSA-r4jh-29pc-gfqr
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/basic-ftp
+  get-uri  5.0.0 - 8.0.1
+  Depends on vulnerable versions of basic-ftp
+  node_modules/get-uri
+    pac-proxy-agent  6.0.0 - 9.1.0
+    Depends on vulnerable versions of get-uri
+    node_modules/pac-proxy-agent
+      proxy-agent  6.0.0 - 8.0.2
+      Depends on vulnerable versions of pac-proxy-agent
+      node_modules/proxy-agent
+        @puppeteer/browsers  <=2.13.2
+        Depends on vulnerable versions of extract-zip
+        Depends on vulnerable versions of proxy-agent
+        node_modules/@puppeteer/browsers
+          puppeteer-core  19.8.4 - 25.12.0
+          Depends on vulnerable versions of @puppeteer/browsers
+          Depends on vulnerable versions of chromium-bidi
+          node_modules/puppeteer-core
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+extract-zip  *
+Severity: high
+extract-zip unvalidated symlink path traversal - https://github.com/advisories/GHSA-jmr9-qjv8-65gv
+extract-zip allows arbitrary file writes through symlink archive entries - https://github.com/advisories/GHSA-7pqw-9j4j-h8q3
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/extract-zip
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+uuid  <11.1.1
+Severity: moderate
+uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - https://github.com/advisories/GHSA-w5hq-g745-h8pq
+fix available via `npm audit fix --force`
+Will install exceljs@3.4.0, which is a breaking change
+node_modules/uuid
+  exceljs  >=3.5.0
+  Depends on vulnerable versions of uuid
+  node_modules/exceljs
+
+vite  <=6.4.3
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+Vite: Cross origin script execution through Vite custom middleware - https://github.com/advisories/GHSA-9jrq-w75r-8gcw
+Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine - https://github.com/advisories/GHSA-rq7h-c2jc-7f22
+fix available via `npm audit fix`
+node_modules/vite
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+fix available via `npm audit fix --force`
+Will install puppeteer-core@25.18.1, which is a breaking change
+node_modules/zod
+  chromium-bidi  0.5.13 - 157.0.8081-0
+  Depends on vulnerable versions of zod
+  node_modules/chromium-bidi
+
+20 vulnerabilities (6 moderate, 14 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+AUDIT_FULL_DONE 1
+
+===== thinking-hat/client npm ls =====
+thinking-hat-client@ C:\Users\Ben\purplehat-website\thinking-hat\client
++-- @vitejs/plugin-react@4.7.0
+| `-- vite@6.4.3 deduped
+`-- vite@6.4.3
+  `-- esbuild@0.25.12
+
+LS_DONE 0
+
+===== thinking-hat/client npm audit --omit=dev =====
+# npm audit report
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+AUDIT_PROD_DONE 1
+
+===== thinking-hat/client npm audit =====
+# npm audit report
+
+postcss-selector-parser  <6.1.5
+Severity: moderate
+PostCSS: Quadratic complexity in flat selector parsing allows CPU exhaustion - https://github.com/advisories/GHSA-rj75-hqrm-r3gf
+fix available via `npm audit fix`
+node_modules/postcss-selector-parser
+
+react-router  6.0.0 - 7.17.0
+Severity: moderate
+React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass) - https://github.com/advisories/GHSA-wrjc-x8rr-h8h6
+React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration - https://github.com/advisories/GHSA-337j-9hxr-rhxg
+fix available via `npm audit fix --force`
+Will install react-router-dom@7.18.6, which is a breaking change
+node_modules/react-router
+  react-router-dom  6.0.0-alpha.0 - 7.17.0
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+source-map-js  1.0.0 - 1.2.1
+Severity: high
+source-map-js allows event-loop denial of service through indexed source-map section offsets - https://github.com/advisories/GHSA-68fv-2mgg-jv7q
+fix available via `npm audit fix`
+node_modules/source-map-js
+
+vite  <=6.4.3
+Severity: high
+launch-editor: escapeCmdArgs() omits % escaping on Windows - https://github.com/advisories/GHSA-698v-4r3x-3vcv
+launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors - https://github.com/advisories/GHSA-r825-w8mm-5pxw
+launch-editor: `fs.existsSync()` existence check can be bypassed on Windows - https://github.com/advisories/GHSA-587h-7wmj-h5pm
+Vite: Cross origin script execution through Vite custom middleware - https://github.com/advisories/GHSA-9jrq-w75r-8gcw
+Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine - https://github.com/advisories/GHSA-rq7h-c2jc-7f22
+fix available via `npm audit fix`
+node_modules/vite
+
+5 vulnerabilities (3 moderate, 2 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+AUDIT_FULL_DONE 1
+
+===== thinking-hat/server npm ls =====
+thinking-hat-server@ C:\Users\Ben\purplehat-website\thinking-hat\server
++-- express@4.22.3
+| `-- body-parser@1.20.8
++-- multer@2.4.0
+`-- nodemailer@7.0.13
+
+LS_DONE 0
+
+===== thinking-hat/server npm audit --omit=dev =====
+# npm audit report
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+4 vulnerabilities (1 moderate, 3 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+AUDIT_PROD_DONE 1
+
+===== thinking-hat/server npm audit =====
+# npm audit report
+
+body-parser  <1.20.9
+Severity: high
+body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body - https://github.com/advisories/GHSA-27r3-jxmh-p828
+fix available via `npm audit fix`
+node_modules/body-parser
+
+multer  2.0.0 - 2.4.0
+Severity: high
+multer vulnerable to Denial of Service via a pending asynchronous fileFilter after request teardown - https://github.com/advisories/GHSA-q7qp-rjg7-q26m
+fix available via `npm audit fix`
+node_modules/multer
+
+nodemailer  <=10.1.3
+Severity: high
+Nodemailer has SMTP command injection due to unsanitized `envelope.size` parameter - https://github.com/advisories/GHSA-c7w3-x93f-qmm8
+Nodemailer Vulnerable to SMTP Command Injection via CRLF in Transport name Option (EHLO/HELO)  - https://github.com/advisories/GHSA-vvjj-xcjg-gr5g
+Nodemailer: CRLF injection in Nodemailer List-* header comments allows arbitrary message header injection - https://github.com/advisories/GHSA-268h-hp4c-crq3
+Nodemailer jsonTransport bypasses disableFileAccess and disableUrlAccess during message normalization - https://github.com/advisories/GHSA-wqvq-jvpq-h66f
+Nodemailer: Message-level raw option bypasses disableFileAccess/disableUrlAccess, enabling arbitrary file read and full-response SSRF in the delivered message - https://github.com/advisories/GHSA-p6gq-j5cr-w38f
+Nodemailer: resolveContent() on a MailMessage bypasses disableFileAccess/disableUrlAccess when called with the legacy signature - https://github.com/advisories/GHSA-8m3c-c648-2xjj
+Nodemailer: IDN/Punycode domain allow-list bypass leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-wmmp-3585-3rmp
+Nodemailer: Quadratic (O(n┬▓)) time complexity in addressparser allows remote denial of service via a crafted address list - https://github.com/advisories/GHSA-2x7j-588g-ccc2
+Nodemailer: Recipient-domain validation bypass via RFC 5322 comment mis-parsing leads to email delivery to an attacker-controlled domain - https://github.com/advisories/GHSA-cc9r-2j5m-2m83
+Nodemailer: Process-global DNS cache reuses TLS `servername` across transports, enabling cross-tenant SMTP credential disclosure - https://github.com/advisories/GHSA-6vj9-mwq6-2f5v
+Nodemailer: Nested structured recipient arrays bypass the parser depth limit and cause stack exhaustion DoS - https://github.com/advisories/GHSA-8vvx-rff5-p5rq
+Nodemailer: Quadratic backtracking in the addressparser free-text fallback allows remote denial of service - https://github.com/advisories/GHSA-v53p-9fqp-m79j
+Nodemailer: Improper TLS Certificate Validation in OAuth2 Token Fetch Enables Credential Interception - https://github.com/advisories/GHSA-r7g4-qg5f-qqm2
+Nodemailer: Quadratic (O(n^2)) DKIM header unfolding lets a large folded header cause remote denial of service during signing - https://github.com/advisories/GHSA-39m8-27wv-hr27
+Nodemailer: A nested comment ends early in addressparser, releasing the rest of the comment as a recipient - https://github.com/advisories/GHSA-8c8m-p3m8-cjg8
+Nodemailer: A ";" inside a quoted string or comment ends an address group early in addressparser, turning display text into a recipient - https://github.com/advisories/GHSA-m943-m63m-w62w
+Nodemailer: A ">" inside a quoted local part ends an angle-addr early in addressparser, delivering to a domain the header does not name - https://github.com/advisories/GHSA-85x2-q946-cp5h
+Nodemailer: Quadratic backtracking in SMTP AUTH mechanism detection regexes allows pre-auth remote denial of service - https://github.com/advisories/GHSA-4ffr-jq9g-5ffx
+Nodemailer: RFC 5322 comment inside an angle-bracket address is never stripped - https://github.com/advisories/GHSA-g73g-hqqh-jr95
+Nodemailer: Quadratic (O(n^2)) SMTP client reply parsing lets a malicious server or MITM cause a pre-auth remote denial of service - https://github.com/advisories/GHSA-4g23-2xm8-66gc
+fix available via `npm audit fix --force`
+Will install nodemailer@10.6.0, which is a breaking change
+node_modules/nodemailer
+
+qs  6.7.0 - 6.16.0
+Severity: moderate
+qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS) - https://github.com/advisories/GHSA-6pq8-jhm2-2vcw
+fix available via `npm audit fix`
+node_modules/qs
+
+4 vulnerabilities (1 moderate, 3 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+AUDIT_FULL_DONE 1

@@ -124,6 +124,11 @@ import {
   resendBlock,
 } from "./inviteEmail.js";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("unhandledRejection", reason);
+  throw reason instanceof Error ? reason : new Error(String(reason ?? "unhandledRejection"));
+});
+
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
   console.error("Set JWT_SECRET in server/.env.");
   process.exit(1);
@@ -140,13 +145,21 @@ app.use((req, res, next) => {
   next();
 });
 app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"] }));
-const websiteJson = express.json({ limit: "1mb" });
+const bodyLimit = { limit: "1mb", inflate: false };
+const websiteJson = express.json(bodyLimit);
+const websiteUrlencoded = express.urlencoded({ extended: false, ...bodyLimit });
 app.use((req, res, next) => {
   if (req.path === "/trader" || req.path.startsWith("/trader/")) {
     next();
     return;
   }
-  websiteJson(req, res, next);
+  websiteJson(req, res, (error) => {
+    if (error) {
+      next(error);
+      return;
+    }
+    websiteUrlencoded(req, res, next);
+  });
 });
 
 const hits = new Map();
@@ -168,6 +181,14 @@ function clean(value, max) {
     .replace(/[\u0000-\u001F\u007F]/g, "")
     .trim()
     .slice(0, max);
+}
+
+const MAX_REQUEST_ITEMS = 1000;
+
+function boundedArray(value) {
+  if (!Array.isArray(value)) return { items: null };
+  if (value.length > MAX_REQUEST_ITEMS) return { error: "Too many items." };
+  return { items: value };
 }
 
 function isEmail(value) {
@@ -402,7 +423,7 @@ const upload = multer({
       callback(null, `${who}-${Date.now()}${ext}`);
     },
   }),
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
   fileFilter(req, file, callback) {
     if (!imageTypes[file.mimetype]) {
       callback(new Error("Use a JPG, PNG, or WebP photo."));
@@ -414,7 +435,7 @@ const upload = multer({
 
 const workbookUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 8 * 1024 * 1024, files: 1 },
   fileFilter(req, file, callback) {
     const name = String(file.originalname || "").toLowerCase();
     if (!name.endsWith(".xlsx")) {
@@ -427,7 +448,7 @@ const workbookUpload = multer({
 
 const excelUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 8 * 1024 * 1024, files: 1 },
   fileFilter(req, file, callback) {
     const name = String(file.originalname || "").toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".xls")) {
@@ -438,16 +459,19 @@ const excelUpload = multer({
   },
 }).single("file");
 
+function uploadLimitMessage(error, tooBig, fallback) {
+  if (error.code === "LIMIT_FILE_SIZE") return tooBig;
+  if (error.code === "LIMIT_FILE_COUNT" || error.code === "LIMIT_UNEXPECTED_FILE") return "Upload one file at a time.";
+  return error.message || fallback;
+}
+
 function acceptExcel(req, res, next) {
   excelUpload(req, res, (error) => {
     if (!error) {
       next();
       return;
     }
-    const message = error.code === "LIMIT_FILE_SIZE"
-      ? "Use an Excel file under 8 MB."
-      : (error.message || "Upload an Excel .xlsx or .xls file.");
-    res.status(400).json({ error: message });
+    res.status(400).json({ error: uploadLimitMessage(error, "Use an Excel file under 8 MB.", "Upload an Excel .xlsx or .xls file.") });
   });
 }
 
@@ -457,8 +481,7 @@ function acceptWorkbook(req, res, next) {
       next();
       return;
     }
-    const message = error.code === "LIMIT_FILE_SIZE" ? "Use an Excel file under 8 MB." : (error.message || "Upload an Excel .xlsx file.");
-    res.status(400).json({ error: message });
+    res.status(400).json({ error: uploadLimitMessage(error, "Use an Excel file under 8 MB.", "Upload an Excel .xlsx file.") });
   });
 }
 
@@ -468,8 +491,7 @@ function photoUpload(req, res, next) {
       next();
       return;
     }
-    const message = error.code === "LIMIT_FILE_SIZE" ? "Use a photo under 2 MB." : (error.message || "Could not upload that photo.");
-    res.status(400).json({ error: message });
+    res.status(400).json({ error: uploadLimitMessage(error, "Use a photo under 2 MB.", "Could not upload that photo.") });
   });
 }
 
@@ -1214,7 +1236,12 @@ app.put("/api/admin/users/:id/finances", requireAuth, requireAdmin, (req, res) =
     }
     cents[field] = value;
   }
-  const months = Array.isArray(req.body.months) ? req.body.months : null;
+  const monthsResult = boundedArray(req.body.months);
+  if (monthsResult.error) {
+    res.status(400).json({ error: monthsResult.error });
+    return;
+  }
+  const months = monthsResult.items;
   if (months) {
     for (const month of months) {
       if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(month.month || ""))) {
@@ -1397,7 +1424,15 @@ app.get("/api/admin/templates", requireAuth, requireAdmin, (req, res) => {
 
 const templateFileUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 8 * 1024 * 1024, files: 1 },
+  fileFilter(req, file, callback) {
+    const name = String(file.originalname || "").toLowerCase();
+    if (!name.endsWith(".csv") && !name.endsWith(".txt") && !name.endsWith(".json")) {
+      callback(new Error("Upload a CSV or text file."));
+      return;
+    }
+    callback(null, true);
+  },
 }).single("file");
 
 function acceptTemplateFile(req, res, next) {
@@ -1406,8 +1441,7 @@ function acceptTemplateFile(req, res, next) {
       next();
       return;
     }
-    const message = error.code === "LIMIT_FILE_SIZE" ? "Use a CSV or text file under 8 MB." : (error.message || "Choose a CSV or text file.");
-    res.status(400).json({ error: message });
+    res.status(400).json({ error: uploadLimitMessage(error, "Use a CSV or text file under 8 MB.", "Choose a CSV or text file.") });
   });
 }
 
@@ -1628,11 +1662,16 @@ app.post("/api/admin/template-builder/clients/:clientId/templates/import", requi
 
 app.post("/api/admin/template-builder/clients/:clientId/templates/:templateId/sections", requireAuth, requireAdmin, (req, res) => {
   const patch = req.body.patch && typeof req.body.patch === "object" && !Array.isArray(req.body.patch) ? req.body.patch : {};
+  const idsResult = boundedArray(req.body.ids);
+  if (idsResult.error) {
+    res.status(400).json({ error: idsResult.error });
+    return;
+  }
   const result = applyBuilderSectionAction(Number(req.params.clientId), Number(req.params.templateId), {
     action: clean(req.body.action, 20),
     sectionType: clean(req.body.sectionType, 40),
     id: clean(req.body.id, 40),
-    ids: Array.isArray(req.body.ids) ? req.body.ids.map((id) => clean(id, 40)) : [],
+    ids: (idsResult.items || []).map((id) => clean(id, 40)),
     patch,
   });
   if (result.error) {
