@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { FrameworkBadge, ReviewFlag, SectionChips } from "../components/templateBuilderUi";

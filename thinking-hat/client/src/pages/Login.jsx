@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth";
+import { sameSitePath } from "../safePath";
 import { Alert, AuthFrame, Button, Field, inputClass } from "../components/ui";
 
 export default function Login() {
@@ -21,7 +22,7 @@ export default function Login() {
     setBusy(true);
     try {
       const signedIn = await login(email, password);
-      const from = location.state?.from?.pathname || "";
+      const from = sameSitePath(location.state?.from?.pathname || "");
       const next = signedIn.role === "admin"
         ? (from.startsWith("/admin") ? from : "/admin")
         : (from && from !== "/login" && !from.startsWith("/admin") ? from : "/dashboard");

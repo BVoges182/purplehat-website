@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { api } from "../api";
 import TemplateLayoutBoard from "../components/TemplateLayoutBoard";
 import { FrameworkBadge, ReviewFlag } from "../components/templateBuilderUi";

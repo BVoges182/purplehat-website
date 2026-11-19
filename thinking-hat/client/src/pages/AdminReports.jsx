@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { api } from "../api";
 import AdminReportList from "../components/AdminReportList";
 import { Alert, Button, Card, Field, PageIntro, inputClass } from "../components/ui";

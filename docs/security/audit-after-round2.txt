@@ -1,0 +1,133 @@
+npm audit round 2 after
+Captured after the qs, postcss-selector-parser, esbuild note, and react-router steps.
+
+===== . npm audit =====
+# npm audit report
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+1 high severity vulnerability
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1
+
+===== . npm ls =====
+purplehat-website@ C:\Users\Ben\purplehat-website
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.17.1 deduped
+| `-- qs@6.17.1
++-- react-router@7.18.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.6 deduped
+| `-- postcss-selector-parser@6.1.6
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat npm audit =====
+# npm audit report
+
+xlsx  *
+Severity: high
+Prototype Pollution in sheetJS - https://github.com/advisories/GHSA-4r6h-8v6p-xvw6
+SheetJS Regular Expression Denial of Service (ReDoS) - https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
+No fix available
+node_modules/xlsx
+
+1 high severity vulnerability
+
+Some issues need review, and may require choosing
+a different dependency.
+
+EXIT 1
+
+===== thinking-hat npm ls =====
+thinking-hat@ C:\Users\Ben\purplehat-website\thinking-hat
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.17.1 deduped
+| `-- qs@6.17.1
++-- react-router@7.18.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.6 deduped
+| `-- postcss-selector-parser@6.1.6
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat/client npm audit =====
+# npm audit report
+
+source-map-js  1.0.0 - 1.2.1
+Severity: high
+source-map-js allows event-loop denial of service through indexed source-map section offsets - https://github.com/advisories/GHSA-68fv-2mgg-jv7q
+fix available via `npm audit fix`
+node_modules/source-map-js
+
+1 high severity vulnerability
+
+To address all issues, run:
+  npm audit fix
+
+EXIT 1
+
+===== thinking-hat/client npm ls =====
+thinking-hat-client@ C:\Users\Ben\purplehat-website\thinking-hat\client
++-- react-router@7.18.6
++-- tailwindcss@3.4.19
+| +-- postcss-nested@6.2.0
+| | `-- postcss-selector-parser@6.1.6 deduped
+| `-- postcss-selector-parser@6.1.6
+`-- vite@6.4.6
+  `-- esbuild@0.25.12
+
+
+EXIT 0
+
+===== thinking-hat/server npm audit =====
+found 0 vulnerabilities
+
+EXIT 0
+
+===== thinking-hat/server npm ls =====
+thinking-hat-server@ C:\Users\Ben\purplehat-website\thinking-hat\server
+`-- express@4.22.3
+  +-- body-parser@1.20.9
+  | `-- qs@6.17.1 deduped
+  `-- qs@6.17.1
+
+
+EXIT 0
+
+===== thinking-hat/thinking-hat npm audit =====
+No package-lock.json in this folder. npm audit was not run.
+
+===== vendor/purplehat-trader npm audit =====
+found 0 vulnerabilities
+
+EXIT 0
+
+===== vendor/purplehat-trader npm ls =====
+purplehat-trading@ C:\Users\Ben\purplehat-website\vendor\purplehat-trader
++-- express@4.22.3
+| +-- body-parser@1.20.9
+| | `-- qs@6.16.2 deduped
+| `-- qs@6.16.2
+`-- react-router@7.18.6
+
+
+EXIT 0

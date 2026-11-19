@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, Avatar, Button } from "./ui";

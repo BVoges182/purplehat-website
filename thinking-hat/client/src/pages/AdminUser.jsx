@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { Alert, Badge, Button, Card, Field, PageIntro, formatDate, inputClass, invoiceLabel, money } from "../components/ui";

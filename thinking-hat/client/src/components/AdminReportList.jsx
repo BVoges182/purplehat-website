@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { api, downloadAuthorized } from "../api";
 import { Alert, Button } from "./ui";
 import { reportMonthLabel, reportPdfName } from "../reportMoney";

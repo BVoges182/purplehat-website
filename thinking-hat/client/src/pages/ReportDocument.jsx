@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router";
 import { api, downloadAuthorized } from "../api";
 import { useAuth } from "../auth";
 import ManagementReportView from "../components/ManagementReportView";
