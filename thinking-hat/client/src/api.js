@@ -62,9 +62,12 @@ export async function downloadAuthorized(path, filename) {
   }
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
+  const disposition = response.headers.get("Content-Disposition") || "";
+  const named = disposition.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"|filename=([^;]+)/i);
+  const headerName = named ? decodeURIComponent((named[1] || named[2] || named[3] || "").trim()) : "";
   const link = document.createElement("a");
   link.href = url;
-  link.download = filename;
+  link.download = headerName || filename;
   document.body.appendChild(link);
   link.click();
   link.remove();

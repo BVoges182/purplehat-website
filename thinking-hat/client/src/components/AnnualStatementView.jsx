@@ -1,25 +1,23 @@
 import { downloadAuthorized } from "../api";
 
 function moneyParts(value, dollar) {
-  if (value == null || Number.isNaN(Number(value))) return { dollar: "", number: "", paren: "" };
+  if (value == null || Number.isNaN(Number(value))) return { dollar: "", amount: "" };
   const rounded = Math.round(Number(value));
-  if (rounded === 0) return { dollar: "", number: "—", paren: "" };
+  if (rounded === 0) return { dollar: "", amount: "\u2014" };
   const text = Math.abs(rounded).toLocaleString("en-US");
   return {
     dollar: dollar ? "$" : "",
-    number: rounded < 0 ? `(${text}` : text,
-    paren: rounded < 0 ? ")" : "",
+    amount: rounded < 0 ? `(${text})` : text,
   };
 }
 
-function Money({ value, dollar }) {
+function AmountCells({ value, dollar }) {
   const parts = moneyParts(value, dollar);
   return (
-    <span className="afs-money">
-      <span className="afs-dollar">{parts.dollar}</span>
-      <span className="afs-num">{parts.number}</span>
-      <span className="afs-paren">{parts.paren}</span>
-    </span>
+    <>
+      <td className="afs-dollar">{parts.dollar}</td>
+      <td className="afs-amt">{parts.amount}</td>
+    </>
   );
 }
 
@@ -40,6 +38,7 @@ function StatementTable({ statement, showNotes = true }) {
   const years = statement.columns.every((column) => /^\d{4}$/.test(column));
   const notes = showNotes && years;
   const dollars = dollarRows(statement.rows);
+  const span = statement.columns.length * 2;
   return (
     <table className="afs-table">
       <thead>
@@ -47,13 +46,13 @@ function StatementTable({ statement, showNotes = true }) {
           <tr>
             <th />
             {notes ? <th /> : null}
-            <th className="afs-date" colSpan={statement.columns.length}>December 31,</th>
+            <th className="afs-date" colSpan={span}>December 31,</th>
           </tr>
         ) : null}
         <tr>
           <th />
           {notes ? <th>Note</th> : null}
-          {statement.columns.map((column) => <th key={column}>{column}</th>)}
+          {statement.columns.map((column) => <th key={column} colSpan={2}>{column}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -62,9 +61,7 @@ function StatementTable({ statement, showNotes = true }) {
             <th style={{ paddingLeft: `${0.15 * (row.indent || 0)}in` }}>{row.label}</th>
             {notes ? <td className="afs-note">{row.note}</td> : null}
             {row.values.map((value, valueIndex) => (
-              <td key={statement.columns[valueIndex] || valueIndex}>
-                <Money value={value} dollar={dollars[index]} />
-              </td>
+              <AmountCells key={statement.columns[valueIndex] || valueIndex} value={value} dollar={dollars[index]} />
             ))}
           </tr>
         ))}
@@ -85,9 +82,9 @@ function anchorFor(title) {
   return "";
 }
 
-function Page({ id, kicker, title, page, children }) {
+function Page({ id, kicker, title, page, part = "section", children }) {
   return (
-    <article id={id} className="afs-page">
+    <article id={id} className={`afs-page afs-part-${part}`}>
       {kicker ? <p className="afs-kicker">{kicker}</p> : null}
       {title ? <h2>{title}</h2> : null}
       {children}
@@ -96,7 +93,7 @@ function Page({ id, kicker, title, page, children }) {
   );
 }
 
-export default function AnnualStatementView({ statement, preview = false, onPublish, busy = false, files }) {
+export default function AnnualStatementView({ statement, preview = false, onPublish, busy = false, files, printable = false }) {
   const document = statement?.document;
   if (!document) return null;
   const entity = document.cover.lines[0]?.text || "";
@@ -115,24 +112,24 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
   }
   return (
     <div className="afs-shell">
-      <aside className="afs-nav">
+      {printable ? null : <aside className="afs-nav">
         <p>Financial Statements</p>
         {nav.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
-      </aside>
+      </aside>}
       <div className="afs-main">
-        <div className="afs-actions">
+        {printable ? null : <div className="afs-actions">
           <button type="button" onClick={() => downloadAuthorized(files?.pdf || `/api/me/annual-statements/${year}/pdf`, files?.pdfName || `annual-financial-statements-${year}.pdf`)}>Download PDF</button>
           <button type="button" onClick={() => downloadAuthorized(files?.xlsx || `/api/me/annual-statements/${year}/xlsx`, files?.xlsxName || statement.sourceName || "statements.xlsx")}>Download Excel</button>
           {preview && statement.status !== "published" ? (
             <button type="button" onClick={onPublish} disabled={busy || statement.errors?.length}>Publish</button>
           ) : null}
-        </div>
+        </div>}
         {statement.errors?.length ? (
           <ul className="afs-errors">
             {statement.errors.map((error) => <li key={error}>{error}</li>)}
           </ul>
         ) : null}
-        <Page id="cover" kicker={entity} title={document.cover.lines[1]?.text || "Financial statements"}>
+        <Page id="cover" part="cover" kicker={entity} title={document.cover.lines[1]?.text || "Financial statements"}>
           {document.cover.lines.slice(2).map((line) => <p key={line.text} className={line.type === "h" || line.text.length < 90 ? "afs-center" : ""}>{line.text}</p>)}
         </Page>
         <Page id="index" kicker={entity} title="INDEX TO FINANCIAL STATEMENTS">
@@ -149,7 +146,7 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
           </ul>
         </Page>
         <Page id="auditor" title="Independent Auditor's Report" page={pages.auditor}>
-          {document.auditor.blocks.map((block) => (
+          {document.auditor.blocks.filter((block) => block.text.trim().toLowerCase() !== "independent auditor's report").map((block) => (
             <p key={block.text.slice(0, 48)} className={block.type === "h" ? "afs-heading" : ""}>{block.text}</p>
           ))}
         </Page>
@@ -160,8 +157,8 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
             <p className="afs-footer">See accompanying notes to the financial statements.</p>
           </Page>
         ))}
-        {document.notes.map((note) => (
-          <Page key={note.number} id={`note-${note.number}`} kicker={entity} title={note.title} page={pages[`note-${note.number}`]}>
+        {document.notes.map((note, noteIndex) => (
+          <Page key={note.number} id={`note-${note.number}`} part={noteIndex === 0 ? "notes" : "flow"} kicker={entity} title={note.title} page={pages[`note-${note.number}`]}>
             {note.blocks.some((block) => block.type === "table") ? <p className="afs-unit">(in whole dollars)</p> : null}
             {note.blocks.map((block, index) => (
               block.type === "table" ? (

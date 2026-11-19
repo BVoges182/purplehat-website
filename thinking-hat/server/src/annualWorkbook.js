@@ -1,5 +1,4 @@
 import ExcelJS from "exceljs";
-import PDFDocument from "pdfkit";
 
 const REQUIRED = [
   "Cover",
@@ -668,71 +667,6 @@ export function annualSectionTitles(document) {
     ...document.statements.map((statement) => statement.title),
     ...document.notes.map((note) => note.title),
   ];
-}
-
-function pdfMoney(value) {
-  if (value == null || Number.isNaN(Number(value))) return "";
-  const rounded = Math.round(Number(value));
-  if (rounded === 0) return "—";
-  const text = Math.abs(rounded).toLocaleString("en-US");
-  return rounded < 0 ? `(${text})` : text;
-}
-
-export function renderAnnualPdf(document) {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "LETTER", margin: 54 });
-    const chunks = [];
-    doc.on("data", (chunk) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
-    const sections = [
-      { title: document.cover.lines[0]?.text || "Cover", blocks: document.cover.lines },
-      { title: "INDEX TO FINANCIAL STATEMENTS", entries: document.index.entries },
-      { title: "Independent Auditor's Report", blocks: document.auditor.blocks },
-      ...document.statements.map((statement) => ({ statement })),
-      ...document.notes.map((note) => ({ note })),
-    ];
-    sections.forEach((section, index) => {
-      if (index) doc.addPage();
-      doc.font("Times-Bold").fontSize(11).fillColor("#1F3864").text(
-        section.statement?.title || section.note?.title || section.title,
-        { align: "center" },
-      );
-      doc.moveDown(0.4);
-      doc.strokeColor("#1F3864").moveTo(54, doc.y).lineTo(558, doc.y).stroke();
-      doc.moveDown(0.6);
-      doc.fillColor("#000000").font("Times-Roman").fontSize(10);
-      const blocks = section.blocks || [];
-      for (const block of blocks) {
-        doc.font(block.type === "h" ? "Times-Bold" : "Times-Roman").text(block.text, { align: block.type === "h" ? "center" : "left" });
-        doc.moveDown(0.3);
-      }
-      for (const entry of section.entries || []) {
-        doc.text(`${entry.title}    ${entry.page}`);
-      }
-      const statement = section.statement;
-      if (statement) {
-        for (const row of statement.rows) {
-          const values = row.values.map((value) => pdfMoney(value)).join("    ");
-          doc.font(row.bold ? "Times-Bold" : "Times-Roman").text(`${row.label}    ${values}`);
-        }
-      }
-      const note = section.note;
-      if (note) {
-        for (const block of note.blocks) {
-          if (block.type === "table") {
-            for (const row of block.rows) doc.text(`${row.label}    ${row.values.map((value) => pdfMoney(value)).join("    ")}`);
-          } else {
-            doc.font(block.type === "h" ? "Times-Bold" : "Times-Roman").text(block.text);
-            doc.moveDown(0.25);
-          }
-        }
-      }
-      const footer = `F-${index + 1}`;
-      doc.font("Times-Roman").fontSize(9).text(footer, 54, 740, { align: "center", width: 504 });
-    });
-    doc.end();
-  });
 }
 
 export { colNumber, colLetters };

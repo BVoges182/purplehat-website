@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import db, { nowIso, uploadsDir } from "./db.js";
 import { normalizeEditorSections } from "./templateSections.js";
-import { parseAnnualWorkbook, renderAnnualPdf } from "./annualWorkbook.js";
+import { parseAnnualWorkbook } from "./annualWorkbook.js";
 
 const fixturePath = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -167,12 +167,6 @@ export function annualFile(id) {
   const row = db.prepare("SELECT * FROM annual_statements WHERE id = ?").get(id);
   if (!row || !row.source_file || !fs.existsSync(row.source_file)) return null;
   return { name: row.source_name, buffer: fs.readFileSync(row.source_file), statement: publicStatement(row) };
-}
-
-export async function annualPdf(id) {
-  const statement = readAnnual(id);
-  if (!statement) return null;
-  return { statement, buffer: await renderAnnualPdf(statement.document) };
 }
 
 function afsSections() {

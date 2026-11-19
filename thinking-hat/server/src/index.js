@@ -74,7 +74,6 @@ import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
 import { viewerCanReadAnnual } from "./annualWorkbook.js";
 import {
   annualFile,
-  annualPdf,
   latestPublished,
   listPublished,
   publishAnnual,
@@ -83,6 +82,7 @@ import {
   saveAnnualUpload,
   seedAnnualPackage,
 } from "./annualStore.js";
+import { annualPdfFilename, readAnnualPrintToken, renderAnnualPdf } from "./annualPrint.js";
 import { insightLoader } from "./insights.js";
 import { sendSmtpMail } from "./mail.js";
 import {
@@ -199,6 +199,10 @@ function requireAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (payload.scope) {
+      res.status(401).json({ error: "Sign in to continue." });
+      return;
+    }
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(payload.sub);
     if (!user) {
       res.status(401).json({ error: "Sign in to continue." });
@@ -1917,6 +1921,7 @@ function isAppPath(pathname) {
     || name === "/reports"
     || name.startsWith("/reports/")
     || name === "/statements"
+    || name.startsWith("/print/financial-statements/")
     || name === "/admin"
     || name.startsWith("/admin/");
 }
@@ -2009,8 +2014,8 @@ app.get("/api/admin/annual-statements/:id", requireAuth, requireAdmin, (req, res
 });
 
 app.get("/api/admin/annual-statements/:id/pdf", requireAuth, requireAdmin, async (req, res) => {
-  const rendered = await annualPdf(Number(req.params.id));
-  sendAnnual(res, rendered?.statement, "pdf", rendered?.buffer, `annual-financial-statements-${rendered?.statement?.year || "draft"}.pdf`);
+  const statement = readAnnual(Number(req.params.id));
+  await sendPrintedAnnual(res, statement);
 });
 
 app.get("/api/admin/annual-statements/:id/xlsx", requireAuth, requireAdmin, (req, res) => {
@@ -2043,6 +2048,20 @@ app.patch("/api/admin/template-builder/clients/:clientId/templates/:templateId/a
   }
   res.json(builderTemplateView(Number(req.params.clientId), Number(req.params.templateId)));
 });
+
+async function sendPrintedAnnual(res, statement) {
+  if (!statement) {
+    res.status(404).json({ error: "That statement was not found." });
+    return;
+  }
+  try {
+    const buffer = await renderAnnualPdf(statement);
+    sendAnnual(res, statement, "pdf", buffer, annualPdfFilename(statement));
+  } catch (error) {
+    console.error(error && error.message ? error.message : error);
+    if (!res.headersSent) res.status(500).json({ error: "Could not prepare the PDF." });
+  }
+}
 
 function sendAnnual(res, statement, kind, buffer, downloadName) {
   if (!statement) {
@@ -2078,12 +2097,29 @@ app.get("/api/me/annual-statements/:year", requireAuth, (req, res) => {
 
 app.get("/api/me/annual-statements/:year/pdf", requireAuth, async (req, res) => {
   const statement = latestPublished(req.user.id, req.params.year);
-  if (!statement) {
+  await sendPrintedAnnual(res, statement);
+});
+
+app.get("/api/print/annual-statements/:userId/:year", (req, res) => {
+  let payload;
+  try {
+    payload = readAnnualPrintToken(String(req.query.token || ""));
+  } catch {
+    res.status(401).json({ error: "That link has expired." });
+    return;
+  }
+  if (Number(payload.sub) !== Number(req.params.userId) || String(payload.year) !== String(req.params.year)) {
+    res.status(403).json({ error: "You cannot view those statements." });
+    return;
+  }
+  const statement = payload.statementId
+    ? readAnnual(Number(payload.statementId))
+    : latestPublished(Number(req.params.userId), req.params.year);
+  if (!statement || Number(statement.userId) !== Number(req.params.userId) || String(statement.year) !== String(req.params.year)) {
     res.status(404).json({ error: "That statement was not found." });
     return;
   }
-  const rendered = await annualPdf(statement.id);
-  sendAnnual(res, statement, "pdf", rendered.buffer, `annual-financial-statements-${req.params.year}.pdf`);
+  res.json({ statement });
 });
 
 app.get("/api/me/annual-statements/:year/xlsx", requireAuth, (req, res) => {

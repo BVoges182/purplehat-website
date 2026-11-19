@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Tinos";
+  src: url("/fonts/Tinos-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tinos";
+  src: url("/fonts/Tinos-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@page {
+  size: Letter;
+  margin: 1in;
+}
+
 body {
   margin: 0;
   color: #4c4560;
@@ -223,7 +244,17 @@ h1, h2, h3, .font-display {
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 1.25rem;
   color: #000;
-  font-family: "Times New Roman", Times, serif;
+  font-family: "Tinos", "Times New Roman", Times, serif;
+}
+.afs-shell h1,
+.afs-shell h2,
+.afs-shell h3,
+.afs-shell p,
+.afs-shell li,
+.afs-shell th,
+.afs-shell td,
+.afs-shell button {
+  font-family: "Tinos", "Times New Roman", Times, serif;
 }
 .afs-nav {
   position: sticky;
@@ -272,7 +303,9 @@ h1, h2, h3, .font-display {
 .afs-page p { margin: 0 0 0.55rem; font-size: 10pt; line-height: 12pt; }
 .afs-table { width: 100%; border-collapse: collapse; font-size: 9pt; line-height: 11pt; }
 .afs-table th, .afs-table td { padding: 0.04in 0.04in; vertical-align: bottom; background: #fff; }
-.afs-table thead th { font-weight: 700; border-bottom: 1px solid #000; }
+.afs-table thead th { font-weight: 700; }
+.afs-table thead tr:last-child th { border-bottom: 1px solid #000; }
+.afs-table thead tr:last-child th:first-child { border-bottom: none; }
 .afs-table tbody th { text-align: left; font-weight: 400; }
 .afs-bold th, .afs-bold td { font-weight: 700; }
 .afs-table tr.afs-single > th,
@@ -282,13 +315,20 @@ h1, h2, h3, .font-display {
 .afs-band th, .afs-band td { background: #CCEEFF; }
 .afs-date, .afs-table thead th, .afs-note { text-align: center; }
 .afs-table td { text-align: right; }
-.afs-money {
-  display: inline-grid;
-  grid-template-columns: 0.55rem 4.8rem 0.5rem;
+.afs-table td.afs-dollar {
+  width: 0.16in;
+  padding-right: 0;
+  padding-left: 0.06in;
+  text-align: left;
   font-variant-numeric: tabular-nums;
 }
-.afs-num { text-align: right; }
-.afs-paren { text-align: left; }
+.afs-table td.afs-amt {
+  width: 0.72in;
+  padding-left: 0;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .afs-fpage {
   position: absolute;
   right: 0.65in;
@@ -304,7 +344,52 @@ h1, h2, h3, .font-display {
   .afs-shell { grid-template-columns: 1fr; }
   .afs-nav { position: static; max-height: none; }
 }
+.afs-print {
+  background: #fff;
+  color: #000;
+}
+body:has(.afs-print) {
+  background: #fff;
+  color: #000;
+}
 @media print {
+  html, body { background: #fff !important; color: #000 !important; }
   .afs-actions, .afs-nav, header, .app-menu-panel { display: none !important; }
-  .afs-page { box-shadow: none; break-after: page; }
+  .afs-fpage { display: none !important; }
+  .afs-page {
+    box-shadow: none;
+    break-after: auto;
+    page-break-after: auto;
+    min-height: 0;
+  }
+  .afs-print {
+    font-size: 10pt;
+    line-height: 13pt;
+  }
+  .afs-print .afs-shell { display: block; }
+  .afs-print .afs-main { gap: 0; }
+  .afs-print .afs-page {
+    width: auto;
+    padding: 0;
+    min-height: 0;
+    break-before: page;
+    page-break-before: always;
+  }
+  .afs-print .afs-part-cover,
+  .afs-print .afs-part-flow {
+    break-before: auto;
+    page-break-before: auto;
+  }
+  .afs-print .afs-part-cover { padding-top: 1.5in; }
+  .afs-print .afs-page:not(.afs-part-cover) > .afs-kicker { display: none; }
+  .afs-print .afs-page h2,
+  .afs-print .afs-heading { break-after: avoid; page-break-after: avoid; }
+  .afs-print .afs-page h2 { margin: 0 0 4pt; font-size: 12pt; }
+  .afs-print .afs-page p { font-size: 10pt; line-height: 12pt; margin: 0 0 4pt; }
+  .afs-print .afs-table { font-size: 9pt; line-height: 11pt; }
+  .afs-print tr { break-inside: avoid; page-break-inside: avoid; }
+  .afs-band th, .afs-band td, .afs-index li:nth-child(even) {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

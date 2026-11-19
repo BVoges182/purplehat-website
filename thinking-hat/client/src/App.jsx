@@ -21,6 +21,7 @@ import AdminAnnualPreview from "./pages/AdminAnnualPreview";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminTemplateBuilder from "./pages/AdminTemplateBuilder";
 import TemplateBuilderOpen from "./pages/TemplateBuilderOpen";
+import AnnualPrint from "./pages/AnnualPrint";
 
 function Loading() {
   return <p className="grid min-h-screen place-items-center text-mute">Loading…</p>;
@@ -53,6 +54,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/print/financial-statements/:clientId/:year" element={<AnnualPrint />} />
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<Home />} />
