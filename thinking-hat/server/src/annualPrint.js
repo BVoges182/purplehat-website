@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import jwt from "jsonwebtoken";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import puppeteer from "puppeteer-core";
 
 export function annualHeaderName(entity) {
   const words = String(entity || "").match(/[A-Za-z0-9]+/g) || [];
@@ -43,6 +42,10 @@ function chromePath() {
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
   ].filter(Boolean);
   return candidates.find((candidate) => fs.existsSync(candidate)) || "";
 }
@@ -108,6 +111,12 @@ async function mergePdf(cover, rest) {
 export async function renderAnnualPdf(statement) {
   const executablePath = chromePath();
   if (!executablePath) throw new Error("Install Google Chrome to prepare the PDF.");
+  let puppeteer;
+  try {
+    ({ default: puppeteer } = await import("puppeteer-core"));
+  } catch {
+    throw new Error("PDF printing is unavailable on this server.");
+  }
   const origin = await printOrigin();
   const token = signAnnualPrint(statement);
   const url = `${origin}/print/financial-statements/${statement.userId}/${statement.year}?token=${encodeURIComponent(token)}`;
