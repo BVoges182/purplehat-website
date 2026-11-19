@@ -89,6 +89,7 @@ function StatementTable({ statement, showNotes = true }) {
   const lastYear = plan.findLastIndex((column) => column.kind === "year");
   const yearSpan = plan.reduce((sum, column) => sum + (column.kind === "year" ? (column.paired ? 2 : 1) : 0), 0);
   return (
+    <div className="afs-table-scroll">
     <table className={`afs-table${flowing ? " afs-table-flow" : ""}`}>
       <colgroup>
         <col style={{ width: `${widths.caption}%` }} />
@@ -114,16 +115,16 @@ function StatementTable({ statement, showNotes = true }) {
         ) : null}
         <tr>
           <th />
-          {notes ? <th>Note</th> : null}
+          {notes ? <th className="afs-note">Note</th> : null}
           {plan.map((column, index) => (
-            <th key={`${column.header}-${index}`} colSpan={column.paired ? 2 : 1} className={column.kind === "life" ? "afs-life" : ""}>{column.header}</th>
+            <th key={`${column.header}-${index}`} colSpan={column.paired ? 2 : 1} className={column.kind === "life" ? "afs-life" : ""}><span className="afs-head">{column.header}</span></th>
           ))}
         </tr>
       </thead>
       <tbody>
         {statement.rows.map((row, index) => (
           <tr key={`${row.label}-${index}`} className={`${index % 2 ? "afs-band" : ""} ${row.bold ? "afs-bold" : ""} ${row.rule === "double" ? "afs-double afs-single" : ""} ${row.rule === "single" ? "afs-single" : ""}`}>
-            <th style={{ paddingLeft: `${0.15 * (row.indent || 0)}in` }}>{row.label}</th>
+            <th className="afs-label" style={{ paddingLeft: `${0.15 * (row.indent || 0)}in`, "--afs-indent": row.indent || 0 }}><span className="afs-label-text">{row.label}</span></th>
             {notes ? <td className="afs-note">{row.note}</td> : null}
             {plan.map((column, valueIndex) => {
               const value = row.values[valueIndex];
@@ -135,6 +136,8 @@ function StatementTable({ statement, showNotes = true }) {
         ))}
       </tbody>
     </table>
+    <span className="afs-scroll-hint" aria-hidden="true" />
+    </div>
   );
 }
 
