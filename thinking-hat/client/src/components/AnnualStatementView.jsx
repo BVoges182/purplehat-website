@@ -1,4 +1,5 @@
 import { downloadAuthorized } from "../api";
+import { Button } from "./ui";
 
 function moneyParts(value, dollar) {
   if (value == null || Number.isNaN(Number(value))) return { dollar: "", amount: "" };
@@ -21,64 +22,101 @@ function AmountCells({ value, dollar }) {
   );
 }
 
-function dollarRows(rows) {
+function lifeText(value) {
+  if (value == null || Number.isNaN(Number(value))) return "";
+  return `${Math.round(Number(value))} years`;
+}
+
+function cellPlan(statement) {
+  const columns = statement.columns || [];
+  const kinds = statement.kinds?.length === columns.length
+    ? statement.kinds
+    : columns.map((column) => (/^\d{4}$/.test(String(column)) ? "year" : "money"));
+  const money = kinds.filter((kind) => kind !== "life");
+  const pairMoney = statement.paired !== false && money.length > 0 && (
+    money.every((kind) => kind === "year")
+    || (money.length <= 3 && money.every((kind) => kind === "money"))
+  );
+  return kinds.map((kind, index) => ({
+    header: columns[index],
+    kind,
+    paired: kind !== "life" && pairMoney,
+  }));
+}
+
+function dollarRows(rows, plan) {
+  const moneyAt = plan.map((column, index) => (column.kind === "life" ? -1 : index)).filter((index) => index >= 0);
   const marks = [];
   let fresh = true;
   rows.forEach((row, index) => {
-    const hasNumber = row.values.some((value) => value != null);
-    const show = hasNumber && (fresh || row.bold);
-    marks[index] = show;
+    const hasNumber = moneyAt.some((slot) => row.values[slot] != null);
+    marks[index] = hasNumber && (fresh || row.bold);
     if (row.bold && hasNumber) fresh = true;
     else if (hasNumber) fresh = false;
   });
   return marks;
 }
 
-function tableWidths(paired, notes, count) {
-  if (!paired) {
-    const caption = 28;
-    return { caption, each: (100 - caption) / Math.max(count, 1) };
-  }
+function tableWidths(plan, notes) {
   const note = notes ? 6 : 0;
-  const natural = 100 - note - count * 18;
-  if (natural >= 40) return { caption: natural, note, dollar: 3, amount: 15 };
-  const pair = (100 - note - 40) / Math.max(count, 1);
-  const dollar = pair * (3 / 18);
-  return { caption: 40, note, dollar, amount: pair - dollar };
+  const lives = plan.filter((column) => column.kind === "life").length;
+  const pairs = plan.filter((column) => column.paired).length;
+  const plain = plan.length - lives - pairs;
+  if (pairs && !plain) {
+    const life = lives ? 14 : 0;
+    const dollar = 3;
+    const amount = 15;
+    const caption = 100 - note - lives * life - pairs * (dollar + amount);
+    if (caption >= 34) return { caption, note, life, dollar, amount, each: 0 };
+    const pair = (100 - note - lives * life - 34) / Math.max(pairs, 1);
+    const scaledDollar = pair * (3 / 18);
+    return { caption: 34, note, life, dollar: scaledDollar, amount: pair - scaledDollar, each: 0 };
+  }
+  const caption = 28;
+  const each = (100 - note - caption) / Math.max(plain + lives, 1);
+  return { caption, note, life: each, dollar: 0, amount: 0, each };
 }
 
 function StatementTable({ statement, showNotes = true }) {
-  const years = statement.columns.every((column) => /^\d{4}$/.test(String(column)));
+  const plan = cellPlan(statement);
+  const years = plan.some((column) => column.kind === "year");
   const notes = showNotes && years;
-  const paired = statement.paired !== false && (years || statement.columns.length <= 3);
-  const dollars = dollarRows(statement.rows);
-  const span = statement.columns.length * 2;
-  const widths = tableWidths(paired, notes, statement.columns.length);
+  const dollars = dollarRows(statement.rows, plan);
+  const widths = tableWidths(plan, notes);
   const flowing = statement.rows.length > 14;
+  const firstYear = plan.findIndex((column) => column.kind === "year");
+  const lastYear = plan.findLastIndex((column) => column.kind === "year");
+  const yearSpan = plan.reduce((sum, column) => sum + (column.kind === "year" ? (column.paired ? 2 : 1) : 0), 0);
   return (
     <table className={`afs-table${flowing ? " afs-table-flow" : ""}`}>
       <colgroup>
         <col style={{ width: `${widths.caption}%` }} />
         {notes ? <col style={{ width: `${widths.note}%` }} /> : null}
-        {paired
-          ? statement.columns.flatMap((column) => [
-            <col key={`${column}-dollar`} style={{ width: `${widths.dollar}%` }} />,
-            <col key={`${column}-amount`} style={{ width: `${widths.amount}%` }} />,
-          ])
-          : statement.columns.map((column) => <col key={column} style={{ width: `${widths.each}%` }} />)}
+        {plan.flatMap((column, index) => (
+          column.paired
+            ? [
+              <col key={`${index}-dollar`} style={{ width: `${widths.dollar}%` }} />,
+              <col key={`${index}-amount`} style={{ width: `${widths.amount}%` }} />,
+            ]
+            : [<col key={`${index}-plain`} style={{ width: `${column.kind === "life" ? widths.life : widths.each}%` }} />]
+        ))}
       </colgroup>
       <thead>
-        {years ? (
+        {yearSpan ? (
           <tr>
             <th />
             {notes ? <th /> : null}
-            <th className="afs-date" colSpan={span}>December 31,</th>
+            {plan.slice(0, firstYear).map((column, index) => <th key={`lead-${index}`} colSpan={column.paired ? 2 : 1} />)}
+            <th className="afs-date" colSpan={yearSpan}>December 31,</th>
+            {plan.slice(lastYear + 1).map((column, index) => <th key={`tail-${index}`} colSpan={column.paired ? 2 : 1} />)}
           </tr>
         ) : null}
         <tr>
           <th />
           {notes ? <th>Note</th> : null}
-          {statement.columns.map((column) => <th key={column} colSpan={paired ? 2 : 1}>{column}</th>)}
+          {plan.map((column, index) => (
+            <th key={`${column.header}-${index}`} colSpan={column.paired ? 2 : 1} className={column.kind === "life" ? "afs-life" : ""}>{column.header}</th>
+          ))}
         </tr>
       </thead>
       <tbody>
@@ -86,13 +124,12 @@ function StatementTable({ statement, showNotes = true }) {
           <tr key={`${row.label}-${index}`} className={`${index % 2 ? "afs-band" : ""} ${row.bold ? "afs-bold" : ""} ${row.rule === "double" ? "afs-double afs-single" : ""} ${row.rule === "single" ? "afs-single" : ""}`}>
             <th style={{ paddingLeft: `${0.15 * (row.indent || 0)}in` }}>{row.label}</th>
             {notes ? <td className="afs-note">{row.note}</td> : null}
-            {paired
-              ? row.values.map((value, valueIndex) => (
-                <AmountCells key={statement.columns[valueIndex] || valueIndex} value={value} dollar={dollars[index]} />
-              ))
-              : row.values.map((value, valueIndex) => (
-                <td key={statement.columns[valueIndex] || valueIndex} className="afs-amt">{moneyParts(value, false).amount}</td>
-              ))}
+            {plan.map((column, valueIndex) => {
+              const value = row.values[valueIndex];
+              if (column.kind === "life") return <td key={`${valueIndex}-life`} className="afs-life">{lifeText(value)}</td>;
+              if (column.paired) return <AmountCells key={`${column.header}-${valueIndex}`} value={value} dollar={dollars[index]} />;
+              return <td key={`${valueIndex}-amt`} className="afs-amt">{moneyParts(value, false).amount}</td>;
+            })}
           </tr>
         ))}
       </tbody>
@@ -123,7 +160,7 @@ function Page({ id, kicker, title, page, part = "section", children }) {
   );
 }
 
-export default function AnnualStatementView({ statement, preview = false, onPublish, busy = false, files, printable = false }) {
+export default function AnnualStatementView({ statement, preview = false, onPublish, busy = false, files, printable = false, actions = true }) {
   const document = statement?.document;
   if (!document) return null;
   const entity = document.cover.lines[0]?.text || "";
@@ -140,18 +177,14 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
     const id = anchorFor(entry.title);
     if (id && entry.page && !pages[id]) pages[id] = entry.page;
   }
-  return (
+  const statementBody = (
     <div className="afs-shell">
-      {printable ? null : <aside className="afs-nav">
-        <p>Financial Statements</p>
-        {nav.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
-      </aside>}
       <div className="afs-main">
-        {printable ? null : <div className="afs-actions">
-          <button type="button" onClick={() => downloadAuthorized(files?.pdf || `/api/me/annual-statements/${year}/pdf`, files?.pdfName || `annual-financial-statements-${year}.pdf`)}>Download PDF</button>
-          <button type="button" onClick={() => downloadAuthorized(files?.xlsx || `/api/me/annual-statements/${year}/xlsx`, files?.xlsxName || statement.sourceName || "statements.xlsx")}>Download Excel</button>
+        {printable || !actions ? null : <div className="afs-actions">
+          <Button type="button" variant="navy" onClick={() => downloadAuthorized(files?.pdf || `/api/me/annual-statements/${year}/pdf`, files?.pdfName || `annual-financial-statements-${year}.pdf`)}>Download PDF</Button>
+          <Button type="button" variant="navy" onClick={() => downloadAuthorized(files?.xlsx || `/api/me/annual-statements/${year}/xlsx`, files?.xlsxName || statement.sourceName || "statements.xlsx")}>Download Excel</Button>
           {preview && statement.status !== "published" ? (
-            <button type="button" onClick={onPublish} disabled={busy || statement.errors?.length}>Publish</button>
+            <Button type="button" variant="navy" onClick={onPublish} disabled={busy || Boolean(statement.errors?.length)}>Publish</Button>
           ) : null}
         </div>}
         {statement.errors?.length ? (
@@ -192,12 +225,21 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
             {note.blocks.some((block) => block.type === "table") ? <p className="afs-unit">(in whole dollars)</p> : null}
             {note.blocks.map((block, index) => (
               block.type === "table" ? (
-                <StatementTable key={index} statement={{ columns: block.headers, rows: block.rows, paired: block.paired }} showNotes={false} />
+                <StatementTable key={index} statement={{ columns: block.headers, rows: block.rows, paired: block.paired, kinds: block.kinds }} showNotes={false} />
               ) : <p key={index} className={block.type === "h" ? "afs-heading" : ""}>{block.text}</p>
             ))}
           </Page>
         ))}
       </div>
+    </div>
+  );
+  if (printable) return statementBody;
+  return (
+    <div className="afs-layout">
+      <aside className="afs-nav">
+        {nav.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
+      </aside>
+      {statementBody}
     </div>
   );
 }

@@ -71,7 +71,7 @@ async function printOrigin() {
 }
 
 function headerTemplate(entity) {
-  return `<div style="width:100%; font-size:10pt; text-align:center; font-family:'Times New Roman',Times,serif; color:#000;">${escapeHtml(entity)}</div>`;
+  return `<div style="width:100%; font-size:10pt; font-weight:700; text-align:center; font-family:'Times New Roman',Times,serif; color:#000;">${escapeHtml(entity)}</div>`;
 }
 
 function footerTemplate() {
@@ -92,7 +92,7 @@ async function mergePdf(cover, rest) {
   for (let index = 1; index < pages.length; index += 1) {
     const page = pages[index];
     const label = `F-${index}`;
-    const size = 10;
+    const size = 8;
     const width = font.widthOfTextAtSize(label, size);
     page.drawText(label, {
       x: (page.getWidth() - width) / 2,

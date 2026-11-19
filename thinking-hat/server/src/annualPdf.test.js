@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import puppeteer from "puppeteer-core";
 import { annualHeaderName, annualPdfFilename } from "./annualPrint.js";
 import { parseAnnualWorkbook } from "./annualWorkbook.js";
 
@@ -60,7 +61,7 @@ test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }
 
   const info = run("pdfinfo", [file]);
   const pages = Number((info.match(/Pages:\s+(\d+)/) || [])[1]);
-  assert.ok(pages >= 18 && pages <= 24, `expected 18 to 24 pages, got ${pages}`);
+  assert.ok(pages >= 18 && pages <= 26, `expected 18 to 26 pages, got ${pages}`);
 
   const pagesText = [];
   for (let page = 1; page <= pages; page += 1) {
@@ -175,10 +176,188 @@ test("the published FY2026 PDF is a laid-out SEC statement", { timeout: 180000 }
     assert.equal(/^\d+\.\s+[A-Z]/.test(last), false, `orphaned heading on page ${index + 1}: ${last}`);
   });
 
+  const note6Title = parsed.notes.find((note) => note.number === 6).title;
+  const note6At = pagesText.findIndex((text) => text.split(/\n/).some((line) => line.trim().toUpperCase().startsWith(note6Title.toUpperCase())));
+  assert.ok(note6At >= 0, note6Title);
+  const note6Text = pagesText.slice(note6At, note6At + 3).join("\n");
+  for (const amount of ["18,000", "15,000", "24,000", "21,000", "42,000", "(6,000)"]) {
+    assert.ok(note6Text.includes(amount), amount);
+  }
+  const note6Flat = note6Text.replace(/\s+/g, " ");
+  assert.match(note6Flat, /Depreciation expense was \$6,000 in 2026 and nil in 2025/);
+  assert.match(note6Flat, /Additions of \$6,000 in 2026 and \$36,000 in 2025 were paid in cash/);
+  function median(values) {
+    const sorted = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+    if (!sorted.length) return 0;
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  function bodyHeight(words) {
+    const heights = words
+      .filter((word) => word.yMin >= 68 && word.yMax <= 740 && /[A-Za-z]/.test(word.text))
+      .map((word) => word.yMax - word.yMin);
+    return median(heights);
+  }
+  const fontPages = [
+    ["index", pagesText.findIndex((text) => text.includes("INDEX TO FINANCIAL STATEMENTS"))],
+    ["auditor", pagesText.findIndex((text) => text.includes("We have audited"))],
+    ["balance", pagesText.findIndex((text) => text.includes("BALANCE SHEETS") && text.includes("Total assets"))],
+    ["operations", pagesText.findIndex((text) => text.includes("STATEMENTS OF OPERATIONS"))],
+    ["note6", note6At],
+  ];
+  const heights = {};
+  for (const [name, index] of fontPages) {
+    assert.ok(index >= 0, name);
+    heights[name] = bodyHeight(boxedPages[index]);
+  }
+  for (const [name, height] of Object.entries(heights)) {
+    assert.ok(Math.abs(height - heights.auditor) <= 1, `${name} ${height.toFixed(2)} vs auditor ${heights.auditor.toFixed(2)}`);
+  }
+  assert.match(run("pdffonts", [file]), /Tinos|Times/);
+
   const round3 = path.join(previewDir, "round3");
   fs.mkdirSync(round3, { recursive: true });
   for (let page = 1; page <= pages; page += 1) {
     const name = `page-${String(page).padStart(2, "0")}`;
     run("pdftoppm", ["-f", String(page), "-l", String(page), "-png", "-r", "80", "-singlefile", file, path.join(round3, name)]);
+  }
+  const round4 = path.join(previewDir, "round4");
+  fs.mkdirSync(round4, { recursive: true });
+  for (let page = 1; page <= pages; page += 1) {
+    const name = `page-${String(page).padStart(2, "0")}`;
+    run("pdftoppm", ["-f", String(page), "-l", String(page), "-png", "-r", "80", "-singlefile", file, path.join(round4, name)]);
+  }
+});
+
+function chromeExecutable() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  ].filter(Boolean);
+  return candidates.find((candidate) => fs.existsSync(candidate)) || "";
+}
+
+test("statement text is one size and the download buttons match management reports", { timeout: 120000 }, async () => {
+  const password = envValue(path.join(repoRoot, "thinking-hat", "server", ".env"), "DEMO_PASSWORD");
+  const executablePath = chromeExecutable();
+  assert.ok(executablePath, "Chrome is required for the on-screen check");
+  const browser = await puppeteer.launch({
+    executablePath,
+    headless: true,
+    args: ["--disable-gpu", "--font-render-hinting=none"],
+  });
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 1100 });
+    await page.goto("http://localhost:5173/login", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.type('input[type="email"]', "demo@purplehat.fun");
+    await page.type('input[type="password"]', password);
+    await page.click('button[type="submit"]');
+    await page.waitForFunction(() => window.location.pathname !== "/login", { timeout: 30000 });
+    await page.goto("http://localhost:5173/statements", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForSelector("#note-6 tbody tr", { timeout: 30000 });
+    await page.addStyleTag({ content: "header { position: static !important; }" });
+    const measured = await page.evaluate(() => {
+      function sample(selector) {
+        const node = document.querySelector(selector);
+        if (!node) return null;
+        const style = getComputedStyle(node);
+        return {
+          fontSize: style.fontSize,
+          fontFamily: style.fontFamily,
+          lineHeight: style.lineHeight,
+          fontWeight: style.fontWeight,
+          paddingTop: style.paddingTop,
+          paddingBottom: style.paddingBottom,
+        };
+      }
+      const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF");
+      const buttonStyle = button ? getComputedStyle(button) : null;
+      return {
+        index: sample("#index li"),
+        auditor: sample("#auditor p"),
+        balance: sample("#balance-sheets tbody th"),
+        operations: sample("#operations tbody td"),
+        note: sample("#note-6 p"),
+        indexTitle: sample("#index h2"),
+        auditorTitle: sample("#auditor h2"),
+        balanceTitle: sample("#balance-sheets h2"),
+        noteTitle: sample("#note-6 h2"),
+        kicker: sample("#index .afs-kicker"),
+        footer: sample("#balance-sheets .afs-footer"),
+        fpage: sample("#balance-sheets .afs-fpage"),
+        button: buttonStyle ? {
+          fontFamily: buttonStyle.fontFamily,
+          fontSize: buttonStyle.fontSize,
+          fontWeight: buttonStyle.fontWeight,
+          borderRadius: buttonStyle.borderRadius,
+          minHeight: buttonStyle.minHeight,
+          paddingTop: buttonStyle.paddingTop,
+          paddingBottom: buttonStyle.paddingBottom,
+          paddingLeft: buttonStyle.paddingLeft,
+          paddingRight: buttonStyle.paddingRight,
+          borderTopWidth: buttonStyle.borderTopWidth,
+          borderTopColor: buttonStyle.borderTopColor,
+          backgroundColor: buttonStyle.backgroundColor,
+          color: buttonStyle.color,
+        } : null,
+      };
+    });
+    for (const name of ["index", "auditor", "balance", "operations", "note"]) {
+      assert.ok(measured[name], name);
+      assert.equal(measured[name].fontSize, measured.auditor.fontSize, name);
+      assert.match(measured[name].fontFamily, /Tinos|Times/);
+    }
+    const bodyPx = Number.parseFloat(measured.auditor.fontSize);
+    const linePx = Number.parseFloat(measured.auditor.lineHeight);
+    assert.ok(Math.abs(linePx / bodyPx - 1.3) < 0.08, `line height ${linePx} / ${bodyPx}`);
+    assert.equal(measured.index.paddingTop, measured.balance.paddingTop);
+    assert.equal(measured.index.paddingBottom, measured.balance.paddingBottom);
+    for (const name of ["indexTitle", "auditorTitle", "balanceTitle", "noteTitle"]) {
+      assert.equal(measured[name].fontSize, measured.indexTitle.fontSize, name);
+      assert.ok(Number.parseFloat(measured[name].fontSize) > bodyPx, name);
+    }
+    assert.equal(measured.kicker.fontSize, measured.auditor.fontSize);
+    assert.ok(Number.parseFloat(measured.kicker.fontWeight) >= 700);
+    assert.ok(Number.parseFloat(measured.footer.fontSize) < bodyPx);
+    assert.equal(measured.footer.fontSize, measured.fpage.fontSize);
+    const round4 = path.join(previewDir, "round4");
+    fs.mkdirSync(round4, { recursive: true });
+    await page.$("#index").then((node) => node.screenshot({ path: path.join(round4, "screen-index.png") }));
+    await page.$("#auditor").then((node) => node.screenshot({ path: path.join(round4, "screen-auditor.png") }));
+    await page.$("#note-6").then((node) => node.screenshot({ path: path.join(round4, "screen-note-6.png") }));
+    const statementsButton = await page.evaluateHandle(() => [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF")?.closest("section"));
+    await statementsButton.asElement().screenshot({ path: path.join(round4, "screen-buttons-statements.png") });
+    await page.goto("http://localhost:5173/reports", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForFunction(() => [...document.querySelectorAll("button")].some((node) => node.textContent.trim() === "Download PDF"), { timeout: 30000 });
+    const reports = await page.evaluate(() => {
+      const button = [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF");
+      const style = getComputedStyle(button);
+      return {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        borderRadius: style.borderRadius,
+        minHeight: style.minHeight,
+        paddingTop: style.paddingTop,
+        paddingBottom: style.paddingBottom,
+        paddingLeft: style.paddingLeft,
+        paddingRight: style.paddingRight,
+        borderTopWidth: style.borderTopWidth,
+      };
+    });
+    const reportsButton = await page.evaluateHandle(() => [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Download PDF")?.closest("section"));
+    await reportsButton.asElement().screenshot({ path: path.join(round4, "screen-buttons-reports.png") });
+    for (const key of ["fontFamily", "fontSize", "fontWeight", "borderRadius", "minHeight", "paddingTop", "paddingBottom", "paddingLeft", "paddingRight", "borderTopWidth"]) {
+      assert.equal(measured.button[key], reports[key], key);
+    }
+    assert.match(measured.button.fontFamily, /Nunito/);
+    assert.equal(measured.button.borderTopColor, "rgb(31, 56, 100)");
+    assert.equal(measured.button.backgroundColor, "rgb(255, 255, 255)");
+    assert.equal(measured.button.color, "rgb(31, 56, 100)");
+    assert.doesNotMatch(measured.button.fontFamily, /Tinos|Times/);
+  } finally {
+    await browser.close();
   }
 });

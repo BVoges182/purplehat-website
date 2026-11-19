@@ -67,6 +67,7 @@ export function Button({ children, variant = "primary", className = "", ...props
   const styles = {
     primary: "bg-gradient-to-b from-[#8b5cf6] to-[#6d28d9] text-white shadow-[0_10px_24px_rgba(109,40,217,0.28)] hover:-translate-y-0.5",
     ghost: "border border-[rgba(109,40,217,0.18)] bg-white text-[#4c1d95] hover:bg-[#f5f3ff]",
+    navy: "border border-[#1F3864] bg-white text-[#1F3864] hover:bg-[#CCEEFF]",
     quiet: "bg-white text-ink border border-[rgba(109,40,217,0.12)] hover:bg-[#f5f3ff]",
   };
   return (

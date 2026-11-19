@@ -123,6 +123,75 @@ test("note 4 ages both years, ties to the balance sheet, and keeps the demo line
   assert.equal(JSON.stringify({ notes: document.notes, auditor: document.auditor }).includes(phrase), false);
 });
 
+test("note 6 and the useful-life table tie to the face statements", async () => {
+  const document = await parseAnnualWorkbook(fs.readFileSync(fixture));
+  assert.deepEqual(document.errors, []);
+  const note2 = document.notes.find((note) => note.number === 2);
+  const lives = note2.blocks.find((block) => block.type === "table" && block.headers.includes("Useful life") && block.headers.length === 1);
+  assert.ok(lives);
+  assert.deepEqual(lives.kinds, ["life"]);
+  assert.deepEqual(lives.rows.map((row) => [row.label, row.values[0]]), [
+    ["Website development", 6],
+    ["Warehouse equipment", 8],
+  ]);
+  const note6 = document.notes.find((note) => note.number === 6);
+  const narrative = note6.blocks.find((block) => /straight-line over 6 years/.test(block.text || ""));
+  assert.equal(narrative.type, "p");
+  assert.match(narrative.text, /Depreciation expense was \$6,000 in 2026 and nil in 2025/);
+  assert.match(narrative.text, /Additions of \$6,000 in 2026 and \$36,000 in 2025 were paid in cash/);
+  const composition = note6.blocks.find((block) => block.type === "table" && block.headers.includes("Useful life"));
+  assert.deepEqual(composition.headers, ["Useful life", "2026", "2025"]);
+  assert.deepEqual(composition.kinds, ["life", "year", "year"]);
+  assert.equal(composition.paired, true);
+  const rounded = (row) => row.values.map((value) => {
+    if (value == null) return null;
+    const next = Math.round(value);
+    return next === 0 ? 0 : next;
+  });
+  assert.deepEqual(rounded(composition.rows.find((row) => row.label === "Website development")), [6, 18000, 15000]);
+  assert.deepEqual(rounded(composition.rows.find((row) => row.label === "Warehouse equipment")), [8, 24000, 21000]);
+  assert.deepEqual(rounded(composition.rows.find((row) => row.label === "Total cost")), [null, 42000, 36000]);
+  assert.deepEqual(rounded(composition.rows.find((row) => row.label === "Less: accumulated depreciation")), [null, -6000, 0]);
+  assert.deepEqual(rounded(composition.rows.find((row) => row.label === "Property and equipment, net")), [null, 36000, 36000]);
+  assert.equal(composition.rows.find((row) => row.label === "Total cost").rule, "single");
+  assert.equal(composition.rows.find((row) => row.label === "Property and equipment, net").rule, "double");
+  const roll = note6.blocks.find((block) => block.type === "table" && block.headers.includes("Warehouse equipment"));
+  assert.deepEqual(roll.headers, ["Website development", "Warehouse equipment", "Total"]);
+  assert.deepEqual(roll.kinds, ["money", "money", "money"]);
+  const byLabel = (label, occurrence = 0) => roll.rows.filter((row) => row.label === label)[occurrence];
+  assert.deepEqual(rounded(byLabel("Cost, January 1, 2025")), [0, 0, 0]);
+  assert.deepEqual(rounded(byLabel("Additions", 0)), [15000, 21000, 36000]);
+  assert.deepEqual(rounded(byLabel("Cost, December 31, 2025")), [15000, 21000, 36000]);
+  assert.deepEqual(rounded(byLabel("Additions", 1)), [3000, 3000, 6000]);
+  assert.deepEqual(rounded(byLabel("Disposals")), [0, 0, 0]);
+  assert.deepEqual(rounded(byLabel("Cost, December 31, 2026")), [18000, 24000, 42000]);
+  assert.deepEqual(rounded(byLabel("Depreciation, 2025")), [0, 0, 0]);
+  assert.deepEqual(rounded(byLabel("Depreciation, 2026")), [3000, 3000, 6000]);
+  assert.deepEqual(rounded(byLabel("Accumulated depreciation, December 31, 2026")), [3000, 3000, 6000]);
+  assert.deepEqual(rounded(byLabel("Net book value, December 31, 2025")), [15000, 21000, 36000]);
+  assert.deepEqual(rounded(byLabel("Net book value, December 31, 2026")), [15000, 21000, 36000]);
+  assert.equal(byLabel("Net book value, December 31, 2026").rule, "double");
+  const balance = document.statements.find((item) => item.key === "balance-sheets");
+  const ppe = balance.rows.find((row) => /^property and equipment, net$/i.test(row.label));
+  const operations = document.statements.find((item) => item.key === "operations");
+  const depreciation = operations.rows.find((row) => /^depreciation$/i.test(row.label));
+  const cash = document.statements.find((item) => item.key === "cash-flows");
+  const purchases = cash.rows.find((row) => /purchases of property/i.test(row.label));
+  const addBack = cash.rows.find((row) => /^depreciation$/i.test(row.label));
+  assert.equal(Math.round(composition.rows.find((row) => row.label === "Property and equipment, net").values[1]), Math.round(ppe.values[0]));
+  assert.equal(Math.round(composition.rows.find((row) => row.label === "Property and equipment, net").values[2]), Math.round(ppe.values[1]));
+  assert.equal(Math.round(byLabel("Net book value, December 31, 2026").values[2]), Math.round(ppe.values[0]));
+  assert.equal(Math.round(byLabel("Net book value, December 31, 2025").values[2]), Math.round(ppe.values[1]));
+  assert.equal(Math.round(byLabel("Depreciation, 2026").values[2]), Math.round(depreciation.values[0]));
+  assert.equal(Math.round(depreciation.values[1] || 0), 0);
+  assert.equal(Math.round(byLabel("Depreciation, 2026").values[2]), Math.round(addBack.values[0]));
+  assert.equal(Math.round(byLabel("Additions", 1).values[2]), Math.round(-purchases.values[0]));
+  assert.equal(Math.round(byLabel("Additions", 0).values[2]), Math.round(-purchases.values[1]));
+  assert.ok(document.checks.some((check) => check.label === "Note 6 net book value, 2026" && check.ok));
+  assert.ok(document.checks.some((check) => check.label === "Note 6 depreciation equals cash flows" && check.ok));
+  assert.ok(document.checks.every((check) => check.ok));
+});
+
 test("another client cannot read a published set", () => {
   assert.equal(viewerCanReadAnnual({ id: 6, role: "client" }, 6), true);
   assert.equal(viewerCanReadAnnual({ id: 24, role: "client" }, 6), false);

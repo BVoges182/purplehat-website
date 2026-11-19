@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
-import { api } from "../api";
+import { api, downloadAuthorized } from "../api";
 import { useAuth } from "../auth";
 import AnnualStatementView from "../components/AnnualStatementView";
-import { Alert, Card, Field, PageIntro, inputClass } from "../components/ui";
+import { Alert, Button, Card, Field, PageIntro, inputClass } from "../components/ui";
 import { isPlasYnGroveFarm, plasYnGroveFinancialPosition, reportFigure, reportMonthLabel, statementCards } from "../reportMoney";
 
 const emptyCard = { column: "", rows: [] };
+
+function yearEndedLabel(yearEnd) {
+  const iso = String(yearEnd || "").slice(0, 10);
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (!iso || Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
 
 function StatementLines({ rows }) {
   return (
@@ -157,7 +169,24 @@ export default function FinancialStatements() {
             </Field>
           </div>
         ) : null}
-        {annual ? <AnnualStatementView statement={annual} /> : <p className="text-mute">Loading statements…</p>}
+        {annual ? (
+          <>
+            <Card className="mb-4">
+              <h2 className="font-display text-xl font-extrabold text-ink">Financial Statements</h2>
+              <div className="mt-2 flex flex-col gap-3 border-t border-[rgba(109,40,217,0.08)] py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-display text-lg font-extrabold text-ink">Annual financial statements</p>
+                  <p className="mt-1 text-sm text-mute">Year ended {yearEndedLabel(annual.yearEnd)}</p>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button type="button" variant="navy" onClick={() => downloadAuthorized(`/api/me/annual-statements/${annual.year}/pdf`, `annual-financial-statements-${annual.year}.pdf`)}>Download PDF</Button>
+                  <Button type="button" variant="navy" onClick={() => downloadAuthorized(`/api/me/annual-statements/${annual.year}/xlsx`, annual.sourceName || "statements.xlsx")}>Download Excel</Button>
+                </div>
+              </div>
+            </Card>
+            <AnnualStatementView statement={annual} actions={false} />
+          </>
+        ) : <p className="text-mute">Loading statements…</p>}
       </div>
     );
   }

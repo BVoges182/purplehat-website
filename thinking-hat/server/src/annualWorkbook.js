@@ -440,6 +440,8 @@ function ruleFor(cell, label) {
     || /^total liabilities and /i.test(name)
     || /^cash and cash equivalents, end of year$/i.test(name)
     || /^balance, december 31,/i.test(name)
+    || /^net book value, december 31,/i.test(name)
+    || /^property and equipment, net$/i.test(name)
     || (/^net income$/i.test(name) && cell?.bold);
   if (cell?.bottom === "double" || grand) return "double";
   if (cell?.top === "thin" || cell?.top === "medium" || cell?.bottom === "thin" || cell?.bottom === "medium") return "single";
@@ -521,15 +523,33 @@ function tableColumns(row) {
     const text = String(cell.text || "").replace(/\u2013|\u2014/g, "-").trim();
     if (!text || text.length > 48) return;
     if (/^purple hat demo/i.test(text) || /^\(in whole dollars\)$/i.test(text)) return;
+    if (/^-?\d+(\.\d+)?$/.test(text) && !/^(19|20)\d{2}$/.test(text)) return;
     hits.push({ index, header: text });
   });
   const years = hits.filter((hit) => /^(19|20)\d{2}$/.test(hit.header));
-  if (years.length >= 2 && hits.every((hit) => years.includes(hit) || /december 31/i.test(hit.header))) return years;
-  const buckets = hits.filter((hit) => !/^(19|20)\d{2}$/.test(hit.header) && !/december 31/i.test(hit.header));
+  const side = hits.filter((hit) => hit.index > 0 && /useful life|^years$/i.test(hit.header));
+  if (years.length >= 2 && hits.every((hit) => years.includes(hit) || side.includes(hit) || hit.index === 0 || /december 31/i.test(hit.header))) {
+    return [...side, ...years];
+  }
+  if (side.length === 1 && years.length === 0) return side;
+  const buckets = hits.filter((hit) => !/^(19|20)\d{2}$/.test(hit.header) && !/december 31/i.test(hit.header) && !side.includes(hit));
   if (buckets.length >= 2 && buckets.some((hit) => /total|current|days|amount|cost|net/i.test(hit.header))) {
     return orderColumns(buckets);
   }
   return null;
+}
+
+function columnKind(header) {
+  if (/useful life|^years$/i.test(header)) return "life";
+  if (/^(19|20)\d{2}$/.test(header)) return "year";
+  return "money";
+}
+
+function pairedColumns(kinds) {
+  const money = kinds.filter((kind) => kind !== "life");
+  if (!money.length) return false;
+  if (money.every((kind) => kind === "year")) return true;
+  return money.length <= 3 && money.every((kind) => kind === "money");
 }
 
 function noteDocument(rows, fallback) {
@@ -549,11 +569,13 @@ function noteDocument(rows, fallback) {
     const nextHasNumbers = columns && next && columns.some((column) => numberOf(next.cells[column.index]?.item) != null);
     if (columns && nextHasNumbers) {
       closeTable();
+      const kinds = columns.map((column) => columnKind(column.header));
       table = {
         type: "table",
         headers: columns.map((column) => column.header),
         indexes: columns.map((column) => column.index),
-        paired: columns.every((column) => /^(19|20)\d{2}$/.test(column.header)) || columns.length <= 3,
+        kinds,
+        paired: pairedColumns(kinds),
         rows: [],
       };
       return;
@@ -564,11 +586,13 @@ function noteDocument(rows, fallback) {
       const prose = Boolean(banner) || label.length > 90 || (!numeric && Boolean(row.cells[0]?.bold));
       if (!prose && (label || numeric)) {
         const labelIndex = table.indexes.includes(0) ? row.cells.findIndex((cell, index) => !table.indexes.includes(index) && cell.text) : 0;
+        const rowLabel = row.cells[labelIndex]?.text || label;
+        const moneyAt = table.indexes.find((index, position) => table.kinds[position] !== "life");
         table.rows.push({
-          label: row.cells[labelIndex]?.text || label,
+          label: rowLabel,
           indent: row.cells[labelIndex]?.indent || row.cells[0]?.indent || 0,
           bold: Boolean(row.cells[0]?.bold),
-          rule: ruleFor(row.cells[table.indexes[0]] || row.cells[0], label),
+          rule: ruleFor(row.cells[moneyAt ?? table.indexes[0]] || row.cells[0], rowLabel),
           values,
         });
         return;
