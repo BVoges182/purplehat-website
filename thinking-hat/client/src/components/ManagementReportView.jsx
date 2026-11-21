@@ -6,8 +6,8 @@ import { ecommerceSeries, reportFigure } from "../reportMoney";
 import { lineChange, periodPill, prepareStatementRows, quarterlyNote, usesPeriodTabs } from "../statementMobile";
 
 function amountClass(value, strong) {
-  if (typeof value !== "number") return "text-neutral-500";
-  return strong ? "font-display font-extrabold text-neutral-950" : "text-neutral-950";
+  if (typeof value !== "number") return "text-mute";
+  return strong ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink";
 }
 
 function mobileFigure(value, format, unit) {
@@ -20,7 +20,7 @@ function mobileFigure(value, format, unit) {
 
 function subtitleLine(section) {
   if (!section?.subtitle) return null;
-  return <p className="mt-1 text-sm text-neutral-500">{section.subtitle}</p>;
+  return <p className="mt-1 text-sm text-mute">{section.subtitle}</p>;
 }
 
 function cashFlowFollowsBalance(sections) {
@@ -46,7 +46,7 @@ function columnHeading(column, unit, hideUnitBelowMd = false) {
   return (
     <div className="ml-auto w-max text-center">
       <div>{column}</div>
-      {unit ? <div className={`mt-0.5 normal-case tracking-normal text-neutral-800${hideUnitBelowMd ? " max-md:hidden" : ""}`}>{unit}</div> : null}
+      {unit ? <div className={`mt-0.5 normal-case tracking-normal text-mute${hideUnitBelowMd ? " max-md:hidden" : ""}`}>{unit}</div> : null}
     </div>
   );
 }
@@ -116,11 +116,11 @@ function StatementMobile({ section, withSymbol }) {
                 ? mobileFigure(row.values?.[period.index], row.formats?.[period.index], section.units?.[period.index])
                 : reportFigure(row.values?.[period.index], row.formats?.[period.index]);
               return (
-                <div key={`${row.label}-${index}`} className={band ? "mt-1 bg-band px-3" : "border-t border-hairline"}>
+                <div key={`${row.label}-${index}`} className={band ? "mt-1 bg-[var(--row-total-bg)] px-3 text-[var(--row-total-text)]" : "border-t border-hairline"}>
                   <div className="flex items-baseline justify-between gap-3 py-2.5">
-                    <p className={`min-w-0 ${band ? "font-display font-extrabold text-heading" : "text-ink"}`}>{row.label}</p>
+                    <p className={`min-w-0 ${band ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}>{row.label}</p>
                     <p className="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
-                      <span className={`tabular-nums ${band ? "font-display font-extrabold text-heading" : "text-ink"}`}>{figure}</span>
+                      <span className={`tabular-nums ${band ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}>{figure}</span>
                       {change ? <ChangeMark change={change} /> : null}
                     </p>
                   </div>
@@ -163,13 +163,13 @@ export function Statement({ section }) {
   const note = quarterlyNote(section.title, visibleNote(section.note));
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{displayTitle(section)}</h2>
       {subtitleLine(section)}
-      {note ? <p className="mt-1 text-sm text-neutral-500">{note}</p> : null}
+      {note ? <p className="mt-1 text-sm text-mute">{note}</p> : null}
       <div className={`mt-4 hidden ${tabbed ? "md:block" : "sm:block"}`}>
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-mute">
               <th className="w-[34%] pb-2 pr-4 text-left font-bold">{section.labelHeader || ""}</th>
               {columns.map((column, columnIndex) => (
                 <th key={`${column}-${columnIndex}`} className="pb-2 align-bottom font-bold">
@@ -182,10 +182,10 @@ export function Statement({ section }) {
             {(section.rows || []).map((row, index) => (
               <tr
                 key={`${row.kind}-${row.label}-${index}`}
-                className={emphasizedRow(row) ? "bg-neutral-100" : "border-t border-neutral-200"}
+                className={emphasizedRow(row) ? "bg-[var(--row-total-bg)] text-[var(--row-total-text)]" : "border-t border-hairline"}
               >
                 <td
-                  className={`whitespace-pre-wrap py-2.5 pr-4 ${row.kind === "heading" || emphasizedRow(row) ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`}
+                  className={`whitespace-pre-wrap py-2.5 pr-4 ${row.kind === "heading" ? "font-display font-extrabold text-heading" : emphasizedRow(row) ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}
                   style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}
                 >
                   {row.label}
@@ -204,15 +204,15 @@ export function Statement({ section }) {
       <div className={`mt-4 space-y-3 sm:hidden ${tabbed ? "hidden" : ""}`}>
         {(section.rows || []).map((row, index) => {
           if (row.kind === "heading") {
-            return <p key={`${row.label}-${index}`} className="pt-1 font-display text-sm font-extrabold text-neutral-950" style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>;
+            return <p key={`${row.label}-${index}`} className="pt-1 font-display text-sm font-extrabold text-heading" style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>;
           }
           return (
-            <div key={`${row.label}-${index}`} className={emphasizedRow(row) ? "rounded-2xl bg-neutral-100 px-3 py-3" : "border-t border-neutral-200 pt-3"}>
-              <p className={`whitespace-pre-wrap ${emphasizedRow(row) ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`} style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>
+            <div key={`${row.label}-${index}`} className={emphasizedRow(row) ? "bg-[var(--row-total-bg)] px-3 py-3 text-[var(--row-total-text)]" : "border-t border-hairline pt-3"}>
+              <p className={`whitespace-pre-wrap ${emphasizedRow(row) ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`} style={{ paddingLeft: row.indent ? `${row.indent * 1.25}rem` : undefined }}>{row.label}</p>
               <dl className="mt-2 space-y-1 text-sm">
                 {columns.map((column, columnIndex) => (
                   <div key={`${column}-${columnIndex}`} className="flex items-baseline justify-between gap-3">
-                    <dt className="text-neutral-500">{column}</dt>
+                    <dt className="text-mute">{column}</dt>
                     <dd className={`whitespace-nowrap text-right tabular-nums ${amountClass(row.values?.[columnIndex], emphasizedRow(row))}`}>{mobileFigure(row.values?.[columnIndex], row.formats?.[columnIndex], section.units?.[columnIndex])}</dd>
                   </div>
                 ))}
@@ -304,7 +304,7 @@ export function Donut({ title, slices }) {
   return (
     <svg className="mx-auto h-auto w-full max-w-64 md:h-72 md:w-72 md:max-w-none" viewBox="0 0 200 200" role="img" aria-label={title}>
       {paths.filter((path) => path.d).map((path) => (
-        <path key={path.key} d={path.d} fill={path.colour} stroke="#ffffff" strokeWidth="2.5" />
+        <path key={path.key} d={path.d} fill={path.colour} stroke="var(--surface)" strokeWidth="2.5" />
       ))}
       {paths.filter((path) => path.percent).map((path) => (
         <text key={`${path.key}-label`} x={path.x} y={path.y} textAnchor="middle" dominantBaseline="central" fill={path.ink} fontSize="11" fontWeight="700" fontFamily="Barlow, sans-serif">
@@ -335,7 +335,7 @@ export function ContactDonutCard({ section }) {
   const title = displayTitle(section);
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{title}</h2>
       {subtitleLine(section)}
       {visibleNote(section.note) ? <p className="mt-1 text-sm text-mute">{visibleNote(section.note)}</p> : null}
       <div className={`mt-6 flex flex-col gap-8 ${section.chart === false ? "" : "lg:flex-row lg:items-center"}`}>
@@ -352,11 +352,11 @@ export function ContactDonutCard({ section }) {
             );
           })}
           {total ? (
-            <li className="grid grid-cols-[1.75rem_0.75rem_minmax(0,1fr)_auto] items-center gap-3 py-3">
+            <li className="grid grid-cols-[1.75rem_0.75rem_minmax(0,1fr)_auto] items-center gap-3 bg-[var(--row-total-bg)] px-2 py-3 text-[var(--row-total-text)]">
               <span />
               <span />
-              <span className="whitespace-nowrap font-display text-base font-extrabold text-ink">{total.label || "Total"}</span>
-              <span className="font-display text-base font-extrabold tabular-nums text-ink">{contactMoney(total.value)}</span>
+              <span className="whitespace-nowrap font-display text-base font-extrabold text-[var(--row-total-text)]">{total.label || "Total"}</span>
+              <span className="font-display text-base font-extrabold tabular-nums text-[var(--row-total-text)]">{contactMoney(total.value)}</span>
             </li>
           ) : null}
         </ol>
@@ -441,13 +441,13 @@ function ClassicContactSection({ section }) {
   const slices = (section.slices || []).filter((slice) => !isOtherLabel(slice.label));
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-neutral-950">{displayTitle(section)}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{displayTitle(section)}</h2>
       {subtitleLine(section)}
-      {visibleNote(section.note) ? <p className="mt-1 text-sm text-neutral-500">{visibleNote(section.note)}</p> : null}
+      {visibleNote(section.note) ? <p className="mt-1 text-sm text-mute">{visibleNote(section.note)}</p> : null}
       <div className={`mt-4 grid items-start gap-6 ${section.chart === false ? "" : "lg:grid-cols-[minmax(0,1fr)_17rem]"}`}>
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-mute">
               <th className="pb-2 pr-3 text-left font-bold">Contact</th>
               <th className="w-28 pb-2 align-bottom font-bold">{columnHeading(section.amountHeader || "Amount", section.currency || "£")}</th>
             </tr>
@@ -456,9 +456,9 @@ function ClassicContactSection({ section }) {
             {rows.map((row, index) => (
               <tr
                 key={`${row.label}-${index}`}
-                className={row.kind === "total" ? "bg-neutral-100" : "border-t border-neutral-200"}
+                className={row.kind === "total" ? "bg-[var(--row-total-bg)] text-[var(--row-total-text)]" : "border-t border-hairline"}
               >
-                <td className={`py-2.5 pr-3 ${row.kind === "total" ? "font-display font-extrabold text-neutral-950" : "text-neutral-950"}`}>{row.label}</td>
+                <td className={`py-2.5 pr-3 ${row.kind === "total" ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}>{row.label}</td>
                 <td className={`py-2.5 text-right tabular-nums ${amountClass(row.value, row.kind === "total")}`}>{reportFigure(row.value, "money")}</td>
               </tr>
             ))}
@@ -477,12 +477,12 @@ function EcommerceReport({ section }) {
     <div className="space-y-4">
       {points ? <EcommercePerformance points={points} /> : null}
       <Card>
-      <h2 className="font-display text-xl font-extrabold text-neutral-950">{section.title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{section.title}</h2>
       {subtitleLine(section)}
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[52rem] text-sm">
           <thead>
-            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+            <tr className="text-left text-xs font-bold uppercase tracking-[0.12em] text-mute">
               <th className="pb-2 pr-3 text-left font-bold">Month</th>
               {(section.columns || []).map((column) => (
                 <th key={column} className="pb-2 pl-3 text-right font-bold">{column}</th>
@@ -491,10 +491,10 @@ function EcommerceReport({ section }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.month} className="border-t border-neutral-200">
-                <td className="py-2.5 pr-3 text-neutral-950">{row.month}</td>
+              <tr key={row.month} className="border-t border-hairline">
+                <td className="py-2.5 pr-3 text-ink">{row.month}</td>
                 {(row.values || []).map((value, index) => (
-                  <td key={`${row.month}-${index}`} className="py-2.5 pl-3 text-right tabular-nums text-neutral-950">
+                  <td key={`${row.month}-${index}`} className="py-2.5 pl-3 text-right tabular-nums text-ink">
                     {reportFigure(value, row.formats?.[index])}
                   </td>
                 ))}
@@ -504,7 +504,7 @@ function EcommerceReport({ section }) {
         </table>
       </div>
       {section.notes?.length ? (
-        <ul className="mt-4 space-y-1 text-xs text-neutral-500">
+        <ul className="mt-4 space-y-1 text-xs text-mute">
           {section.notes.map((note) => <li key={note}>{note}</li>)}
         </ul>
       ) : null}

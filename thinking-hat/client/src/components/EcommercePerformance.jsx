@@ -115,7 +115,7 @@ function LineChart({ points }) {
         <div className="relative aspect-[25/11] overflow-hidden">
           <svg className="h-full w-full" viewBox={`0 0 ${plotW} ${plotH}`} role="img" aria-label={summary}>
             {roasTicks.map((tick) => (
-              <line key={tick.toFixed(2)} x1="0" x2={plotW} y1={py(tick, roasDomain.min, roasDomain.max)} y2={py(tick, roasDomain.min, roasDomain.max)} stroke="#ede9fe" strokeWidth="1" />
+              <line key={tick.toFixed(2)} x1="0" x2={plotW} y1={py(tick, roasDomain.min, roasDomain.max)} y2={py(tick, roasDomain.min, roasDomain.max)} stroke="var(--hairline)" strokeWidth="1" />
             ))}
             {conversionLine ? <polyline points={conversionLine} fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
             {roasLine ? <polyline points={roasLine} fill="none" stroke={PURPLE} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
@@ -219,7 +219,7 @@ export default function EcommercePerformance({ points }) {
   const insight = ecommerceInsight(points);
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-ink">E-commerce Performance Overview</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">E-commerce Performance Overview</h2>
       <p className="mt-1 text-sm text-mute">Trend-focused insights</p>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
@@ -258,14 +258,14 @@ export default function EcommercePerformance({ points }) {
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
-          <h3 className="font-display text-base font-extrabold text-ink">ROAS & Conversion Rate Trend</h3>
+          <h3 className="font-display text-base font-extrabold text-heading">ROAS & Conversion Rate Trend</h3>
           <Legend items={[{ label: "ROAS", swatch: "bg-[var(--chart-rev)]" }, { label: "Conversion rate", swatch: "bg-[var(--chart-exp)]" }]} />
           <div className="mt-4">
             <LineChart points={points} />
           </div>
         </div>
         <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
-          <h3 className="font-display text-base font-extrabold text-ink">Ad Spend vs Revenue</h3>
+          <h3 className="font-display text-base font-extrabold text-heading">Ad Spend vs Revenue</h3>
           <Legend items={[{ label: "Ad spend", swatch: "bg-[var(--chart-exp)]" }, { label: "Revenue", swatch: "bg-[var(--chart-rev)]" }]} />
           <div className="mt-4">
             <BarChart points={points} />

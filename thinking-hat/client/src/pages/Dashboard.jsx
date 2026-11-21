@@ -19,7 +19,7 @@ function ContactHighlight({ section }) {
   if (!slices.length) return null;
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-ink">{section.title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{section.title}</h2>
       <div className="mt-4">
         <ClassicDonut title={section.title} slices={slices} />
       </div>
@@ -87,7 +87,7 @@ function ProfileCard({ user, events }) {
       <div className="flex items-center gap-3">
         <Avatar user={user} className="h-14 w-14 text-lg" />
         <div>
-          <h2 className="font-display text-xl font-extrabold text-ink">{user.businessName || "Business"}</h2>
+          <h2 className="font-display text-xl font-extrabold text-heading">{user.businessName || "Business"}</h2>
           <Link className="text-sm font-semibold text-plum" to="/business">Business photo and details</Link>
         </div>
       </div>
@@ -175,14 +175,14 @@ function ClassicDashboard({ user }) {
             {stats.map(([label, value]) => (
               <Card key={label}>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
-                <p className="mt-3 font-display text-2xl font-extrabold text-ink">{reportFigure(value, "money")}</p>
+                <p className="mt-3 font-display text-2xl font-extrabold text-heading">{reportFigure(value, "money")}</p>
               </Card>
             ))}
           </div>
           <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
             <Card>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-xl font-extrabold text-ink">Six months</h2>
+                <h2 className="font-display text-xl font-extrabold text-heading">Six months</h2>
                 <p className="text-xs text-mute">Payable {reportFigure(data.payables, "money")}</p>
               </div>
               <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
@@ -323,7 +323,7 @@ function DemoDashboard({ user }) {
             {stats.map(([label, value]) => (
               <Card key={label} className="flex flex-col">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
-                <p className="mt-3 font-display text-2xl font-extrabold text-ink xl:mt-auto xl:pt-3">{reportFigure(value, "money")}</p>
+                <p className="mt-3 font-display text-2xl font-extrabold text-heading xl:mt-auto xl:pt-3">{reportFigure(value, "money")}</p>
               </Card>
             ))}
           </div>
@@ -343,7 +343,7 @@ function DemoDashboard({ user }) {
               </div>
               <div ref={chartRef} className="h-64 min-w-0 shrink-0">
                 <Card className="flex h-full flex-col">
-                  <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
+                  <h2 className="font-display text-xl font-extrabold text-heading">6 months of revenue</h2>
                   <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
                     <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 bg-[var(--chart-rev)]" /> Revenue</span>
                     <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[var(--chart-exp)]" /> Expenses</span>

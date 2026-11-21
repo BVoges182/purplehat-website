@@ -25,11 +25,11 @@ function StatementLines({ rows }) {
       {rows.map((row) => (
         <div
           key={row.key}
-          className={`flex items-baseline justify-between gap-4 px-2 py-2.5 ${row.strong ? "bg-neutral-100" : "border-t border-neutral-200 first:border-t-0"}`}
+          className={`flex items-baseline justify-between gap-4 px-2 py-2.5 ${row.strong ? "bg-[var(--row-total-bg)] text-[var(--row-total-text)]" : "border-t border-hairline first:border-t-0"}`}
         >
-          <dt className={row.heading || row.strong ? "font-display font-extrabold text-neutral-950" : "text-sm text-neutral-950"} style={{ paddingLeft: row.indent ? "1.25rem" : undefined }}>{row.label}</dt>
+          <dt className={row.heading ? "font-display font-extrabold text-heading" : row.strong ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-sm text-ink"} style={{ paddingLeft: row.indent ? "1.25rem" : undefined }}>{row.label}</dt>
           {row.heading ? null : (
-            <dd className={`shrink-0 tabular-nums text-neutral-950 ${row.strong ? "font-display font-extrabold" : "text-sm"}`}>
+            <dd className={`shrink-0 tabular-nums ${row.strong ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-sm text-ink"}`}>
               {reportFigure(row.value, row.format)}
             </dd>
           )}
@@ -42,7 +42,7 @@ function StatementLines({ rows }) {
 function StatementCard({ title, card }) {
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-ink">{title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{title}</h2>
       {card.column ? <p className="mt-1 text-xs text-mute">{card.column}</p> : null}
       {card.rows.length ? <StatementLines rows={card.rows} /> : null}
       {card.note ? <p className="mt-3 text-sm font-semibold text-rose-800">{card.note}</p> : null}
@@ -181,7 +181,7 @@ export default function FinancialStatements() {
         {annual ? (
           <>
             <Card className="mb-4">
-              <h2 className="font-display text-xl font-extrabold text-ink">Financial Statements</h2>
+              <h2 className="font-display text-xl font-extrabold text-heading">Financial Statements</h2>
               <div className="mt-2 flex flex-col gap-3 border-t border-hairline py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="font-display text-lg font-extrabold text-ink">Annual financial statements</p>

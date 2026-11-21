@@ -57,13 +57,13 @@ export default function ReportDocument() {
         <div className="mt-4">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="font-display text-3xl font-extrabold tracking-tight text-neutral-950 sm:text-4xl">{report.title}</h1>
-              {report.periodLabel ? <p className="mt-2 max-w-2xl text-neutral-500">{report.periodLabel}</p> : null}
+              <h1 className="font-display text-3xl font-extrabold tracking-tight text-heading sm:text-4xl">{report.title}</h1>
+              {report.periodLabel ? <p className="mt-2 max-w-2xl text-mute">{report.periodLabel}</p> : null}
             </div>
             <Button type="button" variant="ghost" disabled={busy} onClick={download}>Download PDF</Button>
           </div>
           {report.entityName ? (
-            <p className="-mt-2 mb-6 text-sm text-neutral-500">{report.entityName}</p>
+            <p className="-mt-2 mb-6 text-sm text-mute">{report.entityName}</p>
           ) : null}
           <ManagementReportView report={report} template={reportTemplate} />
         </div>

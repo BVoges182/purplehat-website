@@ -27,14 +27,14 @@ function moneyLabel(value, currency) {
   return `${symbol}${text}`;
 }
 
-function SideTile({ label, side, tone, currency }) {
+function SideTile({ label, side, tone, figure, currency }) {
   return (
-    <div className={`rounded-2xl px-3 py-3 ${tone}`}>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-mute">{label}</p>
+    <div className={`px-3 py-3 ${tone}`}>
+      <p className={`text-xs font-bold uppercase tracking-[0.14em] ${figure}`}>{label}</p>
       <p className="mt-2 text-xs text-mute">Total</p>
-      <p className="font-display text-xl font-extrabold text-ink">{moneyLabel(side?.total, currency)}</p>
+      <p className={`font-display text-xl font-extrabold ${figure}`}>{moneyLabel(side?.total, currency)}</p>
       <p className="mt-2 text-xs text-mute">Overdue</p>
-      <p className="font-display text-lg font-extrabold text-ink">{moneyLabel(side?.overdue, currency)}</p>
+      <p className={`font-display text-lg font-extrabold ${figure}`}>{moneyLabel(side?.overdue, currency)}</p>
       {side?.note ? <p className="mt-2 text-xs leading-5 text-mute">{publicCopy(side.note)}</p> : null}
     </div>
   );
@@ -44,7 +44,7 @@ function BulletList({ label, items }) {
   if (!items?.length) return null;
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent)]">{label}</p>
       <ul className="mt-2 space-y-1.5">
         {items.map((item) => (
           <li key={item} className="text-sm leading-5 text-ink">{publicCopy(item)}</li>
@@ -60,17 +60,17 @@ function Brief({ financial, currency }) {
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Financial insights</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent)]">Financial insights</p>
           {financial.period ? <p className="mt-1 text-sm font-semibold text-ink">{financial.period}</p> : null}
         </div>
         {updated ? <p className="shrink-0 text-xs text-mute">Updated {updated}</p> : null}
       </div>
       {financial.headline ? (
-        <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{publicCopy(financial.headline)}</h3>
+        <h3 className="mt-2 font-display text-lg font-normal leading-snug text-heading">{publicCopy(financial.headline)}</h3>
       ) : null}
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <SideTile label="Receivables" side={financial.receivables} tone="bg-[#efe6ff]" currency={currency} />
-        <SideTile label="Payables" side={financial.payables} tone="bg-band" currency={currency} />
+        <SideTile label="Receivables" side={financial.receivables} tone="bg-[var(--card-receivables-bg)]" figure="text-[var(--card-receivables-text)]" currency={currency} />
+        <SideTile label="Payables" side={financial.payables} tone="bg-[var(--card-payables-bg)]" figure="text-[var(--card-payables-text)]" currency={currency} />
       </div>
       <div className="mt-4 space-y-4">
         <BulletList label="This month" items={financial.currentMonth} />
@@ -84,8 +84,8 @@ function Brief({ financial, currency }) {
 function EmptyBrief({ error }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Financial insights</p>
-      <h3 className="mt-2 font-display text-lg font-extrabold text-ink">{error ? "Couldn't load insights" : "No brief here yet"}</h3>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent)]">Financial insights</p>
+      <h3 className="mt-2 font-display text-lg font-extrabold text-heading">{error ? "Couldn't load insights" : "No brief here yet"}</h3>
     </div>
   );
 }

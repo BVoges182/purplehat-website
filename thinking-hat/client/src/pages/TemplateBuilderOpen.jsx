@@ -24,7 +24,7 @@ function Dialog({ title, lede, onClose, children, wide = false }) {
         className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-hairline bg-white p-6 shadow-card ${wide ? "max-w-3xl" : "max-w-lg"}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <h2 id="template-editor-dialog" className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+        <h2 id="template-editor-dialog" className="font-display text-2xl font-extrabold text-heading">{title}</h2>
         {lede ? <p className="mt-1 text-sm text-mute">{lede}</p> : null}
         <div className="mt-5">{children}</div>
       </div>
@@ -244,7 +244,7 @@ function AnnualProfileCard({ clientId, templateId, profile, clientName, busy, on
 
   return (
     <Card>
-      <h3 className="font-display text-lg font-extrabold text-ink">Annual statement profile</h3>
+      <h3 className="font-display text-lg font-extrabold text-heading">Annual statement profile</h3>
       <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={save}>
         <Field label="Client">
           <input className={inputClass} value={clientName} readOnly />
@@ -417,7 +417,7 @@ export default function TemplateBuilderOpen() {
         <div className="space-y-4">
           <Card>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-2xl font-extrabold text-ink">{view.client.name}</h2>
+              <h2 className="font-display text-2xl font-extrabold text-heading">{view.client.name}</h2>
               <FrameworkBadge label={view.client.frameworkLabel} />
               {view.template.needsReview ? <ReviewFlag reason={view.template.reviewReason} /> : null}
             </div>
@@ -469,7 +469,7 @@ export default function TemplateBuilderOpen() {
             />
           ) : (
             <Card>
-              <h3 className="font-display text-lg font-extrabold text-ink">Sections</h3>
+              <h3 className="font-display text-lg font-extrabold text-heading">Sections</h3>
               {sections.length ? (
                 <ol className="mt-4 divide-y divide-hairline">
                   {sections.map((section, index) => (

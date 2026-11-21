@@ -47,7 +47,7 @@ export default function AdminRequests() {
           <Card key={item.id}>
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
               <div className="max-w-xl">
-                <h2 className="font-display text-lg font-extrabold text-ink">{item.title}</h2>
+                <h2 className="font-display text-lg font-extrabold text-heading">{item.title}</h2>
                 <p className="text-sm text-mute">{item.businessName || item.name} · {item.email} · {kindLabel[item.kind]} · {formatDate(item.createdAt)}</p>
                 <p className="mt-3 text-sm leading-relaxed">{item.details}</p>
                 {item.budget ? <p className="mt-2 text-sm text-mute">Budget {item.budget}</p> : null}

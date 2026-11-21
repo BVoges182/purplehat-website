@@ -111,7 +111,7 @@ function Modal({ title, lede, onClose, children }) {
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-white p-6 shadow-card"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <h2 id="builder-dialog-title" className="font-display text-2xl font-extrabold text-ink">{title}</h2>
+        <h2 id="builder-dialog-title" className="font-display text-2xl font-extrabold text-heading">{title}</h2>
         {lede ? <p className="mt-1 text-sm text-mute">{lede}</p> : null}
         <div className="mt-5">{children}</div>
       </div>
@@ -449,7 +449,7 @@ export default function AdminTemplateBuilder() {
       <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
         <Card className="!p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-lg font-extrabold text-ink">Clients</h2>
+            <h2 className="font-display text-lg font-extrabold text-heading">Clients</h2>
             <Button type="button" className="!min-h-10 !px-4" onClick={openClientForm}>+ New client</Button>
           </div>
           <label className="mb-3 block">
@@ -503,7 +503,7 @@ export default function AdminTemplateBuilder() {
             <p className="py-10 text-center text-mute">Loading templates…</p>
           ) : !selected ? (
             <div className="py-10 text-center">
-              <h2 className="font-display text-2xl font-extrabold text-ink">No client selected</h2>
+              <h2 className="font-display text-2xl font-extrabold text-heading">No client selected</h2>
               <p className="mx-auto mt-2 max-w-md text-mute">Create a client to see their templates here.</p>
             </div>
           ) : (
@@ -511,7 +511,7 @@ export default function AdminTemplateBuilder() {
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">{selected.name}</h2>
+                    <h2 className="font-display text-2xl font-extrabold text-heading sm:text-3xl">{selected.name}</h2>
                     <FrameworkBadge label={selected.frameworkLabel} />
                   </div>
                   <p className="mt-2 text-sm text-mute">

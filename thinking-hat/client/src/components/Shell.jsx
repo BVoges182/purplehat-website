@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { api } from "../api";
 import { useAuth } from "../auth";
-import { Alert, Avatar, Button, ThemeToggle } from "./ui";
+import { Alert, Avatar, Button, ThemeToggle, navItemClass } from "./ui";
 
 const clientLinks = [
   ["/dashboard", "Dashboard"],
@@ -27,7 +27,7 @@ function Item({ to, end, children }) {
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) => `whitespace-nowrap px-4 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] ${isActive ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-mute hover:text-heading"}`}
+      className={({ isActive }) => `whitespace-nowrap px-4 py-2 font-display text-sm uppercase tracking-[0.12em] ${navItemClass(isActive)}`}
     >
       {children}
     </NavLink>
@@ -149,7 +149,7 @@ export default function Shell() {
                 to={to}
                 end={to === "/" || to === "/dashboard" || to === "/admin"}
                 onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `flex min-h-11 items-center px-4 font-display text-sm font-semibold uppercase tracking-[0.08em] ${isActive ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-ink"}`}
+                className={({ isActive }) => `flex min-h-11 items-center px-4 font-display text-sm uppercase tracking-[0.08em] ${navItemClass(isActive, "left")}`}
               >
                 {label}
               </NavLink>

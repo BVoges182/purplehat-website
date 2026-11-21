@@ -1,6 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { downloadAuthorized } from "../api";
 import { Alert, Button } from "./ui";
+
+function AfsNav({ items }) {
+  const ids = items.map(([id]) => id).join("\n");
+  const [current, setCurrent] = useState(items[0]?.[0] || "");
+  useEffect(() => {
+    const nodes = ids.split("\n").filter(Boolean).map((id) => document.getElementById(id)).filter(Boolean);
+    if (!nodes.length || typeof IntersectionObserver === "undefined") return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target?.id) setCurrent(visible.target.id);
+    }, { root: null, rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] });
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [ids]);
+  return (
+    <aside className="afs-nav">
+      {items.map(([id, label]) => (
+        <a key={id} href={`#${id}`} aria-current={current === id ? "true" : undefined}>{label}</a>
+      ))}
+    </aside>
+  );
+}
 
 function moneyParts(value, dollar) {
   if (value == null || Number.isNaN(Number(value))) return { dollar: "", amount: "" };
@@ -250,9 +274,7 @@ export default function AnnualStatementView({ statement, preview = false, onPubl
   if (printable) return statementBody;
   return (
     <div className="afs-layout">
-      <aside className="afs-nav">
-        {nav.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
-      </aside>
+      <AfsNav items={nav} />
       {statementBody}
     </div>
   );

@@ -81,7 +81,7 @@ export default function ManagementReports() {
       {reportError ? <div className="mb-4"><Alert>{reportError}</Alert></div> : null}
       {reports.length > 0 ? (
         <Card className="mb-4">
-          <h2 className="font-display text-xl font-extrabold text-ink">Reports</h2>
+          <h2 className="font-display text-xl font-extrabold text-heading">Reports</h2>
           <ul className="mt-2">
             {reports.map((report) => (
               <li key={report.month} className="flex flex-col gap-3 border-t border-hairline py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
@@ -115,7 +115,7 @@ export default function ManagementReports() {
             ))}
           </div>
           <Card>
-            <h2 className="font-display text-xl font-extrabold text-ink">Months on file</h2>
+            <h2 className="font-display text-xl font-extrabold text-heading">Months on file</h2>
             {months.length === 0 ? <p className="mt-4 text-sm text-mute">No months posted yet.</p> : null}
             {months.length > 0 ? (
               <>

@@ -295,7 +295,7 @@ export default function AdminUser() {
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h2 className="font-display text-xl font-extrabold text-ink">Invite</h2>
+              <h2 className="font-display text-xl font-extrabold text-heading">Invite</h2>
               {record.invite ? (
                 <>
                   <div className="mt-3"><Badge status={record.invite.inviteStatus} /></div>
@@ -333,7 +333,7 @@ export default function AdminUser() {
       {record.user.role === "client" ? (
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-xl font-extrabold text-ink">Management Reports</h2>
+            <h2 className="font-display text-xl font-extrabold text-heading">Management Reports</h2>
             <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-hairline bg-white px-5 font-display text-sm font-extrabold text-heading" to={`/admin/reports?client=${id}`}>Upload Excel</Link>
           </div>
           <AdminReportList
@@ -357,7 +357,7 @@ export default function AdminUser() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="min-w-0">
-          <h2 className="font-display text-xl font-extrabold text-ink">Details</h2>
+          <h2 className="font-display text-xl font-extrabold text-heading">Details</h2>
           <form className="mt-4 space-y-4" onSubmit={saveDetails}>
             <Field label="Name"><input className={inputClass} value={details.name} onChange={(event) => setDetails({ ...details, name: event.target.value })} /></Field>
             <Field label="Email"><input className={inputClass} type="email" value={details.email} disabled={record.bootstrap} onChange={(event) => setDetails({ ...details, email: event.target.value })} /></Field>
@@ -372,7 +372,7 @@ export default function AdminUser() {
 
         <div className="min-w-0 space-y-4">
           <Card>
-            <h2 className="font-display text-xl font-extrabold text-ink">Access</h2>
+            <h2 className="font-display text-xl font-extrabold text-heading">Access</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Role">
                 <select className={inputClass} value={access.role} disabled={locked} onChange={(event) => setAccess({ ...access, role: event.target.value })}>
@@ -396,7 +396,7 @@ export default function AdminUser() {
             </div>
           </Card>
           <Card>
-            <h2 className="font-display text-xl font-extrabold text-ink">Business photo</h2>
+            <h2 className="font-display text-xl font-extrabold text-heading">Business photo</h2>
             <div className="mt-4 flex flex-wrap items-center gap-4">
               {record.user.photoUrl ? (
                 <img src={record.user.photoUrl} alt="" className="h-24 w-24 rounded-3xl object-cover" />
@@ -415,7 +415,7 @@ export default function AdminUser() {
 
       <Card>
         <div id="financial-figures">
-          <h2 className="font-display text-xl font-extrabold text-ink">Financial figures</h2>
+          <h2 className="font-display text-xl font-extrabold text-heading">Financial figures</h2>
           <p className="mt-1 text-sm text-mute">Saved figures show on the client dashboard within a few seconds. Amounts are in ZAR.</p>
           <form className="mt-4 space-y-4" onSubmit={saveFigures}>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -441,7 +441,7 @@ export default function AdminUser() {
 
       <Card>
         <div id="invoices">
-        <h2 className="font-display text-xl font-extrabold text-ink">Invoices</h2>
+        <h2 className="font-display text-xl font-extrabold text-heading">Invoices</h2>
         <div className="mt-4 space-y-3">
           {record.invoices.map((item) => (
             <div key={item.id} className="rounded-2xl border border-hairline px-4 py-3">

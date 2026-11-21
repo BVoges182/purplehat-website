@@ -109,7 +109,7 @@ export default function AdminReports() {
       {error ? <div className="mb-4"><Alert>{error}</Alert></div> : null}
       {message ? <div className="mb-4"><Alert tone="ok">{message}</Alert></div> : null}
       <Card>
-        <h2 className="font-display text-xl font-extrabold text-ink">Upload Excel</h2>
+        <h2 className="font-display text-xl font-extrabold text-heading">Upload Excel</h2>
         <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={(event) => submit(event, false)}>
           <Field label="Client">
             <select className={inputClass} value={userId} onChange={(event) => { setUserId(event.target.value); setReplaceAsk(null); }} required>
@@ -147,7 +147,7 @@ export default function AdminReports() {
         ) : null}
       </Card>
       <Card className="mt-4">
-        <h2 className="font-display text-xl font-extrabold text-ink">Upload Annual Financial Statements (.xlsx)</h2>
+        <h2 className="font-display text-xl font-extrabold text-heading">Upload Annual Financial Statements (.xlsx)</h2>
         <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={async (event) => {
           event.preventDefault();
           setError("");
@@ -199,7 +199,7 @@ export default function AdminReports() {
         ) : null}
       </Card>
       <Card className="mt-4">
-        <h2 className="font-display text-xl font-extrabold text-ink">Reports</h2>
+        <h2 className="font-display text-xl font-extrabold text-heading">Reports</h2>
         <div className="mt-4 max-w-md">
           <Field label="Client">
             <select

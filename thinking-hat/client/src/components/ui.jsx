@@ -93,21 +93,32 @@ export function Badge({ status }) {
   );
 }
 
+const primaryButton = "border border-[var(--btn-bg)] bg-[var(--btn-bg)] text-[var(--btn-text)] hover:border-[var(--btn-bg-hover)] hover:bg-[var(--btn-bg-hover)] disabled:border-[var(--btn-disabled-bg)] disabled:bg-[var(--btn-disabled-bg)] disabled:text-[var(--btn-disabled-text)]";
+
 export function Button({ children, variant = "primary", className = "", ...props }) {
   const styles = {
-    primary: "border border-[var(--btn-bg)] bg-[var(--btn-bg)] text-[var(--btn-text)]",
+    primary: primaryButton,
+    navy: primaryButton,
+    secondary: "border border-[var(--btn-secondary-border)] bg-transparent text-[var(--btn-secondary-text)] hover:bg-[var(--nav-hover-bg)] disabled:border-[var(--btn-disabled-bg)] disabled:bg-transparent disabled:text-[var(--btn-disabled-text)]",
     ghost: "border border-hairline bg-surface text-heading hover:bg-band",
-    navy: "border border-heading bg-surface text-heading hover:bg-band",
     quiet: "border border-hairline bg-surface text-ink hover:bg-band",
   };
   return (
     <button
-      className={`inline-flex min-h-11 items-center justify-center px-5 font-display text-sm font-semibold tracking-[0.12em] transition disabled:cursor-not-allowed disabled:opacity-60 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center px-5 font-display text-sm font-bold tracking-[0.12em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed ${styles[variant] || primaryButton} ${className}`}
       {...props}
     >
       {children}
     </button>
   );
+}
+
+export function navItemClass(isActive, edge = "bottom") {
+  const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  if (edge === "left") {
+    return `border-l-[3px] ${focus} ${isActive ? "border-l-[var(--nav-active-bar)] bg-[var(--nav-active-bg)] font-bold text-[var(--nav-active-text)]" : "border-l-transparent text-ink hover:bg-[var(--nav-hover-bg)]"}`;
+  }
+  return `border-b-[3px] ${focus} ${isActive ? "border-b-[var(--nav-active-bar)] bg-[var(--nav-active-bg)] font-bold text-[var(--nav-active-text)]" : "border-b-transparent text-mute hover:bg-[var(--nav-hover-bg)] hover:text-heading"}`;
 }
 
 export function SegmentedPills({ options, value, onChange, label }) {
@@ -135,7 +146,7 @@ export function SegmentedPills({ options, value, onChange, label }) {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className={`inline-flex min-h-10 flex-1 shrink-0 items-center justify-center border-r border-hairline px-3 font-display text-[11px] font-semibold uppercase tracking-[0.14em] last:border-r-0 ${active ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-mute"}`}
+                className={`inline-flex min-h-10 flex-1 shrink-0 items-center justify-center border-r border-hairline px-3 font-display text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${active ? "bg-[var(--nav-active-bg)] text-[var(--nav-active-text)]" : "text-mute hover:bg-[var(--nav-hover-bg)]"}`}
                 onClick={() => onChange(option.id)}
               >
                 {option.label}
@@ -227,7 +238,7 @@ export function AuthFrame({ title, lede, children, homeLink = false }) {
             </div>
             <ThemeToggle />
           </div>
-          <h1 className="font-display text-3xl font-extrabold text-ink">{title}</h1>
+          <h1 className="font-display text-3xl font-extrabold text-heading">{title}</h1>
           {lede ? <p className="mt-2 text-mute">{lede}</p> : null}
           <div className="mt-6">{children}</div>
         </div>
@@ -240,7 +251,7 @@ export function PageIntro({ title, lede, children }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{title}</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-heading sm:text-4xl">{title}</h1>
         {lede ? <p className="mt-2 max-w-2xl text-mute">{lede}</p> : null}
       </div>
       {children}

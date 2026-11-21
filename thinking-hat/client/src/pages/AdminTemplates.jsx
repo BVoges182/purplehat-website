@@ -179,14 +179,14 @@ export default function AdminTemplates() {
                   </div>
                 </div>
               ) : null}
-              <h2 className="mt-6 font-display text-xl font-extrabold text-ink">{selected.name}</h2>
+              <h2 className="mt-6 font-display text-xl font-extrabold text-heading">{selected.name}</h2>
               <p className="mt-1 text-sm text-mute">Dashboard and management reports: {reportTemplateName(selected.reportTemplate)}.</p>
               {selected.copiedFromName ? (
                 <p className="mt-1 text-sm text-mute">Copied from {selected.copiedFromName}. This copy is separate from that template.</p>
               ) : selected.sourceBusiness && selected.sourceBusiness !== selected.name ? (
                 <p className="mt-1 text-sm text-mute">Saved from {selected.sourceBusiness}.</p>
               ) : null}
-              <h3 className="mt-5 font-display text-sm font-extrabold text-ink">Clients using this template</h3>
+              <h3 className="mt-5 font-display text-sm font-extrabold text-heading">Clients using this template</h3>
               {using.length === 0 ? <p className="mt-2 text-sm text-mute">No clients are using this template yet.</p> : (
                 <ul className="mt-2 space-y-1">
                   {using.map((client) => (
@@ -194,7 +194,7 @@ export default function AdminTemplates() {
                   ))}
                 </ul>
               )}
-              <h3 className="mt-5 font-display text-sm font-extrabold text-ink">Reports</h3>
+              <h3 className="mt-5 font-display text-sm font-extrabold text-heading">Reports</h3>
               {selected.reports.length === 0 ? <p className="mt-2 text-sm text-mute">No reports in this template.</p> : (
                 <ul className="mt-2 space-y-1">
                   {selected.reports.map((report) => (
@@ -202,7 +202,7 @@ export default function AdminTemplates() {
                   ))}
                 </ul>
               )}
-              <h3 className="mt-5 font-display text-sm font-extrabold text-ink">Dashboard</h3>
+              <h3 className="mt-5 font-display text-sm font-extrabold text-heading">Dashboard</h3>
               <p className="mt-2 text-sm text-mute">Headline figures and the six-month chart come from these reports.</p>
               {selected.movements.length === 0 ? <p className="mt-2 text-sm text-mute">No recent movements saved.</p> : (
                 <ul className="mt-2 space-y-1">
@@ -212,7 +212,7 @@ export default function AdminTemplates() {
                 </ul>
               )}
               <div className="mt-6 border-t border-hairline pt-5">
-                <h3 className="font-display text-sm font-extrabold text-ink">Template file</h3>
+                <h3 className="font-display text-sm font-extrabold text-heading">Template file</h3>
                 <p className="mt-1 text-sm text-mute">Download {selected.name} as a CSV or a text file, then upload that file on the live site. Clients using the template get this dashboard and these management reports.</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button type="button" disabled={busy} onClick={() => onDownload("csv")}>Download CSV</Button>

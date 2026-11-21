@@ -74,7 +74,7 @@ export default function RequestBuild() {
             <Card key={item.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-lg font-extrabold text-ink">{item.title}</h2>
+                  <h2 className="font-display text-lg font-extrabold text-heading">{item.title}</h2>
                   <p className="text-sm text-mute">{kindLabel[item.kind]} · {formatDate(item.createdAt)}</p>
                 </div>
                 <Badge status={item.status} />

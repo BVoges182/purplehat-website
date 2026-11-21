@@ -53,8 +53,8 @@ function ClippedBody({ open, children }) {
       ref={ref}
       className={open ? "" : "max-h-72 overflow-hidden"}
       style={overflows ? {
-        maskImage: "linear-gradient(to bottom, #000 calc(100% - 2.75rem), transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, #000 calc(100% - 2.75rem), transparent)",
+        maskImage: "linear-gradient(to bottom, black calc(100% - 2.75rem), transparent)",
+        WebkitMaskImage: "linear-gradient(to bottom, black calc(100% - 2.75rem), transparent)",
       } : undefined}
     >
       {children}
@@ -72,7 +72,7 @@ function Brief({ insights, title, open, onToggle }) {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p>
         {updated ? <p className="shrink-0 text-xs text-mute">{updated}</p> : null}
       </div>
-      <h3 className="mt-2 font-display text-lg font-normal leading-snug text-ink">{publicCopy(insights.headline)}</h3>
+      <h3 className="mt-2 font-display text-lg font-normal leading-snug text-heading">{publicCopy(insights.headline)}</h3>
       <ClippedBody open={open}>
         {visible.length ? (
           <ol className="mt-4 space-y-3">
@@ -108,7 +108,7 @@ function EmptyBrief({ title, error }) {
   return (
     <div>
       {title ? <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">{title}</p> : null}
-      <h3 className={`font-display text-lg font-extrabold text-ink ${title ? "mt-2" : ""}`}>
+      <h3 className={`font-display text-lg font-extrabold text-heading ${title ? "mt-2" : ""}`}>
         {error ? "Couldn't load insights" : "No brief here yet"}
       </h3>
     </div>

@@ -53,7 +53,7 @@ export default function AgingSummary({ section }) {
   }
   return (
     <Card>
-      <h2 className="font-display text-xl font-extrabold text-ink">{section.title}</h2>
+      <h2 className="font-display text-xl font-extrabold text-heading">{section.title}</h2>
       {section.subtitle ? <p className="mt-1 text-sm text-mute">{section.subtitle}</p> : null}
       {section.note ? <p className="mt-1 text-sm text-mute">{section.note}</p> : null}
       <div className="mt-5 hidden grid-cols-2 gap-3 md:grid xl:grid-cols-4">
@@ -95,9 +95,9 @@ export default function AgingSummary({ section }) {
             </button>
           ) : null}
           {ranked.length ? (
-            <div className="mt-1 flex items-baseline justify-between gap-3 rounded-xl bg-neutral-100 px-3 py-3">
-              <p className="font-display font-extrabold text-ink">{total?.label || "Total"}</p>
-              <p className="whitespace-nowrap text-right font-display font-extrabold tabular-nums text-ink">{shownFigure(total?.values?.[selected.index], total?.formats?.[selected.index])}</p>
+            <div className="mt-1 flex items-baseline justify-between gap-3 bg-[var(--row-total-bg)] px-3 py-3 text-[var(--row-total-text)]">
+              <p className="font-display font-extrabold text-[var(--row-total-text)]">{total?.label || "Total"}</p>
+              <p className="whitespace-nowrap text-right font-display font-extrabold tabular-nums text-[var(--row-total-text)]">{shownFigure(total?.values?.[selected.index], total?.formats?.[selected.index])}</p>
             </div>
           ) : null}
         </div>
@@ -114,10 +114,10 @@ export default function AgingSummary({ section }) {
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={`${row.label}-${index}`} className={row.kind === "total" ? "" : "border-t border-hairline"}>
-                <td className={`py-2.5 pr-3 ${row.kind === "total" ? "font-display font-extrabold text-ink" : "text-ink"}`}>{row.label}</td>
+              <tr key={`${row.label}-${index}`} className={row.kind === "total" ? "bg-[var(--row-total-bg)] text-[var(--row-total-text)]" : "border-t border-hairline"}>
+                <td className={`py-2.5 pr-3 ${row.kind === "total" ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}>{row.label}</td>
                 {columns.map((column, columnIndex) => (
-                  <td key={`${column}-${columnIndex}`} className={`py-2.5 pl-3 text-right tabular-nums ${row.kind === "total" ? "font-display font-extrabold text-ink" : "text-ink"}`}>
+                  <td key={`${column}-${columnIndex}`} className={`py-2.5 pl-3 text-right tabular-nums ${row.kind === "total" ? "font-display font-extrabold text-[var(--row-total-text)]" : "text-ink"}`}>
                     {reportFigure(row.values?.[columnIndex], row.formats?.[columnIndex] || "money")}
                   </td>
                 ))}

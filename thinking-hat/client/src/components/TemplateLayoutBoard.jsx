@@ -52,7 +52,7 @@ function LayoutCard({ section, template, zoom, overId, activeId, onEdit, onDelet
           <span aria-hidden="true" className="text-lg leading-none">⋮⋮</span>
         </button>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-display text-lg font-extrabold text-ink">{section.title}</h3>
+          <h3 className="truncate font-display text-lg font-extrabold text-heading">{section.title}</h3>
           {section.hidden ? <p className="text-xs font-semibold text-mute">Hidden in the report</p> : null}
         </div>
         <Button type="button" variant="quiet" onClick={() => onEdit(section)} disabled={disabled}>Edit</Button>

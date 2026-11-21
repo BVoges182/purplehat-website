@@ -1102,7 +1102,7 @@ function drawRoasChart(doc, points, x, y, chartWidth, chartHeight) {
     return plotY + pad + ((max - value) / (max - min)) * (plotH - pad * 2);
   };
   doc.save();
-  doc.strokeColor("#ede9fe").lineWidth(0.6);
+  doc.strokeColor(BRAND.line).lineWidth(0.6);
   roasTicks.forEach((tick) => {
     const lineY = mapY(tick, roasDomain.min, roasDomain.max);
     doc.moveTo(plotX, lineY).lineTo(plotX + plotW, lineY).stroke();
@@ -1160,7 +1160,7 @@ function drawSpendChart(doc, points, x, y, chartWidth, chartHeight) {
   const max = Math.max(1, ...points.flatMap((point) => [point.spend || 0, point.revenue || 0]));
   const slot = plotW / points.length;
   doc.save();
-  doc.strokeColor("#ede9fe").lineWidth(0.8);
+  doc.strokeColor(BRAND.line).lineWidth(0.8);
   doc.moveTo(plotX, plotY + plotH).lineTo(plotX + plotW, plotY + plotH).stroke();
   doc.restore();
   points.forEach((point, index) => {
