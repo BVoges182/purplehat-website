@@ -109,6 +109,35 @@ function readQuarterlyProfit(sheet) {
   return readStatement(sheet, "Profit and loss quarterly", 1, [2, 3, 4, 5]);
 }
 
+export function fillCashSubtotals(rows) {
+  let heading = "";
+  return (rows || []).map((row) => {
+    if (row.kind === "heading") {
+      heading = String(row.label || "");
+      return row;
+    }
+    if (row.kind === "total" && !String(row.label || "").trim()) {
+      const label = /operating/i.test(heading)
+        ? "Net cash from operating activities"
+        : /investing/i.test(heading)
+          ? "Net cash from investing activities"
+          : /financing/i.test(heading)
+            ? "Net cash from financing activities"
+            : "";
+      if (label) return { ...row, label };
+    }
+    return row;
+  });
+}
+
+export function statementCopy(title, note, rows) {
+  const nextNote = /^profit and loss quarterly$/i.test(String(title || "").trim())
+    ? String(note || "").replace(/for the month ended/gi, "For the year ended")
+    : note;
+  const nextRows = /cash flow/i.test(String(title || "")) ? fillCashSubtotals(rows) : rows;
+  return { note: nextNote, rows: nextRows };
+}
+
 function findCourtLease(workbook) {
   return workbook.worksheets.find((sheet) => /court\s*lease/i.test(sheet.name)) || null;
 }
@@ -218,12 +247,13 @@ function readStatement(sheet, title, labelCol, valueCols) {
   if (!rows.some((row) => Array.isArray(row.values) && row.values.some((value) => typeof value === "number"))) {
     throw new Error(`The ${title} sheet did not contain any figures.`);
   }
+  const copy = statementCopy(title, [company, period].filter(Boolean).join(" · "), rows);
   return {
     title,
-    note: [company, period].filter(Boolean).join(" · "),
+    note: copy.note,
     labelHeader: "Account",
     columns,
-    rows,
+    rows: copy.rows,
     entityName: company,
   };
 }
@@ -625,13 +655,14 @@ function readModernStatement(sheet, title) {
   if (!rows.some((row) => row.values?.some((value) => typeof value === "number"))) {
     throw new Error(`The ${title} sheet did not contain any figures.`);
   }
+  const copy = statementCopy(title, note, rows);
   return {
     title,
-    note,
+    note: copy.note,
     labelHeader: "",
     columns: header.columns.map((column) => column.label),
     units: units || header.columns.map(() => "£"),
-    rows,
+    rows: copy.rows,
     entityName,
   };
 }
