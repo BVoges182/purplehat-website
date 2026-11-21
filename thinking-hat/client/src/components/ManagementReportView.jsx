@@ -254,7 +254,8 @@ const DEMO_DONUT_COLOURS = [
   "#0E1A2E",
 ];
 
-function demoDonutColour(count, index) {
+function demoDonutColour(count, index, label) {
+  if (isOtherLabel(label)) return "#8FC9F0";
   const last = DEMO_DONUT_COLOURS.length - 1;
   if (count <= 1) return DEMO_DONUT_COLOURS[0];
   const slot = Math.round((Math.max(0, index) / (count - 1)) * last);
@@ -287,7 +288,7 @@ export function Donut({ title, slices }) {
     const start = angle;
     const end = angle + portion * Math.PI * 2;
     angle = end;
-    const colour = demoDonutColour(items.length, index);
+    const colour = demoDonutColour(items.length, index, slice.label);
     const mid = portion > 0.98 ? -Math.PI / 2 : (start + end) / 2;
     const radius = portion > 0.98 ? 0 : (outer + inner) / 2;
     const percent = Math.round(portion * 100);
@@ -341,7 +342,7 @@ export function ContactDonutCard({ section }) {
       <div className={`mt-6 flex flex-col gap-8 ${section.chart === false ? "" : "lg:flex-row lg:items-center"}`}>
         <ol className="min-w-0 flex-1">
           {lines.map((row, index) => {
-            const colour = demoDonutColour(lines.length, index);
+            const colour = demoDonutColour(lines.length, index, row.label);
             return (
               <li key={`${row.label}-${index}`} className="grid grid-cols-[1.75rem_0.75rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-hairline py-2.5">
                 <span className="text-sm tabular-nums text-mute">{index + 1}</span>

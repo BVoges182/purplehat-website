@@ -1,8 +1,8 @@
 import { Card } from "./ui";
 import { ecommerceInsight, insightMonthName, reportFigure } from "../reportMoney";
 
-const PURPLE = "var(--chart-rev)";
-const GREEN = "var(--chart-exp)";
+const SERIES_NAVY = "var(--chart-rev)";
+const SERIES_AD = "var(--chart-ad)";
 
 function shortMonth(label) {
   const name = insightMonthName(label);
@@ -117,8 +117,8 @@ function LineChart({ points }) {
             {roasTicks.map((tick) => (
               <line key={tick.toFixed(2)} x1="0" x2={plotW} y1={py(tick, roasDomain.min, roasDomain.max)} y2={py(tick, roasDomain.min, roasDomain.max)} stroke="var(--hairline)" strokeWidth="1" />
             ))}
-            {conversionLine ? <polyline points={conversionLine} fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
-            {roasLine ? <polyline points={roasLine} fill="none" stroke={PURPLE} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
+            {conversionLine ? <polyline points={conversionLine} fill="none" stroke={SERIES_AD} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
+            {roasLine ? <polyline points={roasLine} fill="none" stroke={SERIES_NAVY} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /> : null}
           </svg>
           {points.map((point, index) => (
             <span key={point.month}>
@@ -131,7 +131,7 @@ function LineChart({ points }) {
               ) : null}
               {typeof point.conversion === "number" ? (
                 <span
-                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[var(--surface)] bg-[var(--chart-exp)]"
+                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[var(--surface)] bg-[var(--chart-ad)]"
                   style={{ left: `${xOf(index, points.length)}%`, top: `${yOf(point.conversion * 100, conversionDomain.min, conversionDomain.max)}%` }}
                   title={`${point.month} conversion ${reportFigure(point.conversion, "percent2")}`}
                 />
@@ -176,7 +176,7 @@ function BarChart({ points }) {
         <div className="flex h-40 flex-1 items-end gap-1 border-b border-hairline">
           {points.map((point) => (
             <div key={point.month} className="flex h-full flex-1 items-end justify-center gap-0.5" title={`${point.month}: spend ${usd(point.spend, 0)}, revenue ${usd(point.revenue, 0)}`}>
-              <div className="w-[42%] max-w-3 bg-[var(--chart-exp)]" style={{ height: `${((point.spend || 0) / max) * 100}%` }} />
+              <div className="w-[42%] max-w-3 bg-[var(--chart-ad)]" style={{ height: `${((point.spend || 0) / max) * 100}%` }} />
               <div className="w-[42%] max-w-3 bg-[var(--chart-rev)]" style={{ height: `${((point.revenue || 0) / max) * 100}%` }} />
             </div>
           ))}
@@ -259,14 +259,14 @@ export default function EcommercePerformance({ points }) {
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-heading">ROAS & Conversion Rate Trend</h3>
-          <Legend items={[{ label: "ROAS", swatch: "bg-[var(--chart-rev)]" }, { label: "Conversion rate", swatch: "bg-[var(--chart-exp)]" }]} />
+          <Legend items={[{ label: "ROAS", swatch: "bg-[var(--chart-rev)]" }, { label: "Conversion rate", swatch: "bg-[var(--chart-ad)]" }]} />
           <div className="mt-4">
             <LineChart points={points} />
           </div>
         </div>
         <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-heading">Ad Spend vs Revenue</h3>
-          <Legend items={[{ label: "Ad spend", swatch: "bg-[var(--chart-exp)]" }, { label: "Revenue", swatch: "bg-[var(--chart-rev)]" }]} />
+          <Legend items={[{ label: "Ad spend", swatch: "bg-[var(--chart-ad)]" }, { label: "Revenue", swatch: "bg-[var(--chart-rev)]" }]} />
           <div className="mt-4">
             <BarChart points={points} />
           </div>

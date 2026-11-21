@@ -3,10 +3,10 @@ import { Card, SegmentedPills } from "./ui";
 import { reportFigure } from "../reportMoney";
 
 const TILES = [
-  "bg-band",
-  "bg-[var(--bg-elev)]",
-  "bg-surface",
-  "bg-[var(--accent-soft)]",
+  "bg-[var(--aging-current-bg)] text-[var(--aging-current-text)]",
+  "bg-[var(--aging-30-bg)] text-[var(--aging-30-text)]",
+  "bg-[var(--aging-60-bg)] text-[var(--aging-60-text)]",
+  "bg-[var(--aging-90-bg)] text-[var(--aging-90-text)]",
 ];
 
 function shownFigure(value, format) {
@@ -59,8 +59,8 @@ export default function AgingSummary({ section }) {
       <div className="mt-5 hidden grid-cols-2 gap-3 md:grid xl:grid-cols-4">
         {tiles.map((tile, index) => (
           <div key={tile.label} className={`rounded-2xl px-4 py-3 ${TILES[index % TILES.length]}`}>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-mute">{tile.label}</p>
-            <p className="mt-2 whitespace-nowrap font-display text-2xl font-extrabold text-ink">{reportFigure(tile.value, "money")}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em]">{tile.label}</p>
+            <p className="mt-2 whitespace-nowrap font-display text-2xl font-extrabold">{reportFigure(tile.value, "money")}</p>
           </div>
         ))}
       </div>
@@ -74,8 +74,8 @@ export default function AgingSummary({ section }) {
               className={`min-h-11 rounded-2xl border-0 px-3 py-2 text-left ${TILES[index % TILES.length]} ${active ? "ring-2 ring-plum" : ""}`}
               onClick={() => chooseBucket(`b${buckets[index].index}`)}
             >
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-mute">{tile.label}</p>
-              <p className="mt-1 whitespace-nowrap font-display text-xl font-extrabold text-ink">{reportFigure(tile.value, "money")}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.08em]">{tile.label}</p>
+              <p className="mt-1 whitespace-nowrap font-display text-xl font-extrabold">{reportFigure(tile.value, "money")}</p>
             </button>
           );
         })}

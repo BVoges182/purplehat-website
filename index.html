@@ -225,24 +225,6 @@
     #shot-dialog::backdrop { background: rgba(42, 21, 72, 0.72); }
     .shot-lightbox { position: relative; }
     #shot-dialog img { display: block; width: 100%; height: auto; max-height: calc(92vh - 7rem); object-fit: contain; border-radius: 0.85rem; background: var(--bg); }
-    #shot-dialog img.is-hidden { display: none; }
-    .shot-viewport .shot-live { height: 100%; overflow: hidden; background: var(--bg); }
-    @media (max-width: 767px) {
-      .shot-viewport:has(.shot-slide.is-active .shot-live) {
-        aspect-ratio: auto; height: auto; overflow: visible;
-      }
-      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-slide.is-active {
-        position: relative; inset: auto; height: auto;
-      }
-      .shot-viewport:has(.shot-slide.is-active .shot-live) .shot-live {
-        height: auto; overflow: visible;
-      }
-    }
-    .shot-live-full {
-      display: none; max-height: calc(92vh - 7rem); overflow: auto;
-      border-radius: 0.85rem; background: var(--bg);
-    }
-    .shot-live-full.is-open { display: block; }
     #shot-caption { min-height: 1.5rem; margin: 0.65rem 0 0; text-align: center; color: var(--text-mute); }
     .shot-close {
       display: inline-flex; align-items: center; justify-content: center;
@@ -559,7 +541,10 @@
                     </picture>
                   </figure>
                   <figure class="shot-slide" data-caption="Income statement and balance sheet, three months side by side.">
-                    <div class="shot-live" data-statements></div>
+                    <picture>
+                      <source data-srcset="images/app/report-statements.webp" type="image/webp">
+                      <img data-src="images/app/report-statements.png" alt="Income statement and balance sheet for PurpleHat Demo, with December, November, and October 2026 side by side and the change from November." width="1440" height="900" loading="lazy" decoding="async">
+                    </picture>
                   </figure>
                   <button type="button" class="shot-arrow shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                   <button type="button" class="shot-arrow shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -747,7 +732,6 @@
     <div class="shot-lightbox">
       <button type="button" class="shot-arrow shot-prev" id="shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <img loading="lazy" id="shot-full" alt="">
-      <div id="shot-live" class="shot-live-full" data-statements></div>
       <button type="button" class="shot-arrow shot-next" id="shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
     <p id="shot-caption"></p>
@@ -858,7 +842,6 @@
         const img = slide.querySelector("img");
         if (source && source.dataset.srcset && !source.getAttribute("srcset")) source.srcset = source.dataset.srcset;
         if (img && img.dataset.src && !img.getAttribute("src")) img.src = img.dataset.src;
-        if (slide.querySelector("[data-statements]")) window.mountHomepageStatements?.();
       }
 
       function activeSlide(root) {
@@ -889,20 +872,9 @@
         return next;
       }
 
-      const shotLive = document.getElementById("shot-live");
-
       function fillLightbox(root) {
         const slide = activeSlide(root);
-        const live = Boolean(slide && slide.querySelector("[data-statements]"));
         if (shotCaption) shotCaption.textContent = slide?.dataset.caption || "";
-        if (live) {
-          shotFull.classList.add("is-hidden");
-          shotLive?.classList.add("is-open");
-          window.mountHomepageStatements?.();
-          return;
-        }
-        shotLive?.classList.remove("is-open");
-        shotFull.classList.remove("is-hidden");
         const img = slide && slide.querySelector("img");
         if (!img) return;
         shotFull.src = img.currentSrc || img.src;
@@ -994,10 +966,8 @@
         });
         shotDialog.addEventListener("close", () => {
           const root = openCarousel;
-          shotFull.classList.remove("is-hidden");
           shotFull.removeAttribute("src");
           shotFull.alt = "";
-          shotLive?.classList.remove("is-open");
           if (shotCaption) shotCaption.textContent = "";
           openCarousel = null;
           root?.resumeIfIdle();
@@ -1005,7 +975,6 @@
       }
     })();
   </script>
-  <script type="module" src="/statements-preview.js"></script>
   <script src="assets/theme.js"></script>
 </body>
 </html>
