@@ -481,8 +481,8 @@ test("statement text is one size and the download buttons match management repor
     }
     assert.match(measured.button.fontFamily, /Barlow/);
     assert.equal(measured.button.borderTopColor, "rgb(31, 56, 100)");
-    assert.equal(measured.button.backgroundColor, "rgb(255, 255, 255)");
-    assert.equal(measured.button.color, "rgb(31, 56, 100)");
+    assert.equal(measured.button.backgroundColor, "rgb(31, 56, 100)");
+    assert.equal(measured.button.color, "rgb(255, 255, 255)");
     assert.doesNotMatch(measured.button.fontFamily, /Tinos|Times/);
   } finally {
     await browser.close();

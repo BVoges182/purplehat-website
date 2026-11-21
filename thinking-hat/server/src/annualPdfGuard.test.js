@@ -5,18 +5,12 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
+import { extractAfsStatementCss } from "./afsCssSnapshot.js";
 import { renderAnnualPdfLib } from "./annualPdfLib.js";
 import { parseAnnualWorkbook } from "./annualWorkbook.js";
+import { normalizePdf } from "./pdfNormalize.js";
 
 const fixture = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "PurpleHatDemo_Audited_FS_FY2026.xlsx");
-
-function normalizePdf(buffer) {
-  const text = Buffer.from(buffer).toString("latin1")
-    .replace(/\/CreationDate\s*\([^)]*\)/g, "/CreationDate (normalized)")
-    .replace(/\/ModDate\s*\([^)]*\)/g, "/ModDate (normalized)")
-    .replace(/\/ID\s*\[[^\]]*\]/g, "/ID [normalized]");
-  return Buffer.from(text, "latin1");
-}
 
 function pdfText(buffer) {
   const raw = Buffer.from(buffer).toString("latin1");
@@ -38,7 +32,13 @@ test("the annual statements PDF stays Times Roman, navy, and banded", async () =
   const second = Buffer.from(await renderAnnualPdfLib(statement));
   const left = normalizePdf(first);
   const right = normalizePdf(second);
-  assert.equal(createHash("sha256").update(left).digest("hex"), createHash("sha256").update(right).digest("hex"));
+  const digest = createHash("sha256").update(left).digest("hex");
+  assert.equal(digest, createHash("sha256").update(right).digest("hex"));
+  const baseline = fs.readFileSync(path.join(path.dirname(fixture), "afs-pdf-baseline.sha256"), "utf8").trim();
+  assert.equal(digest, baseline);
+  const cssPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "client", "src", "index.css");
+  const cssBaseline = fs.readFileSync(path.join(path.dirname(fixture), "afs-css-baseline.css"), "utf8");
+  assert.equal(extractAfsStatementCss(fs.readFileSync(cssPath, "utf8")), cssBaseline);
   const text = pdfText(first);
   assert.match(text, /Times-Roman/);
   assert.match(text, /Times-Bold/);
