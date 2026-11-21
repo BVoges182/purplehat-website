@@ -13,7 +13,7 @@ const indexPath = path.join(repoRoot, "thinking-hat", "server", "src", "index.js
 const assetHtml = fs.readFileSync(path.join(repoRoot, "vendor", "purplehat-trader", "dist", "index.html"), "utf8");
 const assetMatch = assetHtml.match(/\/trader\/assets\/index-[^"]+\.js/);
 const assetPath = assetMatch ? assetMatch[0] : "";
-const homeMarker = "Online accounting for nomads and digital businesses";
+const homeMarker = "Management accounting for businesses that work from anywhere";
 
 if (process.argv.includes("--serve")) {
   process.env.THINKING_HAT_NO_LISTEN = "1";

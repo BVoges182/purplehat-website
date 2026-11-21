@@ -1933,6 +1933,8 @@ const marketingFiles = {
   "/disclaimer": "disclaimer.html",
   "/disclaimer.html": "disclaimer.html",
   "/logo.png": "logo.png",
+  "/robots.txt": "robots.txt",
+  "/sitemap.xml": "sitemap.xml",
 };
 
 function sendManagementReportPdf(res, user, month) {
@@ -1973,6 +1975,12 @@ function isAppPath(pathname) {
 }
 
 if (siteRoot) {
+  app.use("/assets", express.static(path.join(siteRoot, "assets"), {
+    index: false,
+    dotfiles: "deny",
+    fallthrough: false,
+    maxAge: "1h",
+  }));
   app.use("/images", express.static(path.join(siteRoot, "images"), {
     index: false,
     dotfiles: "deny",

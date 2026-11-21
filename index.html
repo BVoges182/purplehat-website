@@ -3,32 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Online accounting for nomads and digital businesses | Purple Hat</title>
-  <meta name="description" content="Clear monthly reports, real-time dashboards and a Chartered Accountant in your corner, wherever you're working from.">
-  <meta name="theme-color" content="#f6f3ff">
+  <title>Management Accounting &amp; Monthly Reports | Purple Hat</title>
+  <meta name="description" content="Outsourced management accounting, monthly management reports, and a live dashboard. A Chartered Accountant handles the monthly close, remote, in any time zone.">
+  <link rel="canonical" href="https://purplehat.fun/">
+  <meta property="og:locale" content="en_ZA">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Purple Hat">
+  <meta property="og:title" content="Management Accounting & Monthly Reports | Purple Hat">
+  <meta property="og:description" content="Outsourced management accounting, monthly management reports, and a live dashboard. A Chartered Accountant handles the monthly close, remote, in any time zone.">
+  <meta property="og:url" content="https://purplehat.fun/">
+  <meta property="og:image" content="https://purplehat.fun/logo.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Management Accounting & Monthly Reports | Purple Hat">
+  <meta name="twitter:description" content="Outsourced management accounting, monthly management reports, and a live dashboard. A Chartered Accountant handles the monthly close, remote, in any time zone.">
+  <meta name="twitter:image" content="https://purplehat.fun/logo.png">
+  <meta name="theme-color" content="#FFFFFF">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("ph-theme");
+        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark = theme === "dark" || (theme !== "light" && systemDark);
+        if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", dark ? "#0B1018" : "#FFFFFF");
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" href="logo.png?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            lilac: "#f6f3ff",
-            ink: "#2a1548",
-            mute: "#5c5470",
-            plum: "#6d28d9"
+            lilac: "var(--bg)",
+            ink: "var(--text)",
+            mute: "var(--text-mute)",
+            plum: "var(--accent)",
+            heading: "var(--heading)",
+            hairline: "var(--hairline)",
+            surface: "var(--surface)",
+            band: "var(--band)"
           },
           fontFamily: {
-            display: ["Nunito", "sans-serif"],
-            sans: ["Outfit", "sans-serif"]
+            display: ["Barlow Condensed", "Arial Narrow", "sans-serif"],
+            sans: ["Barlow", "Arial", "sans-serif"]
           },
           maxWidth: { page: "72rem" },
           boxShadow: {
-            card: "0 18px 40px rgba(76, 29, 149, 0.08)",
-            soft: "0 10px 30px rgba(76, 29, 149, 0.12)"
+            card: "none",
+            soft: "none"
           }
         }
       }
@@ -254,6 +279,52 @@
       .mascot, .btn-primary:hover, .btn-ghost:hover, .card:hover, .shot-slide { animation: none; transition: none; }
     }
   </style>
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "Purple Hat",
+          "url": "https://purplehat.fun/"
+        },
+        {
+          "@type": "AccountingService",
+          "name": "Purple Hat",
+          "url": "https://purplehat.fun/",
+          "areaServed": "Worldwide",
+          "founder": {
+            "@type": "Person",
+            "name": "Benjamin Voges",
+            "jobTitle": "Chartered Accountant",
+            "honorificSuffix": "CA(SA)"
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Wilderness",
+            "addressCountry": "ZA"
+          }
+        },
+        {
+          "@type": "ProfessionalService",
+          "name": "Purple Hat",
+          "url": "https://purplehat.fun/",
+          "founder": {
+            "@type": "Person",
+            "name": "Benjamin Voges",
+            "jobTitle": "Chartered Accountant",
+            "honorificSuffix": "CA(SA)"
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Wilderness",
+            "addressCountry": "ZA"
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -261,7 +332,7 @@
   <header id="nav" class="fixed inset-x-0 top-0 z-50">
     <div class="mx-auto flex h-[4.5rem] w-full max-w-page items-center justify-between gap-4 px-5 sm:px-8">
       <a href="#top" class="flex min-w-0 items-center gap-2.5">
-        <img src="logo.png?v=4" alt="" class="h-11 w-11 object-contain" width="44" height="44">
+        <img src="logo.png?v=4" alt="Purple Hat logo" class="h-11 w-11 object-contain" width="44" height="44">
         <span class="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">Purple Hat</span>
       </a>
       <nav class="hidden items-center gap-8 md:flex" aria-label="Primary">
@@ -282,7 +353,11 @@
       </nav>
       <div class="flex items-center gap-2">
         <a class="btn btn-ghost !min-h-10 hidden !px-4 text-sm xl:inline-flex" href="/login" data-thinking-hat>Client login</a>
-        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm min-[360px]:inline-flex" href="#book">Book a call</a>
+        <a class="btn btn-primary !min-h-10 hidden !px-4 text-sm md:inline-flex" href="#book">Book a call</a>
+        <div class="theme-toggle" role="group" aria-label="Colour theme">
+          <button type="button" data-set-theme="light">Light</button>
+          <button type="button" data-set-theme="dark">Dark</button>
+        </div>
         <button id="nav-toggle" class="relative h-11 w-11 md:hidden" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
           <span class="line line-1"></span>
           <span class="line line-2"></span>
@@ -320,18 +395,18 @@
       <div class="order-2 min-w-0 max-w-xl lg:order-1">
         <p class="pill mb-5">Online accounting practice</p>
         <h1 class="font-display text-[clamp(2.5rem,5vw,4.35rem)] font-extrabold leading-[1.05] tracking-tight text-ink">
-          Online accounting for nomads and digital businesses.
+          Management accounting for businesses that work from anywhere.
         </h1>
         <p class="mt-5 text-lg leading-relaxed text-mute sm:text-xl">
-          Clear monthly reports, real-time dashboards and a Chartered Accountant in your corner, wherever you're working from.
+          Monthly management reports, a monthly close, and a live dashboard. Outsourced management accounting from a Chartered Accountant, remote, in any time zone.
         </p>
         <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <a class="btn btn-primary" href="#book">Book a free call</a>
           <a class="btn btn-ghost" href="/login" data-thinking-hat>Client login</a>
           <a class="btn btn-ghost" href="#services">View services</a>
         </div>
-        <p class="mt-8 text-sm font-medium text-[#7c7394]">
-          Fully remote <span class="px-1.5 text-[#c4b5fd]">/</span> Any time zone
+        <p class="mt-8 text-sm font-medium text-mute">
+          Fully remote <span class="px-1.5 text-heading">/</span> Any time zone
         </p>
       </div>
       <div class="order-1 flex min-w-0 justify-center lg:order-2">
@@ -351,7 +426,7 @@
               Clear books. A clear month. Wherever you work.
             </p>
             <p class="mt-5 text-lg leading-relaxed">
-              Purple Hat is an online accounting practice for digital nomads and online businesses. We keep the books, send a clear monthly report, and put a live dashboard on any device. A Chartered Accountant reviews the work and is your point of contact. We work with online businesses anywhere in the world. No office visits. Simple monthly pricing.
+              Purple Hat is an online accounting practice for businesses that work from anywhere. We keep the books, prepare monthly management reports and financial reporting you can read, and put a live dashboard on any device. A Chartered Accountant reviews the monthly close and is your point of contact. The work is remote, in any time zone. No office visits. Simple monthly pricing.
             </p>
           </div>
         </div>
@@ -389,19 +464,19 @@
         </div>
         <div class="mt-10 grid gap-4 md:grid-cols-3">
           <article class="card reveal p-7" style="animation-delay: 0.05s">
-            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">01</p>
+            <p class="font-display text-4xl font-extrabold text-heading">01</p>
             <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">KEEP</h3>
             <p class="mt-1 text-sm font-semibold text-plum">Accurate books.</p>
             <p class="mt-3 leading-relaxed">Transactions are recorded automatically wherever possible, and a Chartered Accountant reconciles and closes your books every month.</p>
           </article>
           <article class="card reveal p-7" style="animation-delay: 0.12s">
-            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">02</p>
+            <p class="font-display text-4xl font-extrabold text-heading">02</p>
             <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">REVEAL</h3>
             <p class="mt-1 text-sm font-semibold text-plum">Useful reports.</p>
             <p class="mt-3 leading-relaxed">Tailored monthly reports that turn your numbers into clear, practical insights, so you can see what matters at a glance.</p>
           </article>
           <article class="card reveal p-7" style="animation-delay: 0.18s">
-            <p class="font-display text-4xl font-extrabold text-[#c4b5fd]">03</p>
+            <p class="font-display text-4xl font-extrabold text-heading">03</p>
             <h3 class="mt-4 font-display text-2xl font-extrabold tracking-wide text-ink">AMPLIFY</h3>
             <p class="mt-1 text-sm font-semibold text-plum">Less admin.</p>
             <p class="mt-3 leading-relaxed">We build and integrate smart solutions that streamline your business and accounting information.</p>
@@ -432,7 +507,7 @@
                   <figure class="shot-slide is-active" data-caption="Top income, top expenses, and what is owed.">
                     <picture>
                       <source srcset="images/app/dashboard-mix.webp" type="image/webp">
-                      <img src="images/app/dashboard-mix.png" alt="PurpleHat Demo top income, top expenses, aged receivables, and aged payables." width="1440" height="900" decoding="async">
+                      <img loading="lazy" src="images/app/dashboard-mix.png" alt="PurpleHat Demo top income, top expenses, aged receivables, and aged payables." width="1440" height="900" decoding="async">
                     </picture>
                   </figure>
                   <figure class="shot-slide" data-caption="Return on ad spend, cost, and the trend.">
@@ -474,7 +549,7 @@
                   <figure class="shot-slide is-active" data-caption="Executive summary for the month and the year.">
                     <picture>
                       <source srcset="images/app/report-summary.webp" type="image/webp">
-                      <img src="images/app/report-summary.png" alt="Executive summary for PurpleHat Demo for December 2026, with cash and profit for December, November, October, and the year to date." width="1440" height="900" decoding="async">
+                      <img loading="lazy" src="images/app/report-summary.png" alt="Executive summary for PurpleHat Demo for December 2026, with cash and profit for December, November, October, and the year to date." width="1440" height="900" decoding="async">
                     </picture>
                   </figure>
                   <figure class="shot-slide" data-caption="Tailored analysis of income and expenses">
@@ -511,7 +586,7 @@
                   <figure class="shot-slide is-active" data-caption="Financial position at the month end.">
                     <picture>
                       <source srcset="images/app/statement-position.webp" type="image/webp">
-                      <img src="images/app/statement-position.png" alt="Financial position for PurpleHat Demo at 31 December 2026." width="1440" height="900" decoding="async">
+                      <img loading="lazy" src="images/app/statement-position.png" alt="Financial position for PurpleHat Demo at 31 December 2026." width="1440" height="900" decoding="async">
                     </picture>
                   </figure>
                   <figure class="shot-slide" data-caption="Profit and loss for the year to date.">
@@ -551,7 +626,7 @@
                   <figure class="shot-slide is-active" data-caption="The dashboard on a phone.">
                     <picture>
                       <source srcset="images/app/mobile-dashboard.webp" type="image/webp">
-                      <img src="images/app/mobile-dashboard.png" alt="Phone view of the PurpleHat Demo dashboard, with cash, revenue, expenses, receivables, and payables." width="390" height="844" decoding="async">
+                      <img loading="lazy" src="images/app/mobile-dashboard.png" alt="Phone view of the PurpleHat Demo dashboard, with cash, revenue, expenses, receivables, and payables." width="390" height="844" decoding="async">
                     </picture>
                   </figure>
                   <figure class="shot-slide" data-caption="Switch the month, or look at the year to date.">
@@ -586,7 +661,7 @@
             <h3 class="mt-3 font-display text-2xl font-extrabold text-ink">Monthly accounting</h3>
             <p class="mt-3 leading-relaxed">Bank reconciliations, tidy records, and a monthly close. One monthly fee.</p>
           </article>
-          <article id="ai-integrations" class="card relative reveal scroll-mt-28 border-[#c4b5fd] bg-[#f5f0ff] p-7">
+          <article id="ai-integrations" class="card relative reveal scroll-mt-28 border-hairline bg-band p-7">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-plum">Your website</p>
             <h3 class="mt-3 font-display text-2xl font-extrabold text-ink"><a class="after:absolute after:inset-0 hover:text-plum" href="integrations.html">AI integrations</a></h3>
             <p class="mt-3 leading-relaxed">Smart integrations that link your site's sales and bookings to your accounts, reviewed by a real accountant.</p>
@@ -596,30 +671,30 @@
     </section>
 
     <section id="book" class="scroll-mt-24 px-5 pb-20 sm:px-8 md:pb-28">
-      <div class="mx-auto grid max-w-page items-center gap-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#6d28d9] to-[#4c1d95] px-7 py-12 text-white shadow-soft sm:px-12 lg:grid-cols-[1fr_220px] lg:py-14">
+      <div class="mx-auto grid max-w-page items-center gap-8 overflow-hidden book-band px-7 py-12 text-white shadow-soft sm:px-12 lg:grid-cols-[1fr_220px] lg:py-14">
         <div>
-          <p class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-[#ddd6fe]">Engagement</p>
+          <p class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-mute">Engagement</p>
           <h2 class="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">Book a free call.</h2>
-          <p class="mt-4 max-w-xl text-lg text-[#ede9fe]">Tell me where you work from, and what you need each month. We work across time zones.</p>
+          <p class="mt-4 max-w-xl text-lg text-mute">Tell me where you work from, and what you need each month. We work across time zones.</p>
           <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <a class="btn bg-white text-[#4c1d95] shadow-none hover:bg-[#f5f3ff]" href="mailto:info@purplehat.fun?subject=Book%20a%20free%20call%20with%20Purple%20Hat">Book a free call</a>
-            <a class="btn border border-white/40 text-white shadow-none hover:bg-white/10" href="/login" data-thinking-hat>Client login</a>
-            <a class="font-semibold text-white underline decoration-white/40 underline-offset-4" href="mailto:info@purplehat.fun">info@purplehat.fun</a>
+            <a class="btn btn-primary" href="mailto:info@purplehat.fun?subject=Book%20a%20free%20call%20with%20Purple%20Hat">Book a free call</a>
+            <a class="btn btn-ghost" href="/login" data-thinking-hat>Client login</a>
+            <a class="font-semibold underline underline-offset-4" href="mailto:info@purplehat.fun">info@purplehat.fun</a>
           </div>
         </div>
-        <img src="logo.png?v=4" alt="" class="mx-auto hidden max-h-48 w-auto lg:block" width="180" height="176">
+        <img loading="lazy" src="logo.png?v=4" alt="Purple Hat logo" class="mx-auto hidden max-h-48 w-auto lg:block" width="180" height="176">
       </div>
     </section>
   </main>
 
-  <footer id="contact" class="scroll-mt-24 bg-[#2a1548] px-5 py-16 text-[#ddd6fe] sm:px-8">
+  <footer id="contact" class="scroll-mt-24 bg-[#2a1548] px-5 py-16 text-mute sm:px-8">
     <div class="mx-auto grid max-w-page gap-12 sm:grid-cols-2 lg:grid-cols-12">
       <div class="lg:col-span-4">
         <a href="#top" class="inline-flex items-center gap-2.5 text-white">
-          <img src="logo.png?v=4" alt="" class="h-12 w-12 object-contain" width="48" height="48">
+          <img loading="lazy" src="logo.png?v=4" alt="Purple Hat logo" class="h-12 w-12 object-contain" width="48" height="48">
           <span class="font-display text-xl font-extrabold">Purple Hat</span>
         </a>
-        <p class="mt-4 max-w-xs text-sm leading-relaxed text-[#c4b5fd]">Online accounting for people who work from anywhere.</p>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed text-heading">Online accounting for people who work from anywhere.</p>
       </div>
       <div class="lg:col-span-3">
         <h2 class="font-display text-sm font-extrabold uppercase tracking-[0.14em] text-white">Services</h2>
@@ -648,7 +723,7 @@
         </ul>
       </div>
     </div>
-    <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-[#a78bfa] sm:flex-row sm:items-center sm:justify-between">
+    <div class="mx-auto mt-12 flex max-w-page flex-col gap-3 border-t border-white/10 pt-6 text-xs text-mute sm:flex-row sm:items-center sm:justify-between">
       <p>© 2026 Purple Hat. All rights reserved.</p>
       <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span>Legal &amp; info:</span>
@@ -671,7 +746,7 @@
     </form>
     <div class="shot-lightbox">
       <button type="button" class="shot-arrow shot-prev" id="shot-prev" aria-label="Previous slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 5 7 10l5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <img id="shot-full" alt="">
+      <img loading="lazy" id="shot-full" alt="">
       <div id="shot-live" class="shot-live-full" data-statements></div>
       <button type="button" class="shot-arrow shot-next" id="shot-next" aria-label="Next slide"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 5 13 10l-5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
@@ -931,5 +1006,6 @@
     })();
   </script>
   <script type="module" src="/statements-preview.js"></script>
+  <script src="assets/theme.js"></script>
 </body>
 </html>

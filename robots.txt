@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /reports
+Disallow: /statements
+Disallow: /admin
+Disallow: /billing
+Disallow: /request
+Disallow: /business
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /print
+
+Sitemap: https://purplehat.fun/sitemap.xml
