@@ -50,78 +50,78 @@
   <style>
     html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
     body {
-      margin: 0; overflow-x: clip; color: #4c4560; font-family: Outfit, sans-serif;
+      margin: 0; overflow-x: clip; color: var(--text-mute); font-family: Barlow, sans-serif;
       background:
-        radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
-        radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
-        #f7f4ff;
+        radial-gradient(900px 520px at 88% -10%, rgba(31, 56, 100, 0.45), transparent 60%),
+        radial-gradient(720px 480px at -10% 30%, rgba(31, 56, 100, 0.38), transparent 55%),
+        var(--bg);
       -webkit-font-smoothing: antialiased;
     }
-    h1, h2, h3, .font-display { font-family: Nunito, sans-serif; }
-    :focus-visible { outline: 2px solid #7c3aed; outline-offset: 3px; }
-    .skip { position: absolute; left: 1rem; top: -4rem; z-index: 80; background: #2a1548; color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px; }
+    h1, h2, h3, .font-display { font-family: "Barlow Condensed", sans-serif; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .skip { position: absolute; left: 1rem; top: -4rem; z-index: 80; background: var(--heading); color: #fff; padding: 0.5rem 0.9rem; border-radius: 999px; }
     .skip:focus { top: 1rem; }
     #nav { background: rgba(247, 244, 255, 0.72); backdrop-filter: blur(16px); }
-    #nav.is-scrolled { background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(109,40,217,.08); box-shadow: 0 10px 30px rgba(76,29,149,.06); }
-    .nav-link { color: #4c4560; font-weight: 500; }
-    .nav-link:hover, .nav-link.is-active { color: #5b21b6; }
+    #nav.is-scrolled { background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(31, 56, 100,.08); box-shadow: 0 10px 30px rgba(31, 56, 100,.06); }
+    .nav-link { color: var(--text-mute); font-weight: 500; }
+    .nav-link:hover, .nav-link.is-active { color: var(--heading); }
     .nav-item { position: relative; }
     .nav-item::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 0.9rem; }
-    .nav-menu { display: none; position: absolute; top: calc(100% + 0.7rem); left: 50%; translate: -50% 0; min-width: 15rem; padding: 0.4rem; border-radius: 1rem; background: #fff; border: 1px solid rgba(109,40,217,.12); box-shadow: 0 16px 40px rgba(76,29,149,.12); z-index: 60; }
+    .nav-menu { display: none; position: absolute; top: calc(100% + 0.7rem); left: 50%; translate: -50% 0; min-width: 15rem; padding: 0.4rem; border-radius: 1rem; background: #fff; border: 1px solid rgba(31, 56, 100,.12); box-shadow: 0 16px 40px rgba(31, 56, 100,.12); z-index: 60; }
     .nav-item:hover .nav-menu, .nav-item:focus-within .nav-menu { display: block; }
-    .nav-menu a { display: block; border-radius: 0.75rem; padding: 0.65rem 0.8rem; color: #2a1548; font-weight: 600; }
-    .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: #f5f0ff; color: #5b21b6; }
+    .nav-menu a { display: block; border-radius: 0.75rem; padding: 0.65rem 0.8rem; color: var(--heading); font-weight: 600; }
+    .nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--band); color: var(--heading); }
     .chev { transition: transform 0.2s ease; }
     .is-expanded .chev { transform: rotate(180deg); }
-    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px; font-family: Nunito, sans-serif; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease; }
-    .btn-primary { color: #fff; background: linear-gradient(180deg, #8b5cf6, #6d28d9); box-shadow: 0 10px 24px rgba(109,40,217,.28); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0.7rem 1.3rem; border-radius: 999px; font-family: "Barlow Condensed", sans-serif; font-weight: 800; transition: transform .2s ease, box-shadow .2s ease; }
+    .btn-primary { color: #fff; background: linear-gradient(180deg, var(--accent), var(--accent)); box-shadow: 0 10px 24px rgba(31, 56, 100,.28); }
     .btn-primary:hover { transform: translateY(-2px); }
-    .btn-ghost { color: #4c1d95; background: #fff; border: 1px solid rgba(109,40,217,.18); }
-    .card { background: rgba(255,255,255,.9); border: 1px solid rgba(109,40,217,.08); box-shadow: 0 16px 40px rgba(76,29,149,.07); border-radius: 1.5rem; }
-    .pill { display: inline-flex; border-radius: 999px; background: #fff; color: #6d28d9; border: 1px solid rgba(109,40,217,.12); font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
-    .field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; font-weight: 600; color: #2a1548; }
+    .btn-ghost { color: var(--heading); background: #fff; border: 1px solid rgba(31, 56, 100,.18); }
+    .card { background: rgba(255,255,255,.9); border: 1px solid rgba(31, 56, 100,.08); box-shadow: 0 16px 40px rgba(31, 56, 100,.07); border-radius: 1.5rem; }
+    .pill { display: inline-flex; border-radius: 999px; background: #fff; color: var(--accent); border: 1px solid rgba(31, 56, 100,.12); font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; font-weight: 600; color: var(--heading); }
     .field input, .field select, .field textarea {
       width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box;
-      font: inherit; font-weight: 400; color: #2a1548; background: #fff;
-      border: 1px solid rgba(109,40,217,.2); border-radius: 0.9rem; min-height: 3rem; padding: 0.65rem 0.85rem;
+      font: inherit; font-weight: 400; color: var(--heading); background: #fff;
+      border: 1px solid rgba(31, 56, 100,.2); border-radius: 0.9rem; min-height: 3rem; padding: 0.65rem 0.85rem;
     }
     .field textarea { min-height: 6.5rem; resize: vertical; }
     .field input[aria-invalid="true"], .field select[aria-invalid="true"], .cal[aria-invalid="true"] { border-color: #9f1239; }
     .field input[type="hidden"] { display: none; }
-    .cal { min-width: 0; max-width: 100%; border: 1px solid rgba(109,40,217,.2); border-radius: 1rem; background: #fff; padding: 0.85rem; }
+    .cal { min-width: 0; max-width: 100%; border: 1px solid rgba(31, 56, 100,.2); border-radius: 1rem; background: #fff; padding: 0.85rem; }
     .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
     .cal-nav {
-      width: 2.25rem; height: 2.25rem; border-radius: 999px; border: 1px solid rgba(109,40,217,.16);
-      background: #fff; color: #4c1d95; font-family: Nunito, sans-serif; font-weight: 800; font-size: 1.2rem; line-height: 1;
+      width: 2.25rem; height: 2.25rem; border-radius: 999px; border: 1px solid rgba(31, 56, 100,.16);
+      background: #fff; color: var(--heading); font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 1.2rem; line-height: 1;
     }
     .cal-nav:disabled { opacity: 0.35; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.2rem; margin-top: 0.65rem; }
-    .cal-dow { text-align: center; font-size: 0.72rem; font-weight: 700; color: #7c7394; padding: 0.15rem 0; }
+    .cal-dow { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--text-mute); padding: 0.15rem 0; }
     .cal-day, .cal-pad {
       aspect-ratio: 1; min-width: 0; border: 0; border-radius: 0.7rem; background: transparent;
-      font-family: Nunito, sans-serif; font-weight: 800; font-size: 0.9rem; color: #2a1548;
+      font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--heading);
     }
     .cal-day { cursor: pointer; }
-    .cal-day:hover:not(:disabled) { background: #f5f0ff; }
-    .cal-day:disabled { color: #d4d0e0; cursor: default; }
-    .cal-day.is-today:not(.is-selected) { box-shadow: inset 0 0 0 1.5px #c4b5fd; }
-    .cal-day.is-selected { background: #6d28d9; color: #fff; }
+    .cal-day:hover:not(:disabled) { background: var(--band); }
+    .cal-day:disabled { color: var(--hairline); cursor: default; }
+    .cal-day.is-today:not(.is-selected) { box-shadow: inset 0 0 0 1.5px var(--accent); }
+    .cal-day.is-selected { background: var(--accent); color: #fff; }
     .time-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.85rem; }
     .time-btn {
       min-height: 2.5rem; padding: 0.35rem 0.9rem; border-radius: 999px;
-      border: 1px solid rgba(109,40,217,.2); background: #fff; color: #4c1d95;
-      font-family: Nunito, sans-serif; font-weight: 800;
+      border: 1px solid rgba(31, 56, 100,.2); background: #fff; color: var(--heading);
+      font-family: "Barlow Condensed", sans-serif; font-weight: 800;
     }
-    .time-btn.is-selected { background: #6d28d9; color: #fff; border-color: #6d28d9; }
-    .cal-note { margin-top: 0.7rem; font-size: 0.8rem; font-weight: 500; color: #5c5470; }
+    .time-btn.is-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .cal-note { margin-top: 0.7rem; font-size: 0.8rem; font-weight: 500; color: var(--text-mute); }
     .error-list { color: #9f1239; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 1rem; padding: 0.8rem 1rem; }
-    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: #4c1d95; transition: transform .3s ease, top .3s ease, opacity .2s ease; }
+    .line { position: absolute; left: 11px; right: 11px; height: 2px; border-radius: 2px; background: var(--heading); transition: transform .3s ease, top .3s ease, opacity .2s ease; }
     .line-1 { top: 15px; } .line-2 { top: 21px; } .line-3 { top: 27px; }
     .is-open .line-1 { top: 21px; transform: rotate(45deg); }
     .is-open .line-2 { opacity: 0; }
     .is-open .line-3 { top: 21px; transform: rotate(-45deg); }
-    #mobile-nav { background: #f7f4ff; }
-    .step-no { font-family: Nunito, sans-serif; font-weight: 800; color: #6d28d9; }
+    #mobile-nav { background: var(--bg); }
+    .step-no { font-family: "Barlow Condensed", sans-serif; font-weight: 800; color: var(--accent); }
     @media (prefers-reduced-motion: reduce) { .btn-primary:hover { transform: none; } }
   </style>
   <link rel="stylesheet" href="assets/site.css">
@@ -272,6 +272,11 @@
                 <div id="cal-days" class="cal-grid"></div>
                 <div id="times" class="time-row" role="group" aria-label="Times, SAST" hidden></div>
                 <p id="slot-summary" class="cal-note"></p>
+                <ul class="cal-legend" aria-label="Day key">
+                  <li><span class="cal-swatch is-available" aria-hidden="true"></span> Available</li>
+                  <li><span class="cal-swatch is-selected" aria-hidden="true"></span> Selected</li>
+                  <li><span class="cal-swatch is-unavailable" aria-hidden="true"></span> Unavailable</li>
+                </ul>
               </div>
             </div>
             <label class="field">Service
@@ -314,7 +319,7 @@
     </section>
   </main>
 
-  <footer class="bg-[#2a1548] px-5 py-14 text-mute sm:px-8">
+  <footer class="bg-[var(--heading)] px-5 py-14 text-mute sm:px-8">
     <div class="mx-auto flex max-w-page flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <a href="index.html" class="inline-flex items-center gap-2 text-white">
         <img src="logo.png?v=4" alt="Purple Hat logo" class="h-10 w-10 object-contain" width="40" height="40">
@@ -325,7 +330,8 @@
     </div>
   </footer>
 
-  <script>
+  <script type="module">
+    import { dayState } from "./assets/booking-calendar.js";
     (function () {
       const nav = document.getElementById("nav");
       const toggle = document.getElementById("nav-toggle");
@@ -450,16 +456,15 @@
           const iso = view.y + "-" + String(view.m + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
           const button = document.createElement("button");
           button.type = "button";
-          button.className = "cal-day";
+          const state = dayState({ iso, todayKey, openDays, selectedDate });
+          button.className = state.className;
           button.textContent = String(day);
-          const open = openDays.has(iso);
-          button.disabled = !open;
-          if (iso === todayKey) button.classList.add("is-today");
-          if (iso === selectedDate) button.classList.add("is-selected");
-          button.setAttribute("aria-pressed", iso === selectedDate ? "true" : "false");
+          button.disabled = state.disabled;
+          button.setAttribute("aria-disabled", state.ariaDisabled);
+          button.setAttribute("aria-pressed", state.selected ? "true" : "false");
           const longLabel = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }).format(new Date(Date.UTC(view.y, view.m, day)));
-          button.setAttribute("aria-label", open ? longLabel : longLabel + ", unavailable");
-          if (open) button.addEventListener("click", () => {
+          button.setAttribute("aria-label", state.available ? longLabel : longLabel + ", unavailable");
+          if (state.available) button.addEventListener("click", () => {
             selectedDate = iso;
             syncSlot();
             renderCalendar();
