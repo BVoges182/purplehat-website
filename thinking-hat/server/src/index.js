@@ -1978,7 +1978,8 @@ if (siteRoot) {
   app.use("/assets", express.static(path.join(siteRoot, "assets"), {
     index: false,
     dotfiles: "deny",
-    fallthrough: false,
+    // The built app also serves hashed files from /assets. A missing marketing file must continue.
+    fallthrough: true,
     maxAge: "1h",
   }));
   app.use("/images", express.static(path.join(siteRoot, "images"), {

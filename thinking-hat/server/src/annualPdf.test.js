@@ -374,7 +374,9 @@ test("statement text is one size and the download buttons match management repor
     await (await waitPublished(server.base, session.token)).arrayBuffer();
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1100 });
+    await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "light" }]);
     await page.goto(`${server.base}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForSelector('input[type="email"]', { timeout: 30000 });
     await page.type('input[type="email"]', "demo@purplehat.fun");
     await page.type('input[type="password"]', demoPassword);
     await page.click('button[type="submit"]');
