@@ -4,6 +4,7 @@ import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -89,6 +90,19 @@ function stop(child) {
   return new Promise((resolve) => child.once("exit", resolve));
 }
 
+function demoPasswordHash(dataDir) {
+  const file = path.join(dataDir, "data", "thinking-hat.sqlite");
+  const database = new DatabaseSync(file);
+  try {
+    const row = database.prepare(
+      "SELECT password_hash FROM users WHERE lower(trim(email)) = 'demo@purplehat.fun'",
+    ).get();
+    return row ? String(row.password_hash) : "";
+  } finally {
+    database.close();
+  }
+}
+
 async function login(port, email, password) {
   const response = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
     method: "POST",
@@ -99,7 +113,7 @@ async function login(port, email, password) {
   return { status: response.status, token: body.token || "", id: body.user?.id || 0 };
 }
 
-test("an admin change to the demo password survives a restart", { timeout: 60000 }, async () => {
+test("seed and startup leave an existing demo password hash unchanged", { timeout: 60000 }, async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "ph-demo-password-"));
   try {
     const firstPort = await freePort(8931);
@@ -129,10 +143,17 @@ test("an admin change to the demo password survives a restart", { timeout: 60000
       await stop(first.child);
     }
 
+    const hashAfterChange = demoPasswordHash(dataDir);
+    assert.ok(hashAfterChange);
+
     const secondPort = await freePort(firstPort + 1);
-    const second = startServer(secondPort, dataDir);
+    const second = startServer(secondPort, dataDir, {
+      DEMO_PASSWORD: "demo-client-replacement",
+      DEMO_AUTO_RESET: "true",
+    });
     try {
       assert.equal(await waitHealth(secondPort, second.child), true, second.safeLog());
+      assert.equal(demoPasswordHash(dataDir), hashAfterChange);
       assert.equal((await login(secondPort, "demo@purplehat.fun", changedPassword)).status, 200);
       assert.equal((await login(secondPort, "demo@purplehat.fun", originalPassword)).status, 401);
     } finally {
@@ -140,11 +161,15 @@ test("an admin change to the demo password survives a restart", { timeout: 60000
     }
 
     const thirdPort = await freePort(secondPort + 1);
-    const third = startServer(thirdPort, dataDir, { DEMO_AUTO_RESET: "true" });
+    const third = startServer(thirdPort, dataDir, {
+      DEMO_PASSWORD: "demo-client-another",
+      DEMO_AUTO_RESET: "1",
+    });
     try {
       assert.equal(await waitHealth(thirdPort, third.child), true, third.safeLog());
-      assert.equal((await login(thirdPort, "demo@purplehat.fun", originalPassword)).status, 200);
-      assert.equal((await login(thirdPort, "demo@purplehat.fun", changedPassword)).status, 401);
+      assert.equal(demoPasswordHash(dataDir), hashAfterChange);
+      assert.equal((await login(thirdPort, "demo@purplehat.fun", changedPassword)).status, 200);
+      assert.equal((await login(thirdPort, "demo@purplehat.fun", originalPassword)).status, 401);
     } finally {
       await stop(third.child);
     }

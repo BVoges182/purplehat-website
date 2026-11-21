@@ -198,26 +198,13 @@ const DEFAULT_PROFILE = {
 
 const DEMO_CLIENT_EMAIL = "demo@purplehat.fun";
 
-function demoAutoResetEnabled() {
-  return /^(1|true|yes)$/i.test(String(process.env.DEMO_AUTO_RESET || "").trim());
-}
-
 function ensureDemoClient() {
-  const password = String(process.env.DEMO_PASSWORD || "");
   const existing = db.prepare(
-    "SELECT id, password_hash FROM users WHERE lower(trim(email)) = ?",
+    "SELECT id FROM users WHERE lower(trim(email)) = ?",
   ).get(DEMO_CLIENT_EMAIL);
-  if (existing) {
-    // A restart must not put the env password back. DEMO_AUTO_RESET=true is the only exception.
-    if (!demoAutoResetEnabled() || password.length < 8) return;
-    if (bcrypt.compareSync(password, existing.password_hash)) return;
-    db.prepare("UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?").run(
-      bcrypt.hashSync(password, 10),
-      nowIso(),
-      existing.id,
-    );
-    return;
-  }
+  // An existing demo account keeps its password. Seed and startup never rehash it.
+  if (existing) return;
+  const password = String(process.env.DEMO_PASSWORD || "");
   if (password.length < 8) return;
   const ts = nowIso();
   db.prepare(
