@@ -11,7 +11,7 @@
     "install:trader": "node scripts/install-trader.mjs",
     "test:combined": "node thinking-hat/server/src/combined-smoke.mjs",
     "assemble:combined": "node scripts/assemble-combined.mjs",
-    "test": "node scripts/check-prod-deps.mjs && node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js thinking-hat/server/src/insights.test.js thinking-hat/server/src/passwordReset.test.js thinking-hat/server/src/contactForm.test.js thinking-hat/client/src/statementComparison.test.js thinking-hat/client/src/statementMobile.test.js thinking-hat/client/src/safePath.test.js thinking-hat/server/src/managementStatementNotes.test.js thinking-hat/server/src/mailSecurity.test.js thinking-hat/server/src/securityRegression.test.js thinking-hat/server/src/demoPassword.test.js"
+    "test": "node scripts/check-prod-deps.mjs && node --test thinking-hat/server/src/templateBuilder.test.js thinking-hat/server/src/templateSections.test.js thinking-hat/server/src/inviteEmail.test.js thinking-hat/server/src/insights.test.js thinking-hat/server/src/passwordReset.test.js thinking-hat/server/src/contactForm.test.js thinking-hat/client/src/statementComparison.test.js thinking-hat/client/src/statementMobile.test.js thinking-hat/client/src/safePath.test.js thinking-hat/server/src/managementStatementNotes.test.js thinking-hat/server/src/annualPdfGuard.test.js thinking-hat/server/src/mailSecurity.test.js thinking-hat/server/src/securityRegression.test.js thinking-hat/server/src/demoPassword.test.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

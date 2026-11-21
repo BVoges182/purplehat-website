@@ -11,7 +11,7 @@
     "postinstall": "node scripts/build-client.mjs",
     "start": "node server/src/index.js",
     "install:all": "npm install --prefix server && npm install --prefix client",
-    "test": "node ../scripts/check-prod-deps.mjs && node --test server/src/templateBuilder.test.js server/src/templateSections.test.js server/src/inviteEmail.test.js server/src/annualWorkbook.test.js server/src/annualPdf.test.js server/src/annualPdfProduction.test.js server/src/demoPassword.test.js server/src/mailSecurity.test.js server/src/securityRegression.test.js server/src/managementStatementNotes.test.js client/src/statementMobile.test.js client/src/safePath.test.js"
+    "test": "node ../scripts/check-prod-deps.mjs && node --test server/src/templateBuilder.test.js server/src/templateSections.test.js server/src/inviteEmail.test.js server/src/annualWorkbook.test.js server/src/annualPdf.test.js server/src/annualPdfProduction.test.js server/src/demoPassword.test.js server/src/mailSecurity.test.js server/src/securityRegression.test.js server/src/managementStatementNotes.test.js server/src/annualPdfGuard.test.js client/src/statementMobile.test.js client/src/safePath.test.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

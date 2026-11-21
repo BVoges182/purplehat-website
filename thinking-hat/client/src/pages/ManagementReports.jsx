@@ -89,7 +89,7 @@ export default function ManagementReports() {
                   <p className="font-display text-lg font-extrabold text-ink">{reportMonthLabel(report.month)}</p>
                   <p className="mt-1 text-sm text-mute">{report.periodLabel}</p>
                 </Link>
-                <Button type="button" variant="ghost" disabled={downloading === report.month} onClick={() => download(report)}>Download PDF</Button>
+                <Button type="button" variant="navy" disabled={downloading === report.month} onClick={() => download(report)}>Download PDF</Button>
               </li>
             ))}
           </ul>

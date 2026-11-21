@@ -15,13 +15,13 @@ const logoPath = [
 const MARGIN_X = 42;
 const PAGE_FOOTER = 72;
 const BRAND = {
-  ink: "#1a1a1a",
-  mute: "#4a4a4a",
-  body: "#2b2b2b",
-  header: "#f2f2f2",
-  band: "#f5f5f5",
-  rule: "#1a1a1a",
-  line: "#d9d9d9",
+  ink: "#1F3864",
+  mute: "#4A4F57",
+  body: "#0B0B0B",
+  header: "#FFFFFF",
+  band: "#CCEEFF",
+  rule: "#1F3864",
+  line: "#D5D8DE",
 };
 const AGING_TILES = ["#e8e8e8", "#f0f0f0", "#f5f5f5", "#fafafa"];
 const AGING_TILE_HEIGHT = 54;
@@ -77,33 +77,33 @@ export function reportFigure(value, format) {
 }
 
 const DEMO_DONUT_COLOURS = [
-  "#2a1548",
-  "#31135f",
-  "#3c1778",
-  "#4c1d95",
-  "#5b21b6",
-  "#6d28d9",
-  "#7c3aed",
-  "#8b5cf6",
-  "#9674f8",
-  "#a78bfa",
-  "#b09afc",
-  "#c4b5fd",
+  "#1F3864",
+  "#2C4A73",
+  "#3E5C86",
+  "#4A5A70",
+  "#6A7A90",
+  "#8B95A3",
+  "#9AA3B0",
+  "#B7C0CC",
+  "#C5CED8",
+  "#D5D8DE",
+  "#1A2B42",
+  "#0E1A2E",
 ];
 
 const CLASSIC_DONUT_COLOURS = [
-  "#c4b5fd",
-  "#b09afc",
-  "#a78bfa",
-  "#9674f8",
-  "#8b5cf6",
-  "#7c3aed",
-  "#6d28d9",
-  "#5b21b6",
-  "#4c1d95",
-  "#3c1778",
-  "#31135f",
-  "#2a1548",
+  "#D5D8DE",
+  "#C5CED8",
+  "#B7C0CC",
+  "#9AA3B0",
+  "#8B95A3",
+  "#6A7A90",
+  "#4A5A70",
+  "#3E5C86",
+  "#2C4A73",
+  "#1F3864",
+  "#1A2B42",
+  "#0E1A2E",
 ];
 
 export function reportPdfFilename(businessName, month) {
@@ -300,10 +300,10 @@ export function readManagementReport(userId, month) {
 }
 
 function registerFonts(doc) {
-  doc.registerFont("Nunito", path.join(fontDir, "Nunito-Regular.ttf"));
-  doc.registerFont("Nunito-ExtraBold", path.join(fontDir, "Nunito-ExtraBold.ttf"));
-  doc.registerFont("Outfit", path.join(fontDir, "Outfit-Regular.ttf"));
-  doc.registerFont("Outfit-SemiBold", path.join(fontDir, "Outfit-SemiBold.ttf"));
+  doc.registerFont("Nunito", path.join(fontDir, "Barlow-Regular.ttf"));
+  doc.registerFont("Nunito-ExtraBold", path.join(fontDir, "BarlowCondensed-Bold.ttf"));
+  doc.registerFont("Outfit", path.join(fontDir, "Barlow-Regular.ttf"));
+  doc.registerFont("Outfit-SemiBold", path.join(fontDir, "Barlow-SemiBold.ttf"));
 }
 
 export function renderManagementReportPdf(report, user) {
@@ -836,7 +836,7 @@ function drawStatementHeader(doc, section, y, left, width, style) {
   hline(doc, left, y + headerHeight - 0.6, width, BRAND.line, 0.9);
   const topPad = 6;
   if (section.labelHeader) {
-    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.ink);
     doc.text(headerText(section.labelHeader), left + 6, y + topPad, {
       width: labelWidth - 12,
       height: headerHeight - topPad - 4,
@@ -847,7 +847,7 @@ function drawStatementHeader(doc, section, y, left, width, style) {
     const unit = units[index];
     const boxX = x + 3;
     const boxWidth = valueWidth - 8;
-    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.ink);
     const heading = headerText(column);
     const headingWidth = doc.widthOfString(heading);
     doc.text(heading, boxX, y + topPad, {
@@ -871,7 +871,7 @@ function drawStatementHeader(doc, section, y, left, width, style) {
 function paintStatementRow(doc, row, y, left, width, labelWidth, valueWidth, columns, style, emphasized, rule) {
   const rowHeight = measureRow(doc, row, labelWidth, style);
   const heading = row.kind === "heading";
-  if (!heading && rule.stripe % 2 === 0) fillRect(doc, left, y, width, rowHeight, BRAND.band);
+  if (emphasized) fillRect(doc, left, y, width, rowHeight, BRAND.band);
   if (emphasized) hline(doc, left, y + 0.7, width, BRAND.rule, 1.15);
   const indent = (row.indent || 0) * 12;
   const labelInner = Math.max(10, labelWidth - 10 - indent);
@@ -948,7 +948,7 @@ function drawAgingTiles(doc, section, y, left, width) {
     const x = left + column * (tileWidth + AGING_TILE_GAP);
     const top = y + row * (AGING_TILE_HEIGHT + AGING_TILE_GAP);
     doc.save();
-    doc.roundedRect(x, top, tileWidth, AGING_TILE_HEIGHT, 10).fill(AGING_TILES[index % AGING_TILES.length]);
+    doc.roundedRect(x, top, tileWidth, AGING_TILE_HEIGHT, 0).fill(AGING_TILES[index % AGING_TILES.length]);
     doc.restore();
     doc.font("Outfit-SemiBold").fontSize(7.5).fillColor(BRAND.mute);
     doc.text(headerText(tile.label), x + 10, top + 9, {
@@ -974,13 +974,13 @@ function drawAging(doc, section, startY, left, width, style) {
   return drawTable(doc, section, y, left, width, style);
 }
 
-const OVERVIEW_PURPLE = "#6d28d9";
-const OVERVIEW_GREEN = "#059669";
-const OVERVIEW_INK = "#2a1548";
-const OVERVIEW_MUTE = "#5c5470";
+const OVERVIEW_PURPLE = "#1F3864";
+const OVERVIEW_GREEN = "#9AA3B0";
+const OVERVIEW_INK = "#0B0B0B";
+const OVERVIEW_MUTE = "#4A4F57";
 const OVERVIEW_ROSE = "#be123c";
 const OVERVIEW_EMERALD = "#047857";
-const OVERVIEW_WASH = "#f6f3ff";
+const OVERVIEW_WASH = "#CCEEFF";
 
 function overviewChange(current, prior) {
   if (typeof current !== "number" || typeof prior !== "number" || !Number.isFinite(current) || !Number.isFinite(prior) || prior === 0) return null;
@@ -1068,7 +1068,7 @@ function drawChangeLine(doc, x, y, value, priorLabel, lowerIsBetter) {
 
 function drawOverviewPanel(doc, x, y, panelWidth, panelHeight) {
   doc.save();
-  doc.roundedRect(x, y, panelWidth, panelHeight, 8).lineWidth(0.8).strokeColor("#efe9ff").stroke();
+  doc.roundedRect(x, y, panelWidth, panelHeight, 0).lineWidth(0.8).strokeColor("#D5D8DE").stroke();
   doc.restore();
 }
 
@@ -1170,8 +1170,8 @@ function drawSpendChart(doc, points, x, y, chartWidth, chartHeight) {
     const revenueH = ((point.revenue || 0) / max) * (plotH - 4);
     doc.save();
     doc.rect(plotX, plotY, plotW, plotH).clip();
-    if (spendH > 0) doc.roundedRect(baseX, plotY + plotH - spendH, barW, spendH + 3, 1.5).fill(OVERVIEW_PURPLE);
-    if (revenueH > 0) doc.roundedRect(baseX + barW + 2, plotY + plotH - revenueH, barW, revenueH + 3, 1.5).fill(OVERVIEW_GREEN);
+    if (spendH > 0) doc.roundedRect(baseX, plotY + plotH - spendH, barW, spendH + 3, 0).fill(OVERVIEW_PURPLE);
+    if (revenueH > 0) doc.roundedRect(baseX + barW + 2, plotY + plotH - revenueH, barW, revenueH + 3, 0).fill(OVERVIEW_GREEN);
     doc.restore();
     const label = overviewShortMonth(point.month);
     doc.font("Outfit").fontSize(6).fillColor(OVERVIEW_MUTE);
@@ -1218,7 +1218,7 @@ function drawEcommerceOverview(doc, points, y, left, width) {
   ].forEach((item, index) => {
     const boxX = left + index * (boxW + 8);
     doc.save();
-    doc.roundedRect(boxX, boxY, boxW, boxH, 8).fill(OVERVIEW_WASH);
+    doc.roundedRect(boxX, boxY, boxW, boxH, 0).fill(OVERVIEW_WASH);
     doc.restore();
     doc.font("Outfit-SemiBold").fontSize(8).fillColor(OVERVIEW_PURPLE);
     doc.text(item[0], boxX + 12, boxY + 10, { lineBreak: false });
@@ -1227,7 +1227,7 @@ function drawEcommerceOverview(doc, points, y, left, width) {
     drawChangeLine(doc, boxX + 12, boxY + 54, item[2], priorLabel, item[3]);
   });
   doc.save();
-  doc.roundedRect(rightX, rowY, rightWidth, boxY + boxH - rowY, 8).lineWidth(0.8).strokeColor("#efe9ff").stroke();
+  doc.roundedRect(rightX, rowY, rightWidth, boxY + boxH - rowY, 0).lineWidth(0.8).strokeColor("#D5D8DE").stroke();
   doc.restore();
   doc.font("Outfit-SemiBold").fontSize(8).fillColor(OVERVIEW_PURPLE);
   doc.text("GROWTH VS PRIOR PERIOD", rightX + 12, rowY + 12, { width: rightWidth - 24, lineBreak: false });
@@ -1264,11 +1264,11 @@ function drawEcommerceOverview(doc, points, y, left, width) {
   const insightY = chartY + chartH + 48;
   const insightH = 58;
   doc.save();
-  doc.roundedRect(left, insightY, width, insightH, 8).fill(OVERVIEW_WASH);
+  doc.roundedRect(left, insightY, width, insightH, 0).fill(OVERVIEW_WASH);
   doc.restore();
   const badgeW = 92;
   doc.save();
-  doc.roundedRect(left + width - badgeW - 10, insightY + 8, badgeW, insightH - 16, 8).fill("#ffffff");
+  doc.roundedRect(left + width - badgeW - 10, insightY + 8, badgeW, insightH - 16, 0).fill("#ffffff");
   doc.restore();
   doc.font("Outfit").fontSize(8.5).fillColor(OVERVIEW_INK);
   doc.text(ecommerceInsight(points), left + 12, insightY + 12, { width: width - badgeW - 34 });
@@ -1303,7 +1303,7 @@ function drawEcommerce(doc, section, startY, left, width, style) {
     const x = left + column * (boxWidth + boxGap);
     const top = y + row * (boxHeight + boxGap);
     doc.save();
-    doc.roundedRect(x, top, boxWidth, boxHeight, 10).fill(AGING_TILES[index % AGING_TILES.length]);
+    doc.roundedRect(x, top, boxWidth, boxHeight, 0).fill(AGING_TILES[index % AGING_TILES.length]);
     doc.restore();
     doc.font("Outfit-SemiBold").fontSize(7).fillColor(BRAND.mute);
     doc.text(headerText(item.label), x + 10, top + 7, { width: boxWidth - 20, lineBreak: false });
@@ -1327,7 +1327,7 @@ function drawEcommerce(doc, section, startY, left, width, style) {
       let size = style.headerFont;
       doc.font("Outfit-SemiBold");
       while (size > 6 && doc.fontSize(size).widthOfString(headerText(label)) > colWidth - 8) size -= 0.25;
-      doc.fontSize(size).fillColor(BRAND.mute);
+      doc.fontSize(size).fillColor(BRAND.ink);
       doc.text(headerText(label), left + colWidth * index + 3, headerY + 6, {
         width: colWidth - 6,
         align: index === 0 ? "left" : "right",
@@ -1347,7 +1347,6 @@ function drawEcommerce(doc, section, startY, left, width, style) {
       y = drawEcomHeader(y);
       stripe = 0;
     }
-    if (stripe % 2 === 0) fillRect(doc, left, y, width, rowHeight, BRAND.band);
     stripe += 1;
     const textY = y + Math.max(2, (rowHeight - style.fontSize) / 2);
     doc.font("Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
@@ -1560,7 +1559,6 @@ function drawDemoContacts(doc, section, startY, left, width) {
   lines.forEach((row, index) => {
     const colour = demoDonutColour(lines.length, index);
     const textY = y + (rowHeight - fontSize) / 2 - 1;
-    if (index % 2 === 0) fillRect(doc, left, y, listWidth, rowHeight, BRAND.band);
     doc.font("Outfit").fontSize(fontSize).fillColor(BRAND.mute);
     doc.text(String(index + 1), left, textY, { width: numberWidth, lineBreak: false });
     doc.circle(left + numberWidth + 6, y + rowHeight / 2, 3.1).fill(colour);
@@ -1578,7 +1576,7 @@ function drawDemoContacts(doc, section, startY, left, width) {
     y += rowHeight;
   });
   if (total) {
-    if (lines.length % 2 === 0) fillRect(doc, left, y, listWidth, totalHeight, BRAND.band);
+    fillRect(doc, left, y, listWidth, totalHeight, BRAND.band);
     hline(doc, left, y + 0.7, listWidth, BRAND.rule, 1.15);
     const textY = y + (totalHeight - fontSize - 1) / 2;
     doc.font("Nunito-ExtraBold").fontSize(fontSize + 1).fillColor(BRAND.ink);
@@ -1614,7 +1612,7 @@ function drawContacts(doc, section, startY, left, width, style) {
     fillRect(doc, left, headerY, frame.tableWidth, style.headerBand, BRAND.header);
     hline(doc, left, headerY + style.headerBand - 0.6, frame.tableWidth, BRAND.line, 0.9);
     const textY = headerY + 6;
-    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.mute);
+    doc.font("Outfit-SemiBold").fontSize(style.headerFont).fillColor(BRAND.ink);
     doc.text("CONTACT", left + 6, textY, { width: frame.contactWidth - 10, lineBreak: false });
     const amountHeader = section.amountHeader || "Amount";
     doc.text(headerText(amountHeader), left + frame.contactWidth, textY, {
@@ -1651,7 +1649,7 @@ function drawContacts(doc, section, startY, left, width, style) {
       stripe = 0;
     }
     const total = row.kind === "total";
-    if (stripe % 2 === 0) fillRect(doc, left, y, frame.tableWidth, rowHeight, BRAND.band);
+    if (total) fillRect(doc, left, y, frame.tableWidth, rowHeight, BRAND.band);
     if (total) hline(doc, left, y + 0.7, frame.tableWidth, BRAND.rule, 1.15);
     doc.font(total ? "Nunito-ExtraBold" : "Outfit").fontSize(style.fontSize).fillColor(BRAND.ink);
     const labelHeight = doc.heightOfString(row.label || "", { width: frame.contactWidth - 12 });
@@ -1681,7 +1679,7 @@ function drawContacts(doc, section, startY, left, width, style) {
       if (legendY + layout.legend[index] > pageLimit(doc)) return;
       const colour = donutColour(slices, index, doc);
       doc.save();
-      doc.roundedRect(chartLeft, legendY + 1, 7, 7, 2).fill(colour);
+      doc.roundedRect(chartLeft, legendY + 1, 7, 7, 0).fill(colour);
       doc.restore();
       doc.fillColor(colour).font("Outfit").fontSize(style.fontSize);
       doc.text(slice.label || "", chartLeft + 12, legendY, { width: layout.legendWidth, height: layout.legend[index] });

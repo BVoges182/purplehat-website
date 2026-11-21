@@ -477,7 +477,7 @@ test("statement text is one size and the download buttons match management repor
     for (const key of ["fontFamily", "fontSize", "fontWeight", "borderRadius", "minHeight", "paddingTop", "paddingBottom", "paddingLeft", "paddingRight", "borderTopWidth"]) {
       assert.equal(measured.button[key], reports[key], key);
     }
-    assert.match(measured.button.fontFamily, /Nunito/);
+    assert.match(measured.button.fontFamily, /Barlow/);
     assert.equal(measured.button.borderTopColor, "rgb(31, 56, 100)");
     assert.equal(measured.button.backgroundColor, "rgb(255, 255, 255)");
     assert.equal(measured.button.color, "rgb(31, 56, 100)");
