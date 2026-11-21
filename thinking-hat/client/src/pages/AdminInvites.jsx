@@ -152,7 +152,7 @@ export default function AdminInvites() {
             <Button type="submit" disabled={busy}>{busy ? "Saving…" : (sendEmail ? "Send email key" : "Create key")}</Button>
           </form>
           {created?.code ? (
-            <div className="mt-5 rounded-3xl bg-[#f5f0ff] p-4">
+            <div className="mt-5 rounded-3xl bg-band p-4">
               <p className="text-sm font-semibold text-ink">
                 {created.emailSent
                   ? `Emailed to ${created.invite.email}. The key is shown once.`
@@ -193,7 +193,7 @@ export default function AdminInvites() {
         </div>
       </div>
       {toast ? (
-        <p role="status" className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card">
+        <p role="status" className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-[#1F3864] px-4 py-3 text-sm font-semibold text-white">
           {toast}
         </p>
       ) : null}

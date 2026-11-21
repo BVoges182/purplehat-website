@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { api } from "../api";
 import { useAuth } from "../auth";
-import { Alert, Avatar, Button } from "./ui";
+import { Alert, Avatar, Button, ThemeToggle } from "./ui";
 
 const clientLinks = [
   ["/dashboard", "Dashboard"],
@@ -27,7 +27,7 @@ function Item({ to, end, children }) {
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) => `whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${isActive ? "bg-white text-plum shadow-card" : "text-mute hover:text-ink"}`}
+      className={({ isActive }) => `whitespace-nowrap px-4 py-2 font-display text-sm font-semibold uppercase tracking-[0.12em] ${isActive ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-mute hover:text-heading"}`}
     >
       {children}
     </NavLink>
@@ -92,14 +92,14 @@ export default function Shell() {
 
   return (
     <div className="app-shell min-h-screen overflow-x-clip">
-      <header ref={headerRef} className="sticky top-0 z-20 border-b border-[rgba(109,40,217,0.08)] bg-[rgba(247,244,255,0.86)] backdrop-blur-md print:hidden">
+      <header ref={headerRef} className="sticky top-0 z-20 border-b border-hairline bg-surface print:hidden">
         <div className={`mx-auto flex ${frame} flex-col gap-3 px-4 py-3 sm:px-8`}>
           <div className="flex flex-nowrap items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <img src="/logo.png" alt="" className="h-11 w-11 shrink-0 object-contain" />
+              <img src="/logo.png" alt="Purple Hat logo" className="h-11 w-11 shrink-0 object-contain" />
               <div className="min-w-0">
-                <p className="truncate font-display text-lg font-extrabold leading-none text-ink">Thinking Hat</p>
-                <p className="mt-1 truncate text-xs font-semibold text-plum">Purple Hat</p>
+                <p className="truncate font-display text-lg font-semibold leading-none text-heading">Thinking Hat</p>
+                <p className="mt-1 truncate text-xs font-semibold text-mute">Purple Hat</p>
               </div>
             </div>
             <div ref={menuRef} className="flex shrink-0 items-center gap-2">
@@ -110,9 +110,10 @@ export default function Shell() {
                   <p className="truncate text-xs text-mute">{user.email}</p>
                 </div>
               </div>
+              <ThemeToggle className="hidden sm:inline-flex" />
               <button
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white text-ink md:hidden"
+                className="inline-flex h-11 w-11 items-center justify-center border border-hairline bg-surface text-ink md:hidden"
                 aria-expanded={menuOpen}
                 aria-controls="app-menu"
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -141,14 +142,14 @@ export default function Shell() {
           style={{ top: panelTop }}
           aria-label="App"
         >
-          <div className="flex flex-col gap-1 rounded-2xl border border-[rgba(109,40,217,0.12)] bg-white p-2 shadow-card">
+          <div className="flex flex-col gap-1 border border-hairline bg-surface p-2">
             {links.map(([to, label]) => (
               <NavLink
                 key={to}
                 to={to}
                 end={to === "/" || to === "/dashboard" || to === "/admin"}
                 onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold ${isActive ? "bg-[#f5f0ff] text-plum" : "text-ink"}`}
+                className={({ isActive }) => `flex min-h-11 items-center px-4 font-display text-sm font-semibold uppercase tracking-[0.08em] ${isActive ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-ink"}`}
               >
                 {label}
               </NavLink>

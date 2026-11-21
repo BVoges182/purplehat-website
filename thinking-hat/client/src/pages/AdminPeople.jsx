@@ -66,7 +66,7 @@ export default function AdminPeople() {
   return (
     <div>
       <PageIntro title="People" lede={waiting ? `${waiting} waiting for approval.` : "Approved clients, pending signups, and access."}>
-        <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-b from-[#8b5cf6] to-[#6d28d9] px-5 font-display text-sm font-extrabold text-white" to="/admin/invites">
+        <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--btn-bg)] px-5 font-display text-sm font-semibold text-[var(--btn-text)]" to="/admin/invites">
           New invite key
         </Link>
       </PageIntro>
@@ -98,7 +98,7 @@ export default function AdminPeople() {
                 {user.status === "pending" ? <Button type="button" onClick={() => approve(user)}>Approve</Button> : null}
                 {user.role === "client" ? (
                   <select
-                    className="max-w-full rounded-2xl border border-[rgba(109,40,217,0.16)] bg-white px-4 py-2 text-sm text-ink outline-none transition focus:border-plum sm:max-w-[14rem]"
+                    className="max-w-full rounded-2xl border border-hairline bg-white px-4 py-2 text-sm text-ink outline-none transition focus:border-plum sm:max-w-[14rem]"
                     aria-label={`Template for ${user.name}`}
                     value={user.templateId || ""}
                     disabled={busy || !templates.length}
@@ -113,7 +113,7 @@ export default function AdminPeople() {
                     ))}
                   </select>
                 ) : null}
-                <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white px-5 font-display text-sm font-extrabold text-[#4c1d95]" to={`/admin/users/${user.id}`}>
+                <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-hairline bg-white px-5 font-display text-sm font-extrabold text-heading" to={`/admin/users/${user.id}`}>
                   Open
                 </Link>
                 {user.role === "client" ? (

@@ -110,10 +110,10 @@ function MonthChart({ months, max, fill = false }) {
     <div key={month.month} className="flex h-full min-w-0 flex-1 flex-col justify-end overflow-hidden">
       <div className={fill ? "flex h-[calc(100%-1.75rem)] items-end gap-1" : "flex h-36 items-end gap-1"}>
         {typeof month.revenue === "number" ? (
-          <div className="flex-1 rounded-t-lg bg-plum" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
+          <div className="flex-1 bg-[var(--chart-rev)]" style={{ height: `${(month.revenue / max) * 100}%` }} title={`Revenue ${reportFigure(month.revenue, "money")}`} />
         ) : <div className="flex-1" />}
         {typeof month.expenses === "number" ? (
-          <div className="flex-1 rounded-t-lg bg-[#c4b5fd]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${reportFigure(month.expenses, "money")}`} />
+          <div className="flex-1 rounded-t-lg bg-[var(--chart-exp)]" style={{ height: `${(month.expenses / max) * 100}%` }} title={`Expenses ${reportFigure(month.expenses, "money")}`} />
         ) : <div className="flex-1" />}
       </div>
       <p className="mt-2 truncate text-center text-xs text-mute">{monthLabel(month.month)}</p>
@@ -186,8 +186,8 @@ function ClassicDashboard({ user }) {
                 <p className="text-xs text-mute">Payable {reportFigure(data.payables, "money")}</p>
               </div>
               <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 bg-[var(--chart-rev)]" /> Revenue</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[var(--chart-exp)]" /> Expenses</span>
               </div>
               <MonthChart months={data.months} max={chartMax(data)} />
             </Card>
@@ -345,8 +345,8 @@ function DemoDashboard({ user }) {
                 <Card className="flex h-full flex-col">
                   <h2 className="font-display text-xl font-extrabold text-ink">6 months of revenue</h2>
                   <div className="mt-3 flex gap-4 text-xs font-semibold text-mute">
-                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-plum" /> Revenue</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#c4b5fd]" /> Expenses</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 bg-[var(--chart-rev)]" /> Revenue</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[var(--chart-exp)]" /> Expenses</span>
                   </div>
                   <MonthChart fill months={data.months} max={chartMax(data) * 1.15} />
                 </Card>

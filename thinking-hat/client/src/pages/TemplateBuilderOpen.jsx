@@ -21,7 +21,7 @@ function Dialog({ title, lede, onClose, children, wide = false }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="template-editor-dialog"
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-[rgba(109,40,217,0.12)] bg-white p-6 shadow-card ${wide ? "max-w-3xl" : "max-w-lg"}`}
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-3xl border border-hairline bg-white p-6 shadow-card ${wide ? "max-w-3xl" : "max-w-lg"}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <h2 id="template-editor-dialog" className="font-display text-2xl font-extrabold text-ink">{title}</h2>
@@ -35,7 +35,7 @@ function Dialog({ title, lede, onClose, children, wide = false }) {
 function Toast({ message }) {
   if (!message) return null;
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card" role="status">
+    <div className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-[#1F3864] px-4 py-3 text-sm font-semibold text-white" role="status">
       {message}
     </div>
   );
@@ -161,7 +161,7 @@ function SectionEditor({ section, busy, onCancel, onSave, shownLabel = "Show in 
         </div>
         <ul className="space-y-2">
           {draft.rows.map((row, index) => (
-            <li key={`row-${index}`} className="grid gap-2 rounded-2xl border border-[rgba(109,40,217,0.1)] p-3 sm:grid-cols-[minmax(0,1fr)_8rem_5rem_auto]">
+            <li key={`row-${index}`} className="grid gap-2 rounded-2xl border border-hairline p-3 sm:grid-cols-[minmax(0,1fr)_8rem_5rem_auto]">
               <input
                 className={inputClass}
                 aria-label={`Row ${index + 1} label`}
@@ -444,7 +444,7 @@ export default function TemplateBuilderOpen() {
                 type="button"
                 role="tab"
                 aria-selected={mode === key}
-                className={`min-h-11 rounded-full px-5 font-display text-sm font-extrabold ${mode === key ? "bg-ink text-white" : "border border-[rgba(109,40,217,0.16)] bg-white text-ink"}`}
+                className={`min-h-11 rounded-full px-5 font-display text-sm font-extrabold ${mode === key ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "border border-hairline bg-surface text-ink"}`}
                 onClick={() => setMode(key)}
               >
                 {label}
@@ -471,7 +471,7 @@ export default function TemplateBuilderOpen() {
             <Card>
               <h3 className="font-display text-lg font-extrabold text-ink">Sections</h3>
               {sections.length ? (
-                <ol className="mt-4 divide-y divide-[rgba(109,40,217,0.08)]">
+                <ol className="mt-4 divide-y divide-hairline">
                   {sections.map((section, index) => (
                     <li key={section.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
@@ -503,7 +503,7 @@ export default function TemplateBuilderOpen() {
               <li key={type.key}>
                 <button
                   type="button"
-                  className="w-full rounded-2xl border border-[rgba(109,40,217,0.12)] px-4 py-3 text-left font-semibold text-ink hover:bg-[#f5f3ff]"
+                  className="w-full rounded-2xl border border-hairline px-4 py-3 text-left font-semibold text-ink hover:bg-band"
                   disabled={busy}
                   onClick={async () => {
                     const ok = await commit({ action: "add", sectionType: type.key }, "Sections saved.");
@@ -560,7 +560,7 @@ export default function TemplateBuilderOpen() {
             {importing.tabs.map((tab) => {
               const choice = importing.choices.find((item) => item.index === tab.index) || { type: "", skip: false };
               return (
-                <li key={tab.index} className="rounded-2xl border border-[rgba(109,40,217,0.1)] p-4">
+                <li key={tab.index} className="rounded-2xl border border-hairline p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink">{tab.name}</p>

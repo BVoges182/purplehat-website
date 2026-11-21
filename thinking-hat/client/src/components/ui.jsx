@@ -1,6 +1,36 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export const inputClass = "w-full rounded-2xl border border-[rgba(109,40,217,0.16)] bg-white px-4 py-3 text-ink outline-none transition focus:border-plum";
+export const inputClass = "w-full border border-hairline bg-surface px-4 py-3 text-ink outline-none transition focus:border-plum";
+
+export function ThemeToggle({ className = "" }) {
+  const [theme, setTheme] = useState("light");
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => {
+      const attr = root.getAttribute("data-theme");
+      if (attr === "light" || attr === "dark") return attr;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    };
+    setTheme(read());
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => { if (!root.hasAttribute("data-theme")) setTheme(read()); };
+    media.addEventListener?.("change", onChange);
+    return () => media.removeEventListener?.("change", onChange);
+  }, []);
+  function choose(next) {
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("ph-theme", next); } catch { /* private mode */ }
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", next === "dark" ? "#0B1018" : "#FFFFFF");
+    setTheme(next);
+  }
+  return (
+    <div className={`theme-toggle ${className}`} role="group" aria-label="Colour theme">
+      <button type="button" aria-pressed={theme === "light"} onClick={() => choose("light")}>Light</button>
+      <button type="button" aria-pressed={theme === "dark"} onClick={() => choose("dark")}>Dark</button>
+    </div>
+  );
+}
 
 export function money(value) {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(Number(value) || 0);
@@ -41,9 +71,9 @@ export function Badge({ status }) {
     done: "bg-emerald-50 text-emerald-800",
     pending: "bg-amber-50 text-amber-800",
     submitted: "bg-amber-50 text-amber-800",
-    reviewing: "bg-[#f5f0ff] text-plum",
-    sent: "bg-[#f5f0ff] text-plum",
-    in_progress: "bg-[#f5f0ff] text-plum",
+    reviewing: "bg-band text-heading",
+    sent: "bg-band text-heading",
+    in_progress: "bg-band text-heading",
     draft: "bg-slate-100 text-slate-700",
     suspended: "bg-rose-50 text-rose-800",
     overdue: "bg-rose-50 text-rose-800",
@@ -52,12 +82,12 @@ export function Badge({ status }) {
     accepted: "bg-emerald-50 text-emerald-800",
     expired: "bg-slate-100 text-slate-700",
     revoked: "bg-rose-50 text-rose-800",
-    admin: "bg-[#2a1548] text-white",
-    client: "bg-white text-ink border border-[rgba(109,40,217,0.12)]",
+    admin: "bg-heading text-[var(--btn-text)]",
+    client: "bg-surface text-ink border border-hairline",
   };
   const labels = { ...accessLabel, ...invoiceLabel, ...requestLabel, used: "Used", accepted: "Accepted", expired: "Expired", revoked: "Revoked", admin: "Admin", client: "Client" };
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tones[status] || "bg-white text-ink"}`}>
+    <span className={`inline-flex px-2.5 py-1 text-xs font-bold ${tones[status] || "bg-surface text-ink"}`}>
       {labels[status] || status}
     </span>
   );
@@ -65,14 +95,14 @@ export function Badge({ status }) {
 
 export function Button({ children, variant = "primary", className = "", ...props }) {
   const styles = {
-    primary: "bg-gradient-to-b from-[#8b5cf6] to-[#6d28d9] text-white shadow-[0_10px_24px_rgba(109,40,217,0.28)] hover:-translate-y-0.5",
-    ghost: "border border-[rgba(109,40,217,0.18)] bg-white text-[#4c1d95] hover:bg-[#f5f3ff]",
-    navy: "border border-[#1F3864] bg-white text-[#1F3864] hover:bg-[#CCEEFF]",
-    quiet: "bg-white text-ink border border-[rgba(109,40,217,0.12)] hover:bg-[#f5f3ff]",
+    primary: "border border-[var(--btn-bg)] bg-[var(--btn-bg)] text-[var(--btn-text)]",
+    ghost: "border border-hairline bg-surface text-heading hover:bg-band",
+    navy: "border border-heading bg-surface text-heading hover:bg-band",
+    quiet: "border border-hairline bg-surface text-ink hover:bg-band",
   };
   return (
     <button
-      className={`inline-flex min-h-11 items-center justify-center rounded-full px-5 font-display text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${styles[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center px-5 font-display text-sm font-semibold tracking-[0.12em] transition disabled:cursor-not-allowed disabled:opacity-60 ${styles[variant]} ${className}`}
       {...props}
     >
       {children}
@@ -96,7 +126,7 @@ export function SegmentedPills({ options, value, onChange, label }) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)]">
       <div ref={scroller} className="overflow-x-auto" role="tablist" aria-label={label}>
-        <div className="flex w-max gap-1 rounded-full bg-[#f6f3ff] p-1">
+        <div className="flex w-full border border-hairline bg-surface">
           {options.map((option) => {
             const active = option.id === value;
             return (
@@ -105,7 +135,7 @@ export function SegmentedPills({ options, value, onChange, label }) {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors ${active ? "bg-plum text-white shadow-card" : "text-mute"}`}
+                className={`inline-flex min-h-10 flex-1 shrink-0 items-center justify-center border-r border-hairline px-3 font-display text-[11px] font-semibold uppercase tracking-[0.14em] last:border-r-0 ${active ? "bg-[var(--toggle-on-bg)] text-[var(--toggle-on-text)]" : "text-mute"}`}
                 onClick={() => onChange(option.id)}
               >
                 {option.label}
@@ -131,13 +161,13 @@ export function Field({ label, hint, children }) {
 export function Alert({ tone = "error", children }) {
   const cls = tone === "error"
     ? "border-rose-100 bg-rose-50 text-rose-800"
-    : "border-[rgba(109,40,217,0.12)] bg-[#f5f0ff] text-ink";
-  return <p className={`rounded-2xl border px-4 py-3 text-sm ${cls}`}>{children}</p>;
+    : "border-hairline bg-band text-ink";
+  return <p className={`border px-4 py-3 text-sm ${cls}`}>{children}</p>;
 }
 
 export function Card({ className = "", children }) {
   return (
-    <section className={`rounded-3xl border border-[rgba(109,40,217,0.08)] bg-white/90 p-6 shadow-card ${className}`}>
+    <section className={`border border-hairline bg-surface p-6 ${className}`}>
       {children}
     </section>
   );
@@ -149,7 +179,7 @@ export function Avatar({ user, className = "h-10 w-10" }) {
   }
   const letter = (user?.businessName || user?.name || "?").slice(0, 1).toUpperCase();
   return (
-    <span className={`${className} inline-flex items-center justify-center rounded-full bg-[#f5f0ff] font-display text-sm font-extrabold text-plum`}>
+    <span className={`${className} inline-flex items-center justify-center bg-band font-display text-sm font-semibold text-heading`}>
       {letter}
     </span>
   );
@@ -165,17 +195,20 @@ export function marketingHome() {
 export function AuthFrame({ title, lede, children, homeLink = false }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <aside className="hidden flex-col justify-between bg-gradient-to-br from-[#6d28d9] to-[#4c1d95] px-12 py-12 text-white lg:flex">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="" className="h-14 w-14 object-contain" />
-          <div>
-            <p className="font-display text-2xl font-extrabold leading-none">Thinking Hat</p>
-            <p className="mt-1 text-sm text-[#ddd6fe]">Purple Hat</p>
+      <aside className="hidden flex-col justify-between border-r border-hairline bg-surface px-12 py-12 text-ink lg:flex">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Purple Hat logo" className="h-14 w-14 object-contain" />
+            <div>
+              <p className="font-display text-2xl font-semibold leading-none text-heading">Thinking Hat</p>
+              <p className="mt-1 text-sm text-mute">Purple Hat</p>
+            </div>
           </div>
+          <ThemeToggle />
         </div>
         <div>
-          <p className="max-w-sm font-display text-4xl font-extrabold leading-tight">Your figures, invoices, and build requests.</p>
-          <p className="mt-4 max-w-sm text-[#ede9fe]">Approved clients only. Use the invite key Purple Hat sent you.</p>
+          <p className="max-w-sm font-display text-4xl font-semibold leading-tight text-heading">Your figures, invoices, and build requests.</p>
+          <p className="mt-4 max-w-sm text-mute">Approved clients only. Use the invite key Purple Hat sent you.</p>
         </div>
         <div className="h-5" aria-hidden="true" />
       </aside>
@@ -184,12 +217,15 @@ export function AuthFrame({ title, lede, children, homeLink = false }) {
           {homeLink ? (
             <a className="mb-6 inline-flex text-sm text-mute transition hover:text-plum" href={marketingHome()}>← Back to website</a>
           ) : null}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <img src="/logo.png" alt="" className="h-12 w-12 object-contain" />
-            <div>
-              <p className="font-display text-xl font-extrabold leading-none text-ink">Thinking Hat</p>
-              <p className="text-xs font-semibold text-plum">Purple Hat</p>
+          <div className="mb-8 flex items-center justify-between gap-3 lg:hidden">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="" className="h-12 w-12 object-contain" />
+              <div>
+                <p className="font-display text-xl font-semibold leading-none text-heading">Thinking Hat</p>
+                <p className="text-xs font-semibold text-mute">Purple Hat</p>
+              </div>
             </div>
+            <ThemeToggle />
           </div>
           <h1 className="font-display text-3xl font-extrabold text-ink">{title}</h1>
           {lede ? <p className="mt-2 text-mute">{lede}</p> : null}

@@ -37,14 +37,14 @@ function LayoutCard({ section, template, zoom, overId, activeId, onEdit, onDelet
       ref={setNodeRef}
       style={style}
       data-section-card
-      className={`rounded-3xl border bg-white p-3 shadow-card ${section.hidden ? "opacity-60" : ""} ${isDragging ? "border-plum" : "border-[rgba(109,40,217,0.12)]"}`}
+      className={`rounded-3xl border bg-white p-3 shadow-card ${section.hidden ? "opacity-60" : ""} ${isDragging ? "border-plum" : "border-hairline"}`}
     >
       {showDrop ? <div className="mb-3 h-1.5 rounded-full bg-plum" aria-hidden="true" /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           ref={setActivatorNodeRef}
-          className="inline-flex h-11 w-11 cursor-grab items-center justify-center rounded-2xl border border-[rgba(109,40,217,0.16)] text-plum active:cursor-grabbing"
+          className="inline-flex h-11 w-11 cursor-grab items-center justify-center rounded-2xl border border-hairline text-plum active:cursor-grabbing"
           aria-label={`Drag ${section.title}`}
           {...attributes}
           {...listeners}
@@ -61,7 +61,7 @@ function LayoutCard({ section, template, zoom, overId, activeId, onEdit, onDelet
       {omitted ? (
         <p className="mt-3 text-sm text-mute">This report layout does not include aging or e-commerce pages.</p>
       ) : null}
-      <div data-preview className="mt-3 overflow-hidden rounded-2xl border border-[rgba(109,40,217,0.08)] bg-[#fbfaff]" style={{ zoom }}>
+      <div data-preview className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-surface" style={{ zoom }}>
         <ManagementReportView
           report={{ sections: [{ ...section, hidden: false }], customOrder: true }}
           template={template}
@@ -116,7 +116,7 @@ export default function TemplateLayoutBoard({ sections, template, onReorder, onE
 
   return (
     <div data-layout-board>
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[rgba(109,40,217,0.1)] bg-white p-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-hairline bg-white p-3 sm:flex-row sm:flex-wrap sm:items-center">
         <Button type="button" variant="quiet" onClick={() => setZoom((value) => clampZoom(value - 0.1))}>Zoom out</Button>
         <label className="flex min-w-0 flex-1 items-center gap-3 text-sm font-semibold text-ink">
           <span className="shrink-0">Zoom</span>
@@ -130,7 +130,7 @@ export default function TemplateLayoutBoard({ sections, template, onReorder, onE
             aria-valuemax={100}
             aria-valuenow={Math.round(zoom * 100)}
             aria-label="Fit to screen zoom"
-            className="min-w-[8rem] flex-1 accent-[#6d28d9]"
+            className="min-w-[8rem] flex-1 accent-[var(--accent)]"
             onChange={(event) => setZoom(clampZoom(Number(event.target.value) / 100))}
           />
           <span className="w-12 tabular-nums">{Math.round(zoom * 100)}%</span>
@@ -138,7 +138,7 @@ export default function TemplateLayoutBoard({ sections, template, onReorder, onE
         <Button type="button" variant="quiet" onClick={() => setZoom((value) => clampZoom(value + 0.1))}>Zoom in</Button>
         <Button type="button" variant="ghost" onClick={fitToScreen}>Fit to screen</Button>
       </div>
-      <div data-layout-viewport className="max-h-[75vh] space-y-4 overflow-auto rounded-3xl border border-[rgba(109,40,217,0.1)] bg-[#f7f4ff] p-3 sm:p-4">
+      <div data-layout-viewport className="max-h-[75vh] space-y-4 overflow-auto rounded-3xl border border-hairline bg-[var(--bg)] p-3 sm:p-4">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

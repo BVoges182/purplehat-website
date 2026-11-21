@@ -211,7 +211,7 @@ export default function AdminTemplates() {
                   ))}
                 </ul>
               )}
-              <div className="mt-6 border-t border-[rgba(109,40,217,0.08)] pt-5">
+              <div className="mt-6 border-t border-hairline pt-5">
                 <h3 className="font-display text-sm font-extrabold text-ink">Template file</h3>
                 <p className="mt-1 text-sm text-mute">Download {selected.name} as a CSV or a text file, then upload that file on the live site. Clients using the template get this dashboard and these management reports.</p>
                 <div className="mt-4 flex flex-wrap gap-2">

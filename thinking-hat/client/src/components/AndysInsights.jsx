@@ -19,7 +19,7 @@ function formatUpdated(iso) {
 
 function Finding({ finding, open }) {
   return (
-    <li className="border-t border-[rgba(109,40,217,0.08)] pt-3">
+    <li className="border-t border-hairline pt-3">
       {finding.title ? <p className="text-sm font-semibold text-ink">{publicCopy(finding.title)}</p> : null}
       {finding.detail ? (
         <p className={`mt-1 text-sm leading-5 text-mute ${open ? "" : "line-clamp-2"}`}>{publicCopy(finding.detail)}</p>
@@ -80,7 +80,7 @@ function Brief({ insights, title, open, onToggle }) {
           </ol>
         ) : null}
         {insights.actions?.length ? (
-          <div className="mt-4 rounded-2xl bg-[#f6f3ff] px-3 py-3">
+          <div className="mt-4 rounded-2xl bg-band px-3 py-3">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Actions</p>
             <ul className="mt-2 space-y-1.5">
               {insights.actions.map((action) => (

@@ -288,18 +288,18 @@ function donutPath(cx, cy, outer, inner, start, end) {
 }
 
 const DEMO_DONUT_COLOURS = [
-  "#2a1548",
-  "#31135f",
-  "#3c1778",
-  "#4c1d95",
-  "#5b21b6",
-  "#6d28d9",
-  "#7c3aed",
-  "#8b5cf6",
-  "#9674f8",
-  "#a78bfa",
-  "#b09afc",
-  "#c4b5fd",
+  "#1F3864",
+  "#2C4A73",
+  "#3E5C86",
+  "#4A5A70",
+  "#6A7A90",
+  "#8B95A3",
+  "#9AA3B0",
+  "#B7C0CC",
+  "#C5CED8",
+  "#D5D8DE",
+  "#1A2B42",
+  "#0E1A2E",
 ];
 
 function demoDonutColour(count, index) {
@@ -316,7 +316,7 @@ function donutInk(colour) {
   const green = parseInt(hex.slice(2, 4), 16);
   const blue = parseInt(hex.slice(4, 6), 16);
   const luma = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
-  return luma > 0.55 ? "#2a1548" : "#ffffff";
+  return luma > 0.55 ? "#0B0B0B" : "#ffffff";
 }
 
 function contactMoney(value) {
@@ -355,7 +355,7 @@ export function Donut({ title, slices }) {
         <path key={path.key} d={path.d} fill={path.colour} stroke="#ffffff" strokeWidth="2.5" />
       ))}
       {paths.filter((path) => path.percent).map((path) => (
-        <text key={`${path.key}-label`} x={path.x} y={path.y} textAnchor="middle" dominantBaseline="central" fill={path.ink} fontSize="11" fontWeight="700" fontFamily="Outfit, sans-serif">
+        <text key={`${path.key}-label`} x={path.x} y={path.y} textAnchor="middle" dominantBaseline="central" fill={path.ink} fontSize="11" fontWeight="700" fontFamily="Barlow, sans-serif">
           {path.percent}
         </text>
       ))}
@@ -391,7 +391,7 @@ export function ContactDonutCard({ section }) {
           {lines.map((row, index) => {
             const colour = demoDonutColour(lines.length, index);
             return (
-              <li key={`${row.label}-${index}`} className="grid grid-cols-[1.75rem_0.75rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-[rgba(109,40,217,0.08)] py-2.5">
+              <li key={`${row.label}-${index}`} className="grid grid-cols-[1.75rem_0.75rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-hairline py-2.5">
                 <span className="text-sm tabular-nums text-mute">{index + 1}</span>
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: colour }} />
                 <span className="truncate text-sm text-ink">{row.label}</span>
@@ -423,18 +423,18 @@ function ContactSection({ section }) {
 }
 
 const CLASSIC_DONUT_COLOURS = [
-  "#c4b5fd",
-  "#b09afc",
-  "#a78bfa",
-  "#9674f8",
-  "#8b5cf6",
-  "#7c3aed",
-  "#6d28d9",
-  "#5b21b6",
-  "#4c1d95",
-  "#3c1778",
-  "#31135f",
-  "#2a1548",
+  "#D5D8DE",
+  "#C5CED8",
+  "#B7C0CC",
+  "#9AA3B0",
+  "#8B95A3",
+  "#6A7A90",
+  "#4A5A70",
+  "#3E5C86",
+  "#2C4A73",
+  "#1F3864",
+  "#1A2B42",
+  "#0E1A2E",
 ];
 
 function classicDonutColour(slices, index) {

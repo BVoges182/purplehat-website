@@ -182,7 +182,7 @@ export default function FinancialStatements() {
           <>
             <Card className="mb-4">
               <h2 className="font-display text-xl font-extrabold text-ink">Financial Statements</h2>
-              <div className="mt-2 flex flex-col gap-3 border-t border-[rgba(109,40,217,0.08)] py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-2 flex flex-col gap-3 border-t border-hairline py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="font-display text-lg font-extrabold text-ink">Annual financial statements</p>
                   <p className="mt-1 text-sm text-mute">Year ended {yearEndedLabel(annual.yearEnd)}</p>

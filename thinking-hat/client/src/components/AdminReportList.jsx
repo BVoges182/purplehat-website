@@ -61,7 +61,7 @@ export default function AdminReportList({ reports, showClient = false, onDeleted
       ) : null}
       <ul className="mt-2">
         {reports.map((report) => (
-          <li key={`${report.userId}-${report.month}`} className="flex flex-col gap-3 border-t border-[rgba(109,40,217,0.08)] py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
+          <li key={`${report.userId}-${report.month}`} className="flex flex-col gap-3 border-t border-hairline py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
             <Link to={`/admin/users/${report.userId}/reports/${report.month}`} className="min-w-0">
               {showClient ? <p className="text-sm font-semibold text-plum">{report.businessName || report.name}</p> : null}
               <p className="font-display text-lg font-extrabold text-ink">{reportMonthLabel(report.month)}</p>

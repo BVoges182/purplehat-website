@@ -1,0 +1,213 @@
+/* Ledger Navy v2. Barlow and Barlow Condensed are SIL OFL (see fonts/OFL.txt). */
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/barlow-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:italic;font-weight:400;font-display:swap;src:url("fonts/barlow-400-italic.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/barlow-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/barlow-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/barlow-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/barlow-condensed-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/barlow-condensed-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/barlow-condensed-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/barlow-condensed-700-normal.woff2") format("woff2")}
+
+:root {
+  --font-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --font-body: "Barlow", Arial, Helvetica, sans-serif;
+  --bg: #FFFFFF;
+  --bg-elev: #FFFFFF;
+  --surface: #FFFFFF;
+  --text: #0B0B0B;
+  --text-mute: #4A4F57;
+  --text-faint: #7A8088;
+  --hairline: #D5D8DE;
+  --heading: #1F3864;
+  --accent: #1F3864;
+  --accent-soft: #CCEEFF;
+  --btn-bg: #1F3864;
+  --btn-text: #FFFFFF;
+  --band: #CCEEFF;
+  --footer-bg: #1F3864;
+  --footer-text: #FFFFFF;
+  --footer-mute: rgba(255,255,255,0.72);
+  --toggle-on-bg: #1F3864;
+  --toggle-on-text: #FFFFFF;
+  --theme-color: #FFFFFF;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    --bg: #0B1018;
+    --bg-elev: #111827;
+    --surface: #141C2A;
+    --text: #F3F5F8;
+    --text-mute: #A8B0BA;
+    --text-faint: #7A8490;
+    --hairline: #2A3548;
+    --heading: #F7F8FA;
+    --accent: #CCEEFF;
+    --accent-soft: #1A2B42;
+    --btn-bg: #CCEEFF;
+    --btn-text: #1F3864;
+    --band: #1A2B42;
+    --footer-bg: #1F3864;
+    --footer-text: #FFFFFF;
+    --footer-mute: rgba(255,255,255,0.72);
+    --toggle-on-bg: #CCEEFF;
+    --toggle-on-text: #1F3864;
+    --theme-color: #0B1018;
+    color-scheme: dark;
+  }
+}
+
+html[data-theme="dark"] {
+  --bg: #0B1018;
+  --bg-elev: #111827;
+  --surface: #141C2A;
+  --text: #F3F5F8;
+  --text-mute: #A8B0BA;
+  --text-faint: #7A8490;
+  --hairline: #2A3548;
+  --heading: #F7F8FA;
+  --accent: #CCEEFF;
+  --accent-soft: #1A2B42;
+  --btn-bg: #CCEEFF;
+  --btn-text: #1F3864;
+  --band: #1A2B42;
+  --footer-bg: #1F3864;
+  --footer-text: #FFFFFF;
+  --footer-mute: rgba(255,255,255,0.72);
+  --toggle-on-bg: #CCEEFF;
+  --toggle-on-text: #1F3864;
+  --theme-color: #0B1018;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] { color-scheme: light; }
+
+body {
+  background: var(--bg) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  font-family: var(--font-body) !important;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display) !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--heading) !important;
+}
+
+p, li, label { color: var(--text); }
+.text-mute, .lede { color: var(--text-mute) !important; }
+
+::selection { background: var(--accent-soft); color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 3px; }
+
+.skip {
+  border-radius: 0 !important;
+  background: var(--heading) !important;
+  color: var(--bg) !important;
+}
+
+#nav, #nav.is-scrolled {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.nav-link { color: var(--text-mute) !important; }
+.nav-link:hover, .nav-link.is-active, .nav-links a[aria-current="page"] { color: var(--heading) !important; }
+
+.nav-menu, #mobile-nav {
+  background: var(--surface) !important;
+  border-color: var(--hairline) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.nav-menu a, #mobile-nav a { color: var(--text) !important; border-radius: 0 !important; }
+.nav-menu a:hover, .nav-menu a[aria-current="page"] { background: var(--accent-soft) !important; color: var(--heading) !important; }
+
+.btn, .pill, .card, .shot, .field input, .field textarea, .field select, button, dialog {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.btn, .pill {
+  font-family: var(--font-display) !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.btn-primary, .btn.btn-primary {
+  background: var(--btn-bg) !important;
+  background-image: none !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-bg) !important;
+}
+.btn-primary:hover { filter: brightness(1.06); transform: none; }
+
+.btn-ghost, .btn.btn-ghost {
+  background: transparent !important;
+  color: var(--heading) !important;
+  border: 1px solid var(--hairline) !important;
+}
+
+.pill {
+  background: var(--surface) !important;
+  color: var(--heading) !important;
+  border: 1px solid var(--hairline) !important;
+}
+
+.card {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+}
+
+.shot, .shot-viewport, .shot-chrome {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-color: var(--hairline) !important;
+}
+
+footer {
+  background: var(--footer-bg) !important;
+  color: var(--footer-mute) !important;
+  padding-top: 28px !important;
+  padding-bottom: 24px !important;
+}
+footer h2, footer h3, footer .font-display { color: var(--footer-text) !important; }
+footer p, footer li, footer span, footer a { color: var(--footer-mute) !important; }
+footer a:hover, footer h2, footer h3 { color: var(--footer-text) !important; }
+footer img { width: 36px; height: 36px; }
+
+.theme-toggle {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.theme-toggle button {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  line-height: 1;
+  min-height: 2.5rem;
+}
+.theme-toggle button + button { border-left: 1px solid var(--hairline); }
+.theme-toggle button[aria-pressed="true"] {
+  background: var(--toggle-on-bg);
+  color: var(--toggle-on-text);
+}
+
+.hero-rule { height: 6px; width: 96px; background: var(--accent-soft); }
+
+img { max-width: 100%; height: auto; }

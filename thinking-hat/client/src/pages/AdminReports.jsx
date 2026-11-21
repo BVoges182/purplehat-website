@@ -137,7 +137,7 @@ export default function AdminReports() {
           </div>
         </form>
         {replaceAsk ? (
-          <div className="mt-4 rounded-2xl border border-[rgba(109,40,217,0.12)] bg-[#f5f0ff] px-4 py-3">
+          <div className="mt-4 rounded-2xl border border-hairline bg-band px-4 py-3">
             <p className="text-sm text-ink">{replaceAsk.message || `${clientName(replaceAsk.userId)} already has a report for ${reportMonthLabel(replaceAsk.month)}. Replace it?`}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button type="button" disabled={busy} onClick={() => submit(null, true)}>Replace report</Button>

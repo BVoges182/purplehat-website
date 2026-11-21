@@ -1,8 +1,8 @@
 import { Card } from "./ui";
 import { ecommerceInsight, insightMonthName, reportFigure } from "../reportMoney";
 
-const PURPLE = "#6d28d9";
-const GREEN = "#059669";
+const PURPLE = "var(--chart-rev)";
+const GREEN = "var(--chart-exp)";
 
 function shortMonth(label) {
   const name = insightMonthName(label);
@@ -124,14 +124,14 @@ function LineChart({ points }) {
             <span key={point.month}>
               {typeof point.roas === "number" ? (
                 <span
-                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-plum"
+                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[var(--surface)] bg-[var(--chart-rev)]"
                   style={{ left: `${xOf(index, points.length)}%`, top: `${yOf(point.roas, roasDomain.min, roasDomain.max)}%` }}
                   title={`${point.month} ROAS ${reportFigure(point.roas, "number2")}`}
                 />
               ) : null}
               {typeof point.conversion === "number" ? (
                 <span
-                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-emerald-600"
+                  className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 border-2 border-[var(--surface)] bg-[var(--chart-exp)]"
                   style={{ left: `${xOf(index, points.length)}%`, top: `${yOf(point.conversion * 100, conversionDomain.min, conversionDomain.max)}%` }}
                   title={`${point.month} conversion ${reportFigure(point.conversion, "percent2")}`}
                 />
@@ -173,11 +173,11 @@ function BarChart({ points }) {
           <span>{compactUsd(max / 2)}</span>
           <span>$0</span>
         </div>
-        <div className="flex h-40 flex-1 items-end gap-1 border-b border-[rgba(109,40,217,0.14)]">
+        <div className="flex h-40 flex-1 items-end gap-1 border-b border-hairline">
           {points.map((point) => (
             <div key={point.month} className="flex h-full flex-1 items-end justify-center gap-0.5" title={`${point.month}: spend ${usd(point.spend, 0)}, revenue ${usd(point.revenue, 0)}`}>
-              <div className="w-[42%] max-w-3 rounded-t bg-plum" style={{ height: `${((point.spend || 0) / max) * 100}%` }} />
-              <div className="w-[42%] max-w-3 rounded-t bg-emerald-600" style={{ height: `${((point.revenue || 0) / max) * 100}%` }} />
+              <div className="w-[42%] max-w-3 bg-[var(--chart-exp)]" style={{ height: `${((point.spend || 0) / max) * 100}%` }} />
+              <div className="w-[42%] max-w-3 bg-[var(--chart-rev)]" style={{ height: `${((point.revenue || 0) / max) * 100}%` }} />
             </div>
           ))}
         </div>
@@ -227,19 +227,19 @@ export default function EcommercePerformance({ points }) {
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Current month highlights</p>
           <p className="mt-1 text-sm text-mute">{latest.month}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-[#f6f3ff] px-4 py-4">
+            <div className="rounded-2xl bg-band px-4 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">ROAS</p>
               <p className="mt-2 font-display text-4xl font-extrabold text-ink">{reportFigure(latest.roas, "number2")}</p>
               <ChangeLine value={roasChange} priorLabel={priorLabel} />
             </div>
-            <div className="rounded-2xl bg-[#f6f3ff] px-4 py-4">
+            <div className="rounded-2xl bg-band px-4 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">CPA</p>
               <p className="mt-2 font-display text-4xl font-extrabold text-ink">{usd(latest.cpa, 2)}</p>
               <ChangeLine value={cpaChange} priorLabel={priorLabel} lowerIsBetter />
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-[rgba(109,40,217,0.1)] bg-white px-4 py-4">
+        <div className="rounded-2xl border border-hairline bg-white px-4 py-4">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-plum">Growth vs prior period</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <div>
@@ -257,23 +257,23 @@ export default function EcommercePerformance({ points }) {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-ink">ROAS & Conversion Rate Trend</h3>
-          <Legend items={[{ label: "ROAS", swatch: "bg-plum" }, { label: "Conversion rate", swatch: "bg-emerald-600" }]} />
+          <Legend items={[{ label: "ROAS", swatch: "bg-[var(--chart-rev)]" }, { label: "Conversion rate", swatch: "bg-[var(--chart-exp)]" }]} />
           <div className="mt-4">
             <LineChart points={points} />
           </div>
         </div>
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-[rgba(109,40,217,0.08)] px-3 py-4 sm:px-4">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-hairline px-3 py-4 sm:px-4">
           <h3 className="font-display text-base font-extrabold text-ink">Ad Spend vs Revenue</h3>
-          <Legend items={[{ label: "Ad spend", swatch: "bg-plum" }, { label: "Revenue", swatch: "bg-emerald-600" }]} />
+          <Legend items={[{ label: "Ad spend", swatch: "bg-[var(--chart-exp)]" }, { label: "Revenue", swatch: "bg-[var(--chart-rev)]" }]} />
           <div className="mt-4">
             <BarChart points={points} />
           </div>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-[#f6f3ff] p-4 sm:flex-row sm:items-center">
+      <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-band p-4 sm:flex-row sm:items-center">
         <p className="flex-1 text-sm leading-6 text-ink">{insight}</p>
         <div className="shrink-0 rounded-2xl bg-white px-4 py-3 text-center shadow-card">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-plum">{latestName} ROAS</p>

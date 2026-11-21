@@ -53,7 +53,7 @@ export default function ResetPassword() {
       {status === "invalid" ? (
         <div className="space-y-4">
           <Alert>{invalidCopy}</Alert>
-          <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-b from-[#8b5cf6] to-[#6d28d9] px-5 font-display text-sm font-extrabold text-white" to="/forgot-password">
+          <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--btn-bg)] px-5 font-display text-sm font-semibold text-[var(--btn-text)]" to="/forgot-password">
             Request a new link
           </Link>
         </div>

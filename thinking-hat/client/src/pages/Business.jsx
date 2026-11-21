@@ -71,7 +71,7 @@ export default function Business() {
             {preview ? (
               <img src={preview} alt="" className="h-28 w-28 rounded-3xl object-cover" />
             ) : (
-              <div className="grid h-28 w-28 place-items-center rounded-3xl bg-[#f5f0ff] font-display text-3xl font-extrabold text-plum">
+              <div className="grid h-28 w-28 place-items-center rounded-3xl bg-band font-display text-3xl font-extrabold text-plum">
                 {(form.businessName || form.name || "?").slice(0, 1).toUpperCase()}
               </div>
             )}

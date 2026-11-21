@@ -84,7 +84,7 @@ export default function ManagementReports() {
           <h2 className="font-display text-xl font-extrabold text-ink">Reports</h2>
           <ul className="mt-2">
             {reports.map((report) => (
-              <li key={report.month} className="flex flex-col gap-3 border-t border-[rgba(109,40,217,0.08)] py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
+              <li key={report.month} className="flex flex-col gap-3 border-t border-hairline py-4 first:border-t-0 sm:flex-row sm:items-center sm:justify-between">
                 <Link to={`/reports/${report.month}`} className="min-w-0">
                   <p className="font-display text-lg font-extrabold text-ink">{reportMonthLabel(report.month)}</p>
                   <p className="mt-1 text-sm text-mute">{report.periodLabel}</p>
@@ -133,7 +133,7 @@ export default function ManagementReports() {
                       {months.map((month) => {
                         const result = resultOf(month.revenue, month.expenses);
                         return (
-                          <tr key={month.month} className="border-t border-[rgba(109,40,217,0.08)]">
+                          <tr key={month.month} className="border-t border-hairline">
                             <td className="py-2.5 font-semibold text-ink">{monthHeading(month.month)}</td>
                             <td className="py-2.5 text-right tabular-nums text-ink">{figure(month.revenue)}</td>
                             <td className="py-2.5 text-right tabular-nums text-ink">{figure(month.expenses)}</td>
@@ -143,7 +143,7 @@ export default function ManagementReports() {
                       })}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-[rgba(109,40,217,0.16)] font-display font-extrabold text-ink">
+                      <tr className="border-t border-hairline font-display font-extrabold text-ink">
                         <td className="pt-3">Total</td>
                         <td className="pt-3 text-right tabular-nums">{figure(totals.revenue)}</td>
                         <td className="pt-3 text-right tabular-nums">{figure(totals.expenses)}</td>
@@ -156,7 +156,7 @@ export default function ManagementReports() {
                   {months.map((month) => {
                     const result = resultOf(month.revenue, month.expenses);
                     return (
-                      <li key={month.month} className="rounded-2xl bg-[#f5f0ff] px-4 py-3">
+                      <li key={month.month} className="rounded-2xl bg-band px-4 py-3">
                         <p className="font-display font-extrabold text-ink">{monthHeading(month.month)}</p>
                         <dl className="mt-2 space-y-1 text-sm">
                           <div className="flex justify-between gap-3"><dt className="text-mute">Revenue</dt><dd className="tabular-nums text-ink">{figure(month.revenue)}</dd></div>

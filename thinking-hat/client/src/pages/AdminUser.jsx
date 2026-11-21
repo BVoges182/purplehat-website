@@ -311,11 +311,11 @@ export default function AdminUser() {
               {record.invite && (record.invite.inviteStatus === "pending" || record.invite.inviteStatus === "sent") ? (
                 <Button type="button" disabled={busy} onClick={resendInvite}>Resend invite</Button>
               ) : null}
-              <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white px-5 font-display text-sm font-extrabold text-[#4c1d95]" to="/admin/invites">New invite key</Link>
+              <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-hairline bg-white px-5 font-display text-sm font-extrabold text-heading" to="/admin/invites">New invite key</Link>
             </div>
           </div>
           {issued?.code ? (
-            <div className="mt-4 rounded-3xl bg-[#f5f0ff] p-4">
+            <div className="mt-4 rounded-3xl bg-band p-4">
               <p className="text-sm font-semibold text-ink">
                 {issued.emailSent ? `Emailed to ${issued.invite.email}. The key is shown once.` : "The key is saved. Copy it or the invite link if the email did not arrive."}
               </p>
@@ -334,7 +334,7 @@ export default function AdminUser() {
         <Card>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-display text-xl font-extrabold text-ink">Management Reports</h2>
-            <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-[rgba(109,40,217,0.18)] bg-white px-5 font-display text-sm font-extrabold text-[#4c1d95]" to={`/admin/reports?client=${id}`}>Upload Excel</Link>
+            <Link className="inline-flex min-h-11 items-center justify-center rounded-full border border-hairline bg-white px-5 font-display text-sm font-extrabold text-heading" to={`/admin/reports?client=${id}`}>Upload Excel</Link>
           </div>
           <AdminReportList
             reports={(record.reports || []).map((report) => ({
@@ -401,7 +401,7 @@ export default function AdminUser() {
               {record.user.photoUrl ? (
                 <img src={record.user.photoUrl} alt="" className="h-24 w-24 rounded-3xl object-cover" />
               ) : (
-                <div className="grid h-24 w-24 place-items-center rounded-3xl bg-[#f5f0ff] font-display text-2xl font-extrabold text-plum">
+                <div className="grid h-24 w-24 place-items-center rounded-3xl bg-band font-display text-2xl font-extrabold text-plum">
                   {(record.user.businessName || record.user.name).slice(0, 1).toUpperCase()}
                 </div>
               )}
@@ -444,7 +444,7 @@ export default function AdminUser() {
         <h2 className="font-display text-xl font-extrabold text-ink">Invoices</h2>
         <div className="mt-4 space-y-3">
           {record.invoices.map((item) => (
-            <div key={item.id} className="rounded-2xl border border-[rgba(109,40,217,0.08)] px-4 py-3">
+            <div key={item.id} className="rounded-2xl border border-hairline px-4 py-3">
               {editing?.id === item.id ? (
                 <form className="grid gap-3 sm:grid-cols-2" onSubmit={saveInvoice}>
                   <Field label="Number"><input className={inputClass} value={editing.number} onChange={(event) => setEditing({ ...editing, number: event.target.value })} required /></Field>
@@ -505,7 +505,7 @@ export default function AdminUser() {
         </div>
       </Card>
       {toast ? (
-        <p role="status" className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card">
+        <p role="status" className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-[#1F3864] px-4 py-3 text-sm font-semibold text-white">
           {toast}
         </p>
       ) : null}

@@ -82,7 +82,7 @@ export default function RequestBuild() {
               <p className="mt-3 text-sm leading-relaxed">{item.details}</p>
               {item.budget ? <p className="mt-2 text-sm text-mute">Budget {item.budget}</p> : null}
               {item.neededBy ? <p className="text-sm text-mute">Needed by {formatDate(item.neededBy)}</p> : null}
-              {item.adminNote ? <p className="mt-3 rounded-2xl bg-[#f5f0ff] px-3 py-2 text-sm text-ink">Purple Hat: {item.adminNote}</p> : null}
+              {item.adminNote ? <p className="mt-3 rounded-2xl bg-band px-3 py-2 text-sm text-ink">Purple Hat: {item.adminNote}</p> : null}
               <p className="sr-only">{requestLabel[item.status]}</p>
             </Card>
           ))}

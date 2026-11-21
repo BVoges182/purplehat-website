@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Barlow and Barlow Condensed are SIL OFL. See /fonts/OFL.txt. */
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/barlow-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: italic; font-weight: 400; font-display: swap; src: url("/fonts/barlow-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/barlow-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/barlow-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/barlow-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/barlow-condensed-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/barlow-condensed-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/barlow-condensed-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/barlow-condensed-700-normal.woff2") format("woff2"); }
+
 @font-face {
   font-family: "Tinos";
   src: url("/fonts/Tinos-Regular.ttf") format("truetype");
@@ -23,35 +34,180 @@
   margin: 1in;
 }
 
+:root {
+  --bg: #FFFFFF;
+  --bg-elev: #FFFFFF;
+  --surface: #FFFFFF;
+  --text: #0B0B0B;
+  --text-mute: #4A4F57;
+  --text-faint: #7A8088;
+  --hairline: #D5D8DE;
+  --heading: #1F3864;
+  --accent: #1F3864;
+  --accent-soft: #CCEEFF;
+  --btn-bg: #1F3864;
+  --btn-text: #FFFFFF;
+  --band: #CCEEFF;
+  --chart-rev: #1F3864;
+  --chart-exp: #9AA3B0;
+  --chart-1: #1F3864;
+  --chart-2: #2C4A73;
+  --chart-3: #3E5C86;
+  --chart-4: #4A5A70;
+  --chart-5: #6A7A90;
+  --chart-6: #8B95A3;
+  --chart-7: #9AA3B0;
+  --chart-8: #B7C0CC;
+  --chart-9: #C5CED8;
+  --chart-10: #D5D8DE;
+  --chart-11: #1A2B42;
+  --chart-12: #0E1A2E;
+  --positive: #1F3864;
+  --negative: #4A4F57;
+  --toggle-on-bg: #1F3864;
+  --toggle-on-text: #FFFFFF;
+  --theme-color: #FFFFFF;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    --bg: #0B1018;
+    --bg-elev: #111827;
+    --surface: #141C2A;
+    --text: #F3F5F8;
+    --text-mute: #A8B0BA;
+    --text-faint: #7A8490;
+    --hairline: #2A3548;
+    --heading: #F7F8FA;
+    --accent: #CCEEFF;
+    --accent-soft: #1A2B42;
+    --btn-bg: #CCEEFF;
+    --btn-text: #1F3864;
+    --band: #1A2B42;
+    --chart-rev: #CCEEFF;
+    --chart-exp: #4A5A70;
+    --chart-1: #CCEEFF;
+    --chart-2: #9ED4EA;
+    --chart-3: #7EB4D0;
+    --chart-4: #6A8EAE;
+    --chart-5: #4A5A70;
+    --chart-6: #3A4A60;
+    --chart-7: #8AA0B8;
+    --chart-8: #D5E4EE;
+    --chart-9: #F3F5F8;
+    --chart-10: #1A2B42;
+    --chart-11: #24364E;
+    --chart-12: #152033;
+    --positive: #CCEEFF;
+    --negative: #C4B8B0;
+    --toggle-on-bg: #CCEEFF;
+    --toggle-on-text: #1F3864;
+    --theme-color: #0B1018;
+    color-scheme: dark;
+  }
+}
+
+html[data-theme="dark"] {
+  --bg: #0B1018;
+  --bg-elev: #111827;
+  --surface: #141C2A;
+  --text: #F3F5F8;
+  --text-mute: #A8B0BA;
+  --text-faint: #7A8490;
+  --hairline: #2A3548;
+  --heading: #F7F8FA;
+  --accent: #CCEEFF;
+  --accent-soft: #1A2B42;
+  --btn-bg: #CCEEFF;
+  --btn-text: #1F3864;
+  --band: #1A2B42;
+  --chart-rev: #CCEEFF;
+  --chart-exp: #4A5A70;
+  --chart-1: #CCEEFF;
+  --chart-2: #9ED4EA;
+  --chart-3: #7EB4D0;
+  --chart-4: #6A8EAE;
+  --chart-5: #4A5A70;
+  --chart-6: #3A4A60;
+  --chart-7: #8AA0B8;
+  --chart-8: #D5E4EE;
+  --chart-9: #F3F5F8;
+  --chart-10: #1A2B42;
+  --chart-11: #24364E;
+  --chart-12: #152033;
+  --positive: #CCEEFF;
+  --negative: #C4B8B0;
+  --toggle-on-bg: #CCEEFF;
+  --toggle-on-text: #1F3864;
+  --theme-color: #0B1018;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] { color-scheme: light; }
+
 body {
   margin: 0;
-  color: #4c4560;
-  font-family: Outfit, sans-serif;
-  background:
-    radial-gradient(900px 520px at 88% -10%, rgba(167, 139, 250, 0.45), transparent 60%),
-    radial-gradient(720px 480px at -10% 30%, rgba(196, 181, 253, 0.38), transparent 55%),
-    radial-gradient(680px 420px at 50% 110%, rgba(221, 214, 254, 0.55), transparent 50%),
-    #f7f4ff;
+  color: var(--text);
+  font-family: "Barlow", Arial, Helvetica, sans-serif;
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, .font-display {
-  font-family: Nunito, sans-serif;
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--heading);
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  color: var(--heading);
 }
 
 ::selection {
-  background: #ddd6fe;
-  color: #2a1548;
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 :focus-visible {
-  outline: 2px solid #7c3aed;
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
+.theme-toggle {
+  display: inline-flex;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.theme-toggle button {
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  color: var(--text-mute);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  line-height: 1;
+  min-height: 2.5rem;
+}
+.theme-toggle button + button { border-left: 1px solid var(--hairline); }
+.theme-toggle button[aria-pressed="true"] {
+  background: var(--toggle-on-bg);
+  color: var(--toggle-on-text);
+}
+
+.bg-white { background-color: var(--surface); }
+.hover\:bg-white:hover { background-color: var(--band); }
+
 .statements-frame {
   container-type: inline-size;
-  background: #f7f4ff;
+  background: var(--bg);
 }
 .statements-frame.is-fit {
   height: 100%;
@@ -61,7 +217,7 @@ h1, h2, h3, .font-display {
   display: grid;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: #f7f4ff;
+  background: var(--bg);
 }
 @container (min-width: 480px) {
   .statements-board {
@@ -71,19 +227,21 @@ h1, h2, h3, .font-display {
 }
 .statement-card {
   min-width: 0;
-  border: 1px solid rgba(109, 40, 217, 0.08);
-  border-radius: 1rem;
-  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 0;
+  background: var(--surface);
   padding: 0.85rem 0.9rem 1rem;
-  box-shadow: 0 10px 28px rgba(76, 29, 149, 0.06);
+  box-shadow: none;
 }
 .statement-card h2 {
   margin: 0 0 0.45rem;
-  font-family: Nunito, sans-serif;
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
   font-size: 1.15rem;
   line-height: 1.2;
-  font-weight: 800;
-  color: #6d28d9;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--heading);
 }
 .statement-card table {
   width: 100%;
@@ -101,7 +259,7 @@ h1, h2, h3, .font-display {
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  color: #6b6280;
+  color: var(--heading);
   text-align: right;
 }
 .statement-card thead th:first-child {
@@ -111,29 +269,32 @@ h1, h2, h3, .font-display {
 .statement-card tbody th {
   text-align: left;
   font-weight: 500;
-  color: #2a1548;
+  color: var(--text);
   padding-right: 0.35rem;
   white-space: normal;
 }
 .statement-card td {
   text-align: right;
   font-variant-numeric: tabular-nums;
-  color: #2a1548;
+  color: var(--text);
   white-space: nowrap;
 }
 .statement-card tr.is-heading th {
   padding-top: 0.55rem;
-  font-family: Nunito, sans-serif;
-  font-weight: 800;
-  color: #4c1d95;
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--heading);
 }
 .statement-card tr.is-total th,
 .statement-card tr.is-total td {
-  font-family: Nunito, sans-serif;
-  font-weight: 800;
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  font-weight: 600;
+  color: var(--heading);
 }
 .statement-card tr.is-total {
-  background: #f4f4f5;
+  background: var(--band);
 }
 .statement-card tr.is-line {
   border-top: 1px solid #e7e5e4;
@@ -265,6 +426,9 @@ h1, h2, h3, .font-display {
   font-family: "Tinos", "Times New Roman", Times, serif;
   font-size: var(--afs-body);
   line-height: var(--afs-leading);
+  letter-spacing: normal;
+  text-transform: none;
+  color: #000;
 }
 .afs-nav {
   position: sticky;
@@ -275,8 +439,10 @@ h1, h2, h3, .font-display {
   gap: 0.35rem;
   max-height: calc(100vh - 6.5rem);
   overflow: auto;
-  font-family: Nunito, sans-serif;
+  font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
   font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   line-height: 1.35;
 }
 .afs-nav a { color: #1F3864; text-decoration: none; }

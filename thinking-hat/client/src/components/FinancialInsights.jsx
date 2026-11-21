@@ -70,7 +70,7 @@ function Brief({ financial, currency }) {
       ) : null}
       <div className="mt-3 grid grid-cols-2 gap-3">
         <SideTile label="Receivables" side={financial.receivables} tone="bg-[#efe6ff]" currency={currency} />
-        <SideTile label="Payables" side={financial.payables} tone="bg-[#f5f0ff]" currency={currency} />
+        <SideTile label="Payables" side={financial.payables} tone="bg-band" currency={currency} />
       </div>
       <div className="mt-4 space-y-4">
         <BulletList label="This month" items={financial.currentMonth} />

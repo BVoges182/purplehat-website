@@ -52,7 +52,7 @@ function IconDownload() {
 }
 
 const rowActionClass = "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border bg-white px-3 font-display text-sm font-extrabold transition";
-const quietActionClass = `${rowActionClass} border-[rgba(109,40,217,0.12)] text-ink hover:bg-[#f5f3ff]`;
+const quietActionClass = `${rowActionClass} border-hairline text-ink hover:bg-band`;
 const deleteActionClass = `${rowActionClass} border-rose-600 text-rose-700 hover:bg-rose-50`;
 
 function TemplateActions({ clientId, template, canManage, onEdit, onDownload, onDelete }) {
@@ -88,7 +88,7 @@ function TemplateActions({ clientId, template, canManage, onEdit, onDownload, on
 function Toast({ message }) {
   if (!message) return null;
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-ink px-4 py-3 text-sm font-semibold text-white shadow-card" role="status">
+    <div className="fixed bottom-4 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl bg-[#1F3864] px-4 py-3 text-sm font-semibold text-white" role="status">
       {message}
     </div>
   );
@@ -108,7 +108,7 @@ function Modal({ title, lede, onClose, children }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="builder-dialog-title"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[rgba(109,40,217,0.12)] bg-white p-6 shadow-card"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-hairline bg-white p-6 shadow-card"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <h2 id="builder-dialog-title" className="font-display text-2xl font-extrabold text-ink">{title}</h2>
@@ -464,10 +464,10 @@ export default function AdminTemplateBuilder() {
           </label>
           {!catalog ? <p className="px-1 py-6 text-sm text-mute">Loading clients…</p> : null}
           {catalog && clients.length === 0 ? (
-            <p className="rounded-2xl bg-[#f5f0ff] px-4 py-6 text-sm text-ink">No clients yet. Create one to start a template.</p>
+            <p className="rounded-2xl bg-band px-4 py-6 text-sm text-ink">No clients yet. Create one to start a template.</p>
           ) : null}
           {catalog && clients.length > 0 && shown.length === 0 ? (
-            <p className="rounded-2xl bg-[#f5f0ff] px-4 py-6 text-sm text-ink">No clients match that search.</p>
+            <p className="rounded-2xl bg-band px-4 py-6 text-sm text-ink">No clients match that search.</p>
           ) : null}
           <ul className="max-h-80 space-y-2 overflow-y-auto lg:max-h-[calc(100vh-22rem)]">
             {shown.map((client) => {
@@ -477,7 +477,7 @@ export default function AdminTemplateBuilder() {
                   <button
                     type="button"
                     onClick={() => choose(client.id)}
-                    className={`w-full rounded-2xl border px-3 py-3 text-left transition ${on ? "border-plum bg-[#f5f0ff]" : "border-[rgba(109,40,217,0.1)] bg-white hover:bg-[#fbfaff]"}`}
+                    className={`w-full rounded-2xl border px-3 py-3 text-left transition ${on ? "border-plum bg-band" : "border-hairline bg-white hover:bg-band"}`}
                     aria-current={on ? "true" : undefined}
                   >
                     <span className="block font-semibold text-ink">{client.name}</span>
@@ -491,7 +491,7 @@ export default function AdminTemplateBuilder() {
           <button
             type="button"
             onClick={openClientForm}
-            className="mt-3 w-full rounded-2xl border border-dashed border-[rgba(109,40,217,0.35)] bg-[#fbfaff] px-4 py-4 text-left hover:bg-[#f5f0ff]"
+            className="mt-3 w-full rounded-2xl border border-dashed border-hairline bg-surface px-4 py-4 text-left hover:bg-band"
           >
             <span className="block font-display text-base font-extrabold text-plum">+ Create new client</span>
             <span className="mt-1 block text-sm text-mute">Add a business and its reporting setup.</span>
@@ -558,7 +558,7 @@ export default function AdminTemplateBuilder() {
                 </div>
               </div>
               {selected.templates.length === 0 ? (
-                <div className="mt-8 rounded-2xl bg-[#f5f0ff] px-5 py-10 text-center">
+                <div className="mt-8 rounded-2xl bg-band px-5 py-10 text-center">
                   <p className="font-display text-xl font-extrabold text-ink">No templates yet</p>
                   <p className="mx-auto mt-2 max-w-md text-sm text-mute">
                     This client has no templates. Create one, copy another client’s template, or import a CSV.
@@ -568,7 +568,7 @@ export default function AdminTemplateBuilder() {
                 <>
                 <ul className="mt-6 space-y-3 md:hidden">
                   {selected.templates.map((template) => (
-                    <li key={template.id} className="rounded-2xl border border-[rgba(109,40,217,0.1)] p-4">
+                    <li key={template.id} className="rounded-2xl border border-hairline p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-ink">{template.name}</span>
                         {template.needsReview ? <ReviewFlag reason={template.reviewReason} /> : null}
@@ -598,7 +598,7 @@ export default function AdminTemplateBuilder() {
                 <div className="mt-6 hidden max-w-full overflow-x-auto md:block">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-[rgba(109,40,217,0.1)] text-xs font-bold uppercase tracking-wide text-mute">
+                      <tr className="border-b border-hairline text-xs font-bold uppercase tracking-wide text-mute">
                         <th className="px-3 py-3 font-bold">Template</th>
                         <th className="px-3 py-3 font-bold">Framework</th>
                         <th className="px-3 py-3 font-bold">Period</th>
@@ -609,7 +609,7 @@ export default function AdminTemplateBuilder() {
                     </thead>
                     <tbody>
                       {selected.templates.map((template) => (
-                        <tr key={template.id} className="border-b border-[rgba(109,40,217,0.08)] align-top">
+                        <tr key={template.id} className="border-b border-hairline align-top">
                           <td className="px-3 py-4">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="whitespace-nowrap font-semibold text-ink">{template.name}</span>
@@ -810,7 +810,7 @@ export default function AdminTemplateBuilder() {
           <ul className="mt-5 space-y-3">
             {bots.length === 0 ? <li className="text-sm text-mute">No bots yet.</li> : null}
             {bots.map((bot) => (
-              <li key={bot.id} className="rounded-2xl border border-[rgba(109,40,217,0.1)] px-3 py-3">
+              <li key={bot.id} className="rounded-2xl border border-hairline px-3 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-ink">{bot.name}</p>

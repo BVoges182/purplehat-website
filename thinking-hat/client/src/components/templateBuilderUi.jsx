@@ -1,10 +1,10 @@
 export function FrameworkBadge({ label }) {
   if (!label) return null;
   const tone = label === "US GAAP"
-    ? "bg-[#2a1548] text-white"
+    ? "bg-[var(--btn-bg)] text-[var(--btn-text)]"
     : label.startsWith("UK")
-      ? "bg-[#f5f0ff] text-plum"
-      : "border border-[rgba(109,40,217,0.18)] bg-white text-[#4c1d95]";
+      ? "bg-band text-plum"
+      : "border border-hairline bg-white text-heading";
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${tone}`}>{label}</span>
   );
@@ -26,7 +26,7 @@ export function SectionChips({ chips }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map((chip) => (
-        <span key={chip} className="inline-flex rounded-full bg-[#f5f0ff] px-2 py-0.5 text-xs font-semibold text-[#4c1d95]">
+        <span key={chip} className="inline-flex rounded-full bg-band px-2 py-0.5 text-xs font-semibold text-heading">
           {chip}
         </span>
       ))}

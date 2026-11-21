@@ -3,10 +3,10 @@ import { Card, SegmentedPills } from "./ui";
 import { reportFigure } from "../reportMoney";
 
 const TILES = [
-  "bg-[#efe6ff]",
-  "bg-[#f5f0ff]",
-  "bg-[#f7f3ff]",
-  "bg-[#faf8ff]",
+  "bg-band",
+  "bg-[var(--bg-elev)]",
+  "bg-surface",
+  "bg-[var(--accent-soft)]",
 ];
 
 function shownFigure(value, format) {
@@ -84,11 +84,11 @@ export default function AgingSummary({ section }) {
         <SegmentedPills label={`${section.title} bucket`} options={options} value={selected.id} onChange={chooseBucket} />
         <div key={selected.id} className="app-switch-in mt-2">
           {visible.length ? visible.map((item, index) => (
-            <div key={`${item.row.label}-${index}`} className="flex items-baseline justify-between gap-3 border-t border-[rgba(109,40,217,0.08)] py-2.5">
+            <div key={`${item.row.label}-${index}`} className="flex items-baseline justify-between gap-3 border-t border-hairline py-2.5">
               <p className="min-w-0 text-sm text-ink">{item.row.label}</p>
               <p className="whitespace-nowrap text-right text-sm tabular-nums text-ink">{shownFigure(item.value, item.row.formats?.[selected.index])}</p>
             </div>
-          )) : <p className="border-t border-[rgba(109,40,217,0.08)] py-3 text-sm text-mute">Nothing outstanding</p>}
+          )) : <p className="border-t border-hairline py-3 text-sm text-mute">Nothing outstanding</p>}
           {ranked.length > 5 && !showAll ? (
             <button type="button" className="flex min-h-11 w-full items-center justify-center text-sm font-semibold text-plum underline" onClick={() => setShowAll(true)}>
               Show all
@@ -114,7 +114,7 @@ export default function AgingSummary({ section }) {
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={`${row.label}-${index}`} className={row.kind === "total" ? "" : "border-t border-[rgba(109,40,217,0.08)]"}>
+              <tr key={`${row.label}-${index}`} className={row.kind === "total" ? "" : "border-t border-hairline"}>
                 <td className={`py-2.5 pr-3 ${row.kind === "total" ? "font-display font-extrabold text-ink" : "text-ink"}`}>{row.label}</td>
                 {columns.map((column, columnIndex) => (
                   <td key={`${column}-${columnIndex}`} className={`py-2.5 pl-3 text-right tabular-nums ${row.kind === "total" ? "font-display font-extrabold text-ink" : "text-ink"}`}>

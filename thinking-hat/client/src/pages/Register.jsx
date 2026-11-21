@@ -56,7 +56,7 @@ export default function Register() {
   if (message) {
     return (
       <AuthFrame title="Account created" lede={message}>
-        <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-b from-[#8b5cf6] to-[#6d28d9] px-5 font-display text-sm font-extrabold text-white" to="/login" state={{ message }}>
+        <Link className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--btn-bg)] px-5 font-display text-sm font-semibold text-[var(--btn-text)]" to="/login" state={{ message }}>
           Go to sign in
         </Link>
       </AuthFrame>
