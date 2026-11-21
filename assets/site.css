@@ -362,7 +362,7 @@ img { max-width: 100%; height: auto; }
   background: transparent;
 }
 .cal-day.is-today {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent) !important;
 }
 .cal-day.is-selected,
 .time-btn.is-selected {
