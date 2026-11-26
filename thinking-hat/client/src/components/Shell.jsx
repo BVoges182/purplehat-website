@@ -13,6 +13,27 @@ const clientLinks = [
   ["/business", "Business"],
 ];
 
+function demoClient(user) {
+  if (user?.reportTemplate === "purple-hat-demo") return true;
+  if (user?.reportTemplate === "wealth-tech") return false;
+  return /purple\s*hat\s*demo/i.test(String(user?.businessName || ""));
+}
+
+function linksFor(user) {
+  if (user.role === "admin") return adminLinks;
+  if (!demoClient(user)) return clientLinks;
+  return [
+    ["/dashboard", "Dashboard"],
+    ["/reports", "Management Reports"],
+    ["/statements", "Financial Statements"],
+    ["/budgets", "Budgets"],
+    ["/cash-forecast", "Cash Forecast"],
+    ["/billing", "Billing"],
+    ["/request", "Request Build"],
+    ["/business", "Business"],
+  ];
+}
+
 const adminLinks = [
   ["/admin", "People"],
   ["/admin/reports", "Management Reports"],
@@ -55,8 +76,10 @@ export default function Shell() {
   const menuRef = useRef(null);
   const panelRef = useRef(null);
   const headerRef = useRef(null);
-  const links = user.role === "admin" ? adminLinks : clientLinks;
-  const wide = location.pathname.startsWith("/admin/template-builder");
+  const links = linksFor(user);
+  const wide = location.pathname.startsWith("/admin/template-builder")
+    || location.pathname.startsWith("/budgets")
+    || location.pathname.startsWith("/cash-forecast");
   const frame = wide ? "max-w-[90rem]" : "max-w-6xl";
 
   useEffect(() => {

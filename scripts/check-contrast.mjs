@@ -70,6 +70,10 @@ const textPairs = [
   ["cal-selected-text", "cal-selected-bg", "selected day"],
   ["afs-nav-link", "bg", "AFS menu link"],
   ["afs-nav-active", "bg", "AFS current section"],
+  ["rag-green", "rag-green-bg", "green pill"],
+  ["rag-amber", "rag-amber-bg", "amber pill"],
+  ["rag-red", "rag-red-bg", "red pill"],
+  ["illustrative-text", "illustrative-bg", "illustrative chip"],
 ];
 
 const boundaryPairs = [
