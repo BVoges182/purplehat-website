@@ -43,6 +43,15 @@ export function defaultCoin() {
   return COINS.find((coin) => coin.symbol === symbol || coin.pair === symbol) || COINS[0];
 }
 
+export function pricePrecision(decimals, tickSize) {
+  if (tickSize != null && String(tickSize).trim() !== "") {
+    const fromTick = decimalsFromTickSize(tickSize);
+    if (Number.isInteger(fromTick) && fromTick >= 0) return fromTick;
+  }
+  const fallback = Number(decimals);
+  return Number.isInteger(fallback) && fallback >= 0 ? fallback : 2;
+}
+
 export function formatPrice(value, decimals = 2) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "—";

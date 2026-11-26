@@ -704,8 +704,6 @@ export function priceMarkers(rows, settings = envDefaults(), interval = "4h", no
   ]);
 }
 
-export { SIGNAL_FAMILIES } from "./marketStructure.js";
-
 export function formatAlert(signal) {
   const coin = signal.coinId || String(signal.symbol || "").replace(/USDT$/, "");
   const timeframe = signal.timeframe === "1d" ? "1D" : "4H";

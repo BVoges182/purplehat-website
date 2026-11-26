@@ -5,7 +5,7 @@ import { storageRoot } from "./db.js";
 
 const require = createRequire(import.meta.url);
 
-// Pinned snapshot of purplehat-trading at 603b207. Do not edit files in vendor/.
+// Pinned snapshot of purplehat-trading at 4293cb59. Do not edit files in vendor/.
 const vendorRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "vendor", "purplehat-trader");
 
 export const TRADER_MIN_PASSWORD = 12;

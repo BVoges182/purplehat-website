@@ -10,10 +10,15 @@ import { runStoredBacktest } from "./backtest.js";
 import { runPlaybookBacktest } from "./playbook-backtest.js";
 import { dismissSignal, listUnreadNotifications, markNotificationRead, querySignals } from "./db.js";
 import { evaluateAll } from "./evaluate.js";
-import { monthlyOpensFor } from "./monthlyOpens.js";
 import { saveRewardRisk } from "./playbook-store.js";
-import { loadLiquidity } from "./liquidity.js";
-import { loadCoin, refreshAll } from "./refresh.js";
+import { buildReadouts } from "./futuresMetrics.js";
+import { fetchStats } from "./backoff.js";
+import { cachedMonthlyOpens } from "./monthlyOpens.js";
+import { kickStaleRecovery, loadCoin, refreshAll } from "./refresh.js";
+import { refreshZigzag30, zigzagCoin, zigzagOverview } from "./zigzag30.js";
+import { backfillStatus, zigzagHistory } from "./zigzagBackfill.js";
+import { halvingView, refreshHalving } from "./halving.js";
+import { buildSymbolReadouts, readFundingBoard } from "./venueFunding.js";
 import { filterScanner, overviewCoins, scanCoins } from "./scanner.js";
 import { getSettings, saveSettings } from "./settings-store.js";
 
@@ -58,18 +63,37 @@ export function createTraderRouter(db, deps = {}) {
   const health = (_req, res) => {
     try {
       db.prepare("SELECT 1 AS ok").get();
-      res.json({ ok: true, db: "up", version: APP_VERSION });
+      res.json({ ok: true, db: "up", version: APP_VERSION, ...(deps.commit ? { commit: deps.commit } : {}) });
     } catch {
       res.status(503).json({ ok: false, db: "down" });
     }
   };
+  router.get("/api/debug/fetch-stats", (_req, res) => {
+    if (process.env.PURPLEHAT_STAGING !== "1") {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    res.json(fetchStats());
+  });
   router.get("/api/health", health);
   router.get("/healthz", health);
   router.get("/api/coins", (_req, res) => res.json({ coins: COINS }));
+  function sendCached(req, res, body, token) {
+    const etag = `W/"${token}"`;
+    res.set("Cache-Control", "no-cache");
+    res.set("ETag", etag);
+    if (req.get("if-none-match") === etag) {
+      res.status(304).end();
+      return;
+    }
+    res.json(body);
+  }
   router.get("/api/overview", (req, res) => {
     const requested = String(req.query.coin || "").trim();
     if (!requested) {
-      res.json({ coins: overviewCoins(db) });
+      const coins = overviewCoins(db);
+      const token = coins.map((row) => `${row.id}:${row.lastPrice || ""}:${(row.signals4h || []).length}:${(row.signals1d || []).length}`).join("|");
+      sendCached(req, res, { coins }, token || "empty");
       return;
     }
     const coin = coinById(requested);
@@ -77,21 +101,24 @@ export function createTraderRouter(db, deps = {}) {
       res.status(404).json({ error: "Unknown coin" });
       return;
     }
-    res.json({ coin: overviewCoins(db, [coin])[0] });
+    const row = overviewCoins(db, [coin])[0];
+    sendCached(req, res, { coin: row }, `${coin.id}:${row?.lastPrice || ""}:${(row?.signals4h || []).length}`);
   });
-  router.get("/api/monthly-opens", async (req, res) => {
+  router.get("/api/monthly-opens", (req, res) => {
     const coin = coinById(req.query.coin || req.query.symbol || "");
     if (!coin) {
       res.status(404).json({ error: "Unknown coin" });
       return;
     }
-    try {
-      const load = deps.monthlyOpens || ((item, extra) => monthlyOpensFor(db, item, extra));
-      const opens = await load(coin, {});
-      res.json({ symbol: coin.symbol, opens });
-    } catch (error) {
-      res.status(502).json({ error: error.message });
+    if (deps.monthlyOpens) {
+      Promise.resolve(deps.monthlyOpens(coin, {}))
+        .then((opens) => res.json({ symbol: coin.symbol, opens }))
+        .catch((error) => res.status(502).json({ error: error.message }));
+      return;
     }
+    const opens = cachedMonthlyOpens(db, coin);
+    res.set("Cache-Control", "no-cache");
+    res.json({ symbol: coin.symbol, opens, stale: opens.length === 0 });
   });
   router.get("/api/dashboard", async (req, res) => {
     const coin = coinById(req.query.coin || "BTC");
@@ -100,7 +127,27 @@ export function createTraderRouter(db, deps = {}) {
       return;
     }
     try {
-      res.json(await loadCoin(db, coin));
+      const body = await loadCoin(db, coin);
+      if (coin.id === "BTC") body.halving = (deps.halvingView || halvingView)(db);
+      const token = `${coin.id}:${body.refreshedAt || 0}:${body.series?.["4h"]?.length || 0}:${body.series?.["1d"]?.length || 0}:${body.source}`;
+      sendCached(req, res, body, token);
+    } catch (error) {
+      res.status(502).json({ error: error.message });
+    }
+  });
+  router.get("/api/dashboard/all", async (_req, res) => {
+    try {
+      const coins = [];
+      let stale = false;
+      for (const coin of COINS) {
+        const body = await loadCoin(db, coin, { recover: false });
+        if (coin.id === "BTC") body.halving = (deps.halvingView || halvingView)(db);
+        if (body.source === "stale") stale = true;
+        coins.push(body);
+      }
+      if (stale) kickStaleRecovery(db);
+      res.set("Cache-Control", "no-cache");
+      res.json({ coins });
     } catch (error) {
       res.status(502).json({ error: error.message });
     }
@@ -115,29 +162,31 @@ export function createTraderRouter(db, deps = {}) {
     }
     res.json({ symbol: coin.symbol, interval, candles: loadSeries(db, coin.symbol, interval) });
   });
-  router.get("/api/liquidity", async (req, res) => {
+  router.get("/api/readouts", (req, res) => {
     const symbol = signalSymbol(req.query.symbol) || "BTCUSDT";
+    const coin = COINS.find((item) => item.symbol === symbol);
+    if (!coin) {
+      res.status(404).json({ error: "Unknown symbol" });
+      return;
+    }
     try {
-      const body = await (deps.loadLiquidity || loadLiquidity)(symbol);
-      res.json(body);
+      if (symbol === "BTCUSDT") {
+        const body = (deps.buildReadouts || buildReadouts)(db, getSettings(db));
+        const board = readFundingBoard(db, symbol);
+        res.json({ ...body, venues: board.venues, venueHistory: board.history });
+        return;
+      }
+      res.json(buildSymbolReadouts(db, symbol));
     } catch (error) {
-      res.json({
-        symbol,
-        status: "unavailable",
-        error: error instanceof Error ? error.message : String(error),
-        oi: { okx: [], binance: [], bybit: [] },
-        funding: [],
-        accountRatios: [],
-        realisedPrints: [],
-        limitations: [],
-        chartsRemain: true,
-      });
+      res.status(500).json({ available: false, error: error instanceof Error ? error.message : String(error) });
     }
   });
   router.get("/api/candles/refresh", async (req, res) => {
     try {
+      const funding = req.query.funding === "1" || !req.query.symbol;
+      const results = await refreshAll(db, undefined, { funding, force: true, monthly: true });
       if (!req.query.symbol) {
-        res.json({ results: await refreshAll(db) });
+        res.json({ results });
         return;
       }
       const coin = COINS.find((item) => item.symbol === req.query.symbol || item.id.toLowerCase() === String(req.query.symbol).toLowerCase());
@@ -145,10 +194,10 @@ export function createTraderRouter(db, deps = {}) {
         res.status(404).json({ error: "Unknown symbol" });
         return;
       }
-      const dashboard = await loadCoin(db, coin, { force: true });
       if (req.query.scan === "1") {
         await runEvaluation(db, { coins: [coin], refresh: async () => {} });
       }
+      const dashboard = await loadCoin(db, coin, { recover: false });
       res.json({ ...dashboard, source: dashboard.error ? dashboard.source : "live" });
     } catch (error) {
       res.status(502).json({ error: error.message });
@@ -197,6 +246,72 @@ export function createTraderRouter(db, deps = {}) {
     }
     markNotificationRead(db, id);
     res.json({ ok: true, id });
+  });
+  router.get("/api/zigzag30/overview", (_req, res) => {
+    try {
+      const body = (deps.zigzagOverview || zigzagOverview)(db);
+      res.set("Cache-Control", "no-cache");
+      res.json(body);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  router.get("/api/zigzag30/coin/:id/history", (req, res) => {
+    const coin = coinById(req.params.id);
+    if (!coin) {
+      res.status(404).json({ error: "Unknown coin" });
+      return;
+    }
+    try {
+      res.set("Cache-Control", "no-cache");
+      res.json((deps.zigzagHistory || zigzagHistory)(db, coin));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  router.get("/api/zigzag30/coin/:id", (req, res) => {
+    const coin = coinById(req.params.id);
+    if (!coin) {
+      res.status(404).json({ error: "Unknown coin" });
+      return;
+    }
+    try {
+      const body = (deps.zigzagCoin || zigzagCoin)(db, coin);
+      res.set("Cache-Control", "no-cache");
+      res.json({ coin: body });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  router.get("/api/zigzag30/backfill", (_req, res) => {
+    try {
+      res.json({ coins: (deps.backfillStatus || backfillStatus)(db) });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  router.get("/api/halving", (_req, res) => {
+    try {
+      res.set("Cache-Control", "no-cache");
+      res.json((deps.halvingView || halvingView)(db));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  router.post("/api/halving/refresh", async (_req, res) => {
+    try {
+      res.json(await (deps.refreshHalving || refreshHalving)(db, { force: true }));
+    } catch (error) {
+      res.status(502).json({ error: error.message });
+    }
+  });
+  router.post("/api/zigzag30/refresh", async (_req, res) => {
+    try {
+      const result = await (deps.refreshZigzag30 || refreshZigzag30)(db);
+      res.json({ coins: result.coins, overview: result.overview });
+    } catch (error) {
+      res.status(502).json({ error: error.message });
+    }
   });
   router.get("/api/settings", (_req, res) => {
     res.json({ settings: getSettings(db) });

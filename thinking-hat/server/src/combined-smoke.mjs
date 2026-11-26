@@ -58,7 +58,7 @@ if (process.argv.includes("--serve")) {
 
   function verifyPin() {
     const pin = JSON.parse(fs.readFileSync(path.join(repoRoot, "trader.pin.json"), "utf8"));
-    check("pin commit", pin.commit === "603b207ffa18cc151701bd79659967bff9779584", pin.commit);
+    check("pin commit", pin.commit === "4293cb59e50f1dedc9ac9f835538382267d13101", pin.commit);
     for (const [file, hash] of Object.entries(pin.files || {})) {
       const full = path.join(repoRoot, "vendor", "purplehat-trader", file);
       const actual = crypto.createHash("sha256").update(fs.readFileSync(full)).digest("hex");

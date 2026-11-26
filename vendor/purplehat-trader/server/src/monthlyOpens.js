@@ -39,3 +39,20 @@ export async function monthlyOpensFor(db, coin, options = {}) {
     fetchKlines: () => fetchMonthlyKlines(provider, market),
   });
 }
+
+export function cachedMonthlyOpens(db, coin, options = {}) {
+  const now = options.now ?? Date.now();
+  const venue = options.venue || (db ? readVenue(db, coin.symbol) : null) || {
+    provider: "binance",
+    market: coin.pair || coin.symbol,
+    label: "Binance",
+    kind: "spot",
+  };
+  if (venue.provider === "unavailable") return [];
+  const store = options.store || defaultStore;
+  if (typeof store.peek !== "function") return [];
+  const market = venue.market || coin.pair || coin.symbol;
+  const fromVenue = venue.decimals == null ? coin.displayDecimals : Number(venue.decimals);
+  const decimals = Number.isFinite(fromVenue) ? fromVenue : 2;
+  return store.peek(`${venue.provider}:${market}`, now, (value) => formatPrice(value, decimals)) || [];
+}
