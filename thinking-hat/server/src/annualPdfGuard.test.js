@@ -38,7 +38,8 @@ test("the annual statements PDF stays Times Roman, navy, and banded", async () =
   assert.equal(digest, baseline);
   const cssPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "client", "src", "index.css");
   const cssBaseline = fs.readFileSync(path.join(path.dirname(fixture), "afs-css-baseline.css"), "utf8");
-  assert.equal(extractAfsStatementCss(fs.readFileSync(cssPath, "utf8")), cssBaseline);
+  const sameLines = (value) => value.replace(/\r\n/g, "\n");
+  assert.equal(sameLines(extractAfsStatementCss(fs.readFileSync(cssPath, "utf8"))), sameLines(cssBaseline));
   const text = pdfText(first);
   assert.match(text, /Times-Roman/);
   assert.match(text, /Times-Bold/);
