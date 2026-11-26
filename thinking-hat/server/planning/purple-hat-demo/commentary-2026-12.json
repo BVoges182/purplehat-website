@@ -1,0 +1,31 @@
+{
+  "entity": "Purple Hat Demo LLC",
+  "currency": "USD",
+  "schemaVersion": 1,
+  "demoOnly": true,
+  "period": "2026-12",
+  "budgetVersion": "fy2026-v2",
+  "status": "draft",
+  "draftedBy": "AI (seeded draft)",
+  "paragraphs": [
+    {
+      "heading": "Revenue",
+      "text": "Net revenue was $86,700, $6,200 (6.7%) below budget. Online product sales of $86,000 were $6,000 short: demand eased faster than planned after Black Friday, and November had already pulled forward some gifting orders. Returns ran at 4.2% of product sales, in line with plan."
+    },
+    {
+      "heading": "Gross margin",
+      "text": "Margin held at 34.5% against a 34.6% budget. Lower volumes meant product purchases, fulfilment and Stripe fees were all under budget, so the revenue shortfall cost about $2,240 of gross profit rather than the full $6,200."
+    },
+    {
+      "heading": "Operating costs",
+      "text": "Marketing was $500 over budget because Adstream ran the holiday campaign to 31 December. Paid ROAS was 4.97 against a 5.2 target. Wages were $500 over because seasonal pick-and-pack staff stayed on to year end."
+    },
+    {
+      "heading": "Result and recommendation",
+      "text": "Net income of $7,760 was $3,280 (29.7%) below budget. Recommend holding January ad spend to budget unless weekly ROAS stays above 5.0, releasing seasonal staff in the first week of January, and timing the Summit spring restock against the 13-week cash forecast. Inventory of $54,000 is about 1.4 months of product purchases."
+    }
+  ],
+  "lineReasons": {
+    "online_product_sales": "Post-Black Friday demand eased faster than planned; some gifting pulled into November."
+  }
+}

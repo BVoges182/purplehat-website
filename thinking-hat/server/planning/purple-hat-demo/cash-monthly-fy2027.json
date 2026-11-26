@@ -1,0 +1,226 @@
+{
+  "entity": "Purple Hat Demo LLC",
+  "currency": "USD",
+  "schemaVersion": 1,
+  "demoOnly": true,
+  "type": "cashMonthly",
+  "method": "indirect",
+  "fiscalYear": 2027,
+  "periods": [
+    "2027-01",
+    "2027-02",
+    "2027-03",
+    "2027-04",
+    "2027-05",
+    "2027-06",
+    "2027-07",
+    "2027-08",
+    "2027-09",
+    "2027-10",
+    "2027-11",
+    "2027-12"
+  ],
+  "basedOnBudget": "fy2027-v1",
+  "openingCash": 71970,
+  "minimumCash": 50000,
+  "rows": {
+    "netRevenue": [
+      50000,
+      47000,
+      52000,
+      50000,
+      53000,
+      53000,
+      55600,
+      61010,
+      67500,
+      80600,
+      106600,
+      93600
+    ],
+    "netIncome": [
+      -1170,
+      -1910,
+      -1140,
+      -1170,
+      -440,
+      -890,
+      200,
+      1530,
+      2670,
+      5130,
+      11500,
+      7860
+    ],
+    "changeReceivables": [
+      5300,
+      432,
+      -720,
+      288,
+      -432,
+      0,
+      -374,
+      -779,
+      -935,
+      -1886,
+      -3744,
+      1872
+    ],
+    "changeInventory": [
+      7000,
+      3000,
+      -18000,
+      6000,
+      4000,
+      2000,
+      -2000,
+      -4000,
+      -6000,
+      -8000,
+      10000,
+      5000
+    ],
+    "changePayables": [
+      -3550,
+      -291,
+      485,
+      -194,
+      291,
+      0,
+      252,
+      525,
+      630,
+      1271,
+      2522,
+      -1261
+    ],
+    "capex": [
+      0,
+      0,
+      0,
+      -6000,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "drawings": [
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500,
+      -1500
+    ],
+    "netCashFlow": [
+      6080,
+      -269,
+      -20875,
+      -2576,
+      1919,
+      -390,
+      -3422,
+      -4224,
+      -5135,
+      -4986,
+      18778,
+      11971
+    ],
+    "opening": [
+      71970,
+      78050,
+      77781,
+      56906,
+      54330,
+      56249,
+      55859,
+      52437,
+      48213,
+      43078,
+      38092,
+      56870
+    ],
+    "closing": [
+      78050,
+      77781,
+      56906,
+      54330,
+      56249,
+      55859,
+      52437,
+      48213,
+      43078,
+      38092,
+      56870,
+      68841
+    ]
+  },
+  "inventoryPath": [
+    47000,
+    44000,
+    62000,
+    56000,
+    52000,
+    50000,
+    52000,
+    56000,
+    62000,
+    70000,
+    60000,
+    55000
+  ],
+  "assumptions": {
+    "grossMarginPct": 34.6,
+    "marketingPctOfRevenue": 10,
+    "receivablesPctOfMonthRevenue": 14.4,
+    "payablesPctOfMonthRevenue": 9.7,
+    "capex": "Website rebuild $6,000 in Apr 2027",
+    "drawingsMonthly": 1500
+  },
+  "tieOut13Week": {
+    "2027-01": 84050,
+    "2027-02": 78780,
+    "2027-03": 58930
+  },
+  "actualClosingCash2026": {
+    "2026-07": 68190,
+    "2026-08": 63720,
+    "2026-09": 60300,
+    "2026-10": 59160,
+    "2026-11": 58210,
+    "2026-12": 71970
+  },
+  "watch": [
+    {
+      "tone": "red",
+      "title": "Q3 stock build for peak season",
+      "detail": "Inventory rises to $70k by October; cash bottoms at about $38.1k in Oct."
+    },
+    {
+      "tone": "amber",
+      "title": "Small losses Jan-Jun",
+      "detail": "Fixed costs about $13.4k/month; contribution 24.6c per sales dollar, so break-even is about $55k revenue a month."
+    },
+    {
+      "tone": "green",
+      "title": "Order Q4 stock on 60-day terms",
+      "detail": "Pushes about $15k of payments from Sep-Oct into November."
+    },
+    {
+      "tone": "green",
+      "title": "Drawings policy",
+      "detail": "Hold the $1,500 monthly drawings in Aug-Oct if headroom is under $10k."
+    }
+  ],
+  "source": "Illustrative. Jul-Dec 2026 closing cash and 31 Dec 2026 balances are real demo data."
+}

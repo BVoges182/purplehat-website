@@ -1,0 +1,229 @@
+{
+  "entity": "Purple Hat Demo LLC",
+  "currency": "USD",
+  "schemaVersion": 1,
+  "demoOnly": true,
+  "fiscalYear": 2026,
+  "lines": [
+    {
+      "key": "online_product_sales",
+      "label": "Online product sales",
+      "section": "revenue",
+      "rowType": "input"
+    },
+    {
+      "key": "shipping_income",
+      "label": "Shipping income",
+      "section": "revenue",
+      "rowType": "input"
+    },
+    {
+      "key": "returns_and_refunds",
+      "label": "Returns and refunds",
+      "section": "revenue",
+      "rowType": "input"
+    },
+    {
+      "key": "net_revenue",
+      "label": "Total net revenue",
+      "section": "total",
+      "rowType": "total"
+    },
+    {
+      "key": "product_purchases",
+      "label": "Product purchases",
+      "section": "cogs",
+      "rowType": "input"
+    },
+    {
+      "key": "fulfilment_and_courier",
+      "label": "Fulfilment and courier",
+      "section": "cogs",
+      "rowType": "input"
+    },
+    {
+      "key": "payment_processing_fees",
+      "label": "Payment processing fees",
+      "section": "cogs",
+      "rowType": "input"
+    },
+    {
+      "key": "packaging",
+      "label": "Packaging",
+      "section": "cogs",
+      "rowType": "input"
+    },
+    {
+      "key": "cogs",
+      "label": "Total cost of goods sold",
+      "section": "total",
+      "rowType": "total"
+    },
+    {
+      "key": "gross_profit",
+      "label": "Gross profit",
+      "section": "total",
+      "rowType": "total"
+    },
+    {
+      "key": "marketing",
+      "label": "Marketing and advertising",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "software",
+      "label": "Software and platform fees",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "wages",
+      "label": "Wages",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "warehouse_rent",
+      "label": "Warehouse rent",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "insurance",
+      "label": "Insurance",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "office",
+      "label": "Office and administration",
+      "section": "opex",
+      "rowType": "input"
+    },
+    {
+      "key": "opex",
+      "label": "Total operating expenses",
+      "section": "total",
+      "rowType": "total"
+    },
+    {
+      "key": "net_income",
+      "label": "Net income",
+      "section": "total",
+      "rowType": "total"
+    }
+  ],
+  "versions": [
+    {
+      "id": "fy2026-v2",
+      "label": "FY2026 v2",
+      "status": "approved",
+      "locked": true,
+      "approvedAt": "2025-12-15",
+      "monthly": {
+        "2026-12": {
+          "online_product_sales": 92000,
+          "shipping_income": 4600,
+          "returns_and_refunds": -3700,
+          "product_purchases": 41400,
+          "fulfilment_and_courier": 13800,
+          "payment_processing_fees": 3680,
+          "packaging": 1840,
+          "marketing": 6500,
+          "software": 990,
+          "wages": 10500,
+          "warehouse_rent": 2200,
+          "insurance": 450,
+          "office": 500,
+          "net_revenue": 92900,
+          "cogs": 60720,
+          "gross_profit": 32180,
+          "opex": 21140,
+          "net_income": 11040
+        }
+      },
+      "ytdThrough": {
+        "2026-12": {
+          "online_product_sales": 728000,
+          "shipping_income": 36400,
+          "returns_and_refunds": -30200,
+          "product_purchases": 327600,
+          "fulfilment_and_courier": 109200,
+          "payment_processing_fees": 29120,
+          "packaging": 14560,
+          "marketing": 66000,
+          "software": 11880,
+          "wages": 111600,
+          "warehouse_rent": 26400,
+          "insurance": 1800,
+          "office": 5400,
+          "net_revenue": 734200,
+          "cogs": 480480,
+          "gross_profit": 253720,
+          "opex": 223080,
+          "net_income": 30640
+        }
+      }
+    }
+  ],
+  "actuals": {
+    "source": "REAL demo data: Dec 2026 management pack / client/src/demoReportStatements.json",
+    "month": "2026-12",
+    "monthActual": {
+      "online_product_sales": 86000,
+      "shipping_income": 4300,
+      "returns_and_refunds": -3600,
+      "net_revenue": 86700,
+      "product_purchases": 38700,
+      "fulfilment_and_courier": 12900,
+      "payment_processing_fees": 3440,
+      "packaging": 1720,
+      "cogs": 56760,
+      "gross_profit": 29940,
+      "marketing": 7000,
+      "software": 990,
+      "wages": 11000,
+      "warehouse_rent": 2200,
+      "insurance": 450,
+      "office": 540,
+      "opex": 22180,
+      "net_income": 7760
+    },
+    "ytdActual": {
+      "online_product_sales": 707000,
+      "shipping_income": 35200,
+      "returns_and_refunds": -29400,
+      "net_revenue": 712800,
+      "product_purchases": 318150,
+      "fulfilment_and_courier": 105900,
+      "payment_processing_fees": 28280,
+      "packaging": 14140,
+      "cogs": 466470,
+      "gross_profit": 246330,
+      "marketing": 68900,
+      "software": 11380,
+      "wages": 113700,
+      "warehouse_rent": 26400,
+      "insurance": 1800,
+      "office": 5080,
+      "opex": 227260,
+      "net_income": 19070
+    }
+  },
+  "ragThresholds": {
+    "green": {
+      "maxAbsPct": 2,
+      "orAbsAmountBelow": 500
+    },
+    "amber": {
+      "maxAbsPct": 5
+    },
+    "red": {
+      "minAbsPct": 5,
+      "andAbsAmountAbove": 1000,
+      "requiresCommentary": true
+    },
+    "favourableIsGreen": true
+  }
+}
