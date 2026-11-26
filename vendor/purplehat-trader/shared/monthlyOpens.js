@@ -118,5 +118,10 @@ export function createMonthlyOpenStore() {
       cache.set(key, { at: now, klines: Array.isArray(klines) ? klines : [] });
       return selectMonthlyOpens(klines, now, format);
     },
+    peek(key, now = Date.now(), format = (value) => String(value)) {
+      const hit = cache.get(key);
+      if (!hit) return null;
+      return selectMonthlyOpens(hit.klines, now, format);
+    },
   };
 }

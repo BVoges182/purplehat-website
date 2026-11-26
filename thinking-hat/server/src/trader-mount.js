@@ -5,7 +5,7 @@ import { storageRoot } from "./db.js";
 
 const require = createRequire(import.meta.url);
 
-// Pinned snapshot of purplehat-trading at 603b207. Do not edit files in vendor/.
+// Pinned snapshot of purplehat-trading at 4293cb59. Do not edit files in vendor/.
 const vendorRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "vendor", "purplehat-trader");
 
 export const TRADER_MIN_PASSWORD = 12;
@@ -142,6 +142,33 @@ function publicError(error) {
   return hidden.slice(0, 300);
 }
 
+function quietWarmup(env = process.env) {
+  const value = String(env.TRADER_WARMUP ?? "").trim();
+  return value === "0" || value === "";
+}
+
+// TRADER_WARMUP=0, and a missing value, skip the startup candle refresh.
+// Page reads stay on the cache. The 30-minute batch runs on candle close,
+// and the paced 90-day backfill starts once. An explicit other value keeps
+// the old startup catch-up.
+async function armQuietTrader(db) {
+  const { redact } = await import(vendorUrl("server/src/alerts.js"));
+  const { armCloseScan, armIntervalScan } = await import(vendorUrl("server/src/closeScan.js"));
+  const { evaluateAll } = await import(vendorUrl("server/src/evaluate.js"));
+  const { refreshZigzag30 } = await import(vendorUrl("server/src/zigzag30.js"));
+  const { startZigzagBackfill } = await import(vendorUrl("server/src/zigzagBackfill.js"));
+  const hide = (error) => redact(publicError(error));
+  console.log("Close-aligned scans run while this API process is up. They stop when the process stops.");
+  console.log("Trader startup candle refresh is off. Page reads stay on the cache.");
+  armCloseScan(() => evaluateAll(db).catch((error) => {
+    console.error(`Close scan failed: ${hide(error)}`);
+  }));
+  armIntervalScan("30m", () => refreshZigzag30(db).catch((error) => {
+    console.error(`30m batch failed: ${hide(error)}`);
+  }));
+  startZigzagBackfill(db);
+}
+
 async function warmTrader(db) {
   const { redact } = await import(vendorUrl("server/src/alerts.js"));
   const { resolveVenues, refreshAll } = await import(vendorUrl("server/src/refresh.js"));
@@ -206,7 +233,14 @@ export function mountWebsiteTrader(parent) {
       basePath: "/trader",
       staticDir: path.join(vendorRoot, "dist"),
     });
-    if (process.env.TRADER_WARMUP !== "0") warmTrader(db);
+    // A no-listen import must exit. Background scans and the backfill keep
+    // the process alive, so they start only when this process will serve.
+    if (process.env.THINKING_HAT_NO_LISTEN === "1") return { configured: true, file };
+    if (quietWarmup()) {
+      armQuietTrader(db).catch((error) => {
+        console.error(`Trader scans did not start. ${publicError(error)}`);
+      });
+    } else warmTrader(db);
     return { configured: true, file };
   } catch (error) {
     closeTrader();

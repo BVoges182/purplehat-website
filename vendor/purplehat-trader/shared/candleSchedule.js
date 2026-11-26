@@ -1,3 +1,4 @@
+const THIRTY_MINUTES = 30 * 60 * 1000;
 const FOUR_HOURS = 4 * 60 * 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -5,7 +6,9 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
 export const PUBLICATION_DELAY_MS = 20_000;
 
 export function intervalSize(interval) {
-  return interval === "1d" ? ONE_DAY : FOUR_HOURS;
+  if (interval === "1d") return ONE_DAY;
+  if (interval === "30m") return THIRTY_MINUTES;
+  return FOUR_HOURS;
 }
 
 // Exchange candles are aligned to UTC epoch boundaries, not to when the page opened.
@@ -69,3 +72,17 @@ export function createProcessingGate() {
 }
 
 export const BROWSER_REFRESH_LIMIT = "The open page refreshes the visible chart after exchange closes and cannot do that while the tab is closed or the computer is asleep. Scans for every watched symbol run only while the API process is running, and they do not run when that process is stopped.";
+
+// One local overview read shortly after each 30m close. A 5-minute window contains at most one.
+export function pollTimesDuring(start, durationMs, delay = PUBLICATION_DELAY_MS) {
+  const end = start + durationMs;
+  const times = [];
+  let cursor = start;
+  while (times.length < 8) {
+    const at = nextCloseTime("30m", cursor) + delay;
+    if (at >= end) break;
+    times.push(at);
+    cursor = at + 1;
+  }
+  return times;
+}

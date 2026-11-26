@@ -8,6 +8,7 @@ import { createPacer } from "./backoff.js";
 import { querySignals, readCandles, readTicker, readVenue } from "./db.js";
 import { loadCoin, mapLimit } from "./refresh.js";
 import { getSettings } from "./settings-store.js";
+import { attachOverviewFunding } from "./venueFunding.js";
 
 export async function scanCoins(db, options = {}) {
   const coins = options.coins ?? COINS;
@@ -108,7 +109,7 @@ export function overviewCoins(db, coins = COINS, now = Date.now()) {
       context.errors[coin.symbol] = error.message || "Could not load this coin";
     }
   }
-  return buildOverviewRows(coins, context);
+  return attachOverviewFunding(db, buildOverviewRows(coins, context));
 }
 
 export function filterScanner(rows, filter) {

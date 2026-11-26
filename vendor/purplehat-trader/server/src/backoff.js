@@ -12,7 +12,37 @@ export function retryDelay(attempt, baseMs = 400) {
 }
 
 export function isRetryableStatus(status) {
-  return status === 429 || status === 418 || (status >= 500 && status <= 599);
+  // 418 is a ban. Retrying it spends the ban window faster.
+  return status === 429 || (status >= 500 && status <= 599);
+}
+
+const fetchCounter = { calls: 0, maxWeight: 0, batches: [] };
+
+export function noteExchangeResponse(response) {
+  fetchCounter.calls += 1;
+  const raw = response?.headers?.get?.("x-mbx-used-weight-1m");
+  const weight = Number(raw);
+  if (Number.isFinite(weight)) fetchCounter.maxWeight = Math.max(fetchCounter.maxWeight, weight);
+}
+
+export function fetchStats() {
+  return {
+    calls: fetchCounter.calls,
+    maxWeight: fetchCounter.maxWeight,
+    batches: fetchCounter.batches.map((row) => ({ ...row })),
+  };
+}
+
+export function resetFetchStats() {
+  fetchCounter.calls = 0;
+  fetchCounter.maxWeight = 0;
+  fetchCounter.batches = [];
+}
+
+export function recordBatch(summary) {
+  fetchCounter.batches.push({ ...summary });
+  if (!summary?.calls) return;
+  console.log(`Batch ${summary.name}: calls ${summary.calls} weight ${summary.weight ?? 0} duration ${summary.ms}ms`);
 }
 
 export async function withBackoff(run, { attempts = 3, baseMs = 400, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
@@ -57,6 +87,7 @@ export async function requestJson(url, { fetchImpl = fetch, method = "GET", body
       },
       signal: controller.signal,
     });
+    noteExchangeResponse(response);
     if (!response.ok) {
       const header = response.headers?.get?.("retry-after");
       const seconds = Number(header);

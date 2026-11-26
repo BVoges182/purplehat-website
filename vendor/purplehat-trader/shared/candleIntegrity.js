@@ -1,6 +1,11 @@
 export const DATA_CORRECTION_VERSION = "binance-spot-kline-close-1";
 
-const INTERVAL_MS = { "4h": 4 * 60 * 60 * 1000, "1d": 24 * 60 * 60 * 1000 };
+const INTERVAL_MS = {
+  "30m": 30 * 60 * 1000,
+  "4h": 4 * 60 * 60 * 1000,
+  "1d": 24 * 60 * 60 * 1000,
+  "1w": 7 * 24 * 60 * 60 * 1000,
+};
 
 export function intervalMs(interval) {
   return INTERVAL_MS[interval] || 0;

@@ -4,13 +4,24 @@ import { requestJson, withBackoff } from "./backoff.js";
 
 const VENUE_TTL = 6 * 60 * 60 * 1000;
 
+export function parseTickerRows(body) {
+  const rows = Array.isArray(body) ? body : body ? [body] : [];
+  return rows.filter((row) => row && row.symbol).map((row) => ({
+    symbol: String(row.symbol),
+    lastPrice: String(row.lastPrice),
+    changePercent: String(row.priceChangePercent ?? ""),
+  }));
+}
+
 export function indexExchangeInfo(payload) {
   const listed = new Map();
   for (const row of payload?.symbols || []) {
     if (row?.status !== "TRADING") continue;
     const price = (row.filters || []).find((filter) => filter.filterType === "PRICE_FILTER");
+    const lot = (row.filters || []).find((filter) => filter.filterType === "LOT_SIZE");
     listed.set(row.symbol, {
       tickSize: price?.tickSize ?? null,
+      stepSize: lot?.stepSize ?? null,
       decimals: decimalsFromTickSize(price?.tickSize),
     });
   }
@@ -28,6 +39,7 @@ export async function resolveCoinVenue(coin, listed, hyperliquid) {
       kind: "spot",
       decimals: hit.decimals,
       tickSize: hit.tickSize ? String(hit.tickSize) : "",
+      stepSize: hit.stepSize ? String(hit.stepSize) : "",
     };
   }
   try {
@@ -58,12 +70,15 @@ export function createBinanceProvider({ fetchImpl = fetch, pace = async () => {}
   return {
     id: "binance",
     label: "Binance",
-    async exchangeInfo() {
+    async exchangeInfo(symbols) {
       if (listed && Date.now() - listedAt < VENUE_TTL) return listed;
       if (!listedPromise) {
+        const query = Array.isArray(symbols) && symbols.length
+          ? `?symbols=${encodeURIComponent(JSON.stringify(symbols))}`
+          : "";
         listedPromise = withBackoff(async () => {
           await pace();
-          const body = await requestJson(`${root}/api/v3/exchangeInfo`, { fetchImpl, service: "Binance" });
+          const body = await requestJson(`${root}/api/v3/exchangeInfo${query}`, { fetchImpl, service: "Binance" });
           listed = indexExchangeInfo(body);
           listedAt = Date.now();
           return listed;
@@ -73,10 +88,21 @@ export function createBinanceProvider({ fetchImpl = fetch, pace = async () => {}
       }
       return listedPromise;
     },
-    async candles(symbol, interval, limit = 500) {
+    async tickers(symbols) {
+      const list = (symbols || []).map((symbol) => String(symbol)).filter(Boolean);
+      if (!list.length) return [];
       return withBackoff(async () => {
         await pace();
-        const url = `${root}/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${limit}`;
+        const url = `${root}/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(list))}`;
+        const body = await requestJson(url, { fetchImpl, service: "Binance" });
+        return parseTickerRows(body);
+      });
+    },
+    async candles(symbol, interval, limit = 500, extra = {}) {
+      return withBackoff(async () => {
+        await pace();
+        const start = extra?.startTime == null ? "" : `&startTime=${encodeURIComponent(extra.startTime)}`;
+        const url = `${root}/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${limit}${start}`;
         const rows = await requestJson(url, { fetchImpl, service: "Binance" });
         return rows.map(normalizeKline);
       });
@@ -122,9 +148,15 @@ export function createHyperliquidProvider({ fetchImpl = fetch, pace = async () =
     async candles(market, interval, limit = 500) {
       const size = interval === "1M"
         ? 31 * 24 * 60 * 60 * 1000
-        : interval === "1d"
-          ? 24 * 60 * 60 * 1000
-          : 4 * 60 * 60 * 1000;
+        : interval === "1w"
+          ? 7 * 24 * 60 * 60 * 1000
+          : interval === "1d"
+            ? 24 * 60 * 60 * 1000
+            : interval === "30m"
+              ? 30 * 60 * 1000
+              : interval === "1h"
+                ? 60 * 60 * 1000
+                : 4 * 60 * 60 * 1000;
       const end = Date.now();
       const start = end - limit * size;
       const rows = await post({

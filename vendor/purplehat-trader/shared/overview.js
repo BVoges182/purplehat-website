@@ -45,6 +45,28 @@ export function compareOverviewRows(left, right) {
   return b.strength - a.strength || b.recent - a.recent || left.id.localeCompare(right.id);
 }
 
+export function fundingSortValue(quote) {
+  if (!quote || quote.status !== "listed") return null;
+  const rate = Number(quote.rate);
+  return Number.isFinite(rate) ? rate : null;
+}
+
+const FUNDING_SORT_KEYS = new Set(["fundingBinance", "fundingOkx", "fundingBybit"]);
+
+export function sortOverviewRows(rows, sort) {
+  const copy = (rows || []).slice();
+  if (!sort?.key || !FUNDING_SORT_KEYS.has(sort.key)) return copy.sort(compareOverviewRows);
+  const direction = sort.direction === "asc" ? 1 : -1;
+  return copy.sort((left, right) => {
+    const a = fundingSortValue(left[sort.key]);
+    const b = fundingSortValue(right[sort.key]);
+    if (a == null && b == null) return left.id.localeCompare(right.id);
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return (a - b) * direction || left.id.localeCompare(right.id);
+  });
+}
+
 export function applyOverviewFilter(rows, side = "") {
   const filtered = rows.map((row) => ({
     ...row,

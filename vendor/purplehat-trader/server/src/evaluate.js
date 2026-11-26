@@ -98,7 +98,7 @@ async function evaluateAllBody(db, options = {}) {
   const coins = options.coins ?? COINS;
   const read = options.readCandles ?? ((symbol, interval) => readCandles(db, symbol, interval));
   if (options.refresh) await options.refresh({ db, now, coins });
-  else await refreshAll(db, coins);
+  else await refreshAll(db, coins, { now, funding: true, monthly: true, fetchImpl: options.fetchImpl, env: options.env });
 
   const evaluated = [];
   const skipped = [];

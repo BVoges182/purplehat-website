@@ -1,4 +1,5 @@
 const OPTIONAL_PIVOTS = ["pivotLeft4h", "pivotRight4h", "pivotLeft1d", "pivotRight1d"];
+const FLAGS = ["rsiSmaVisible", "showFundingHistory", "showFundingOkx", "showFundingBybit", "showOutcomeOdds"];
 
 function num(env, name, fallback) {
   const raw = env[name];
@@ -62,6 +63,17 @@ export function envDefaults(env) {
     divMaxBars: num(source, "DIV_MAX_BARS", 60),
     divMaxBars1d: optionalNum(source, "DIV_MAX_BARS_1D") ?? 40,
     divergenceStyle: divergenceStyle(source.DIVERGENCE_STYLE, "A"),
+    showFundingHistory: flag(source, "SHOW_FUNDING_HISTORY", true),
+    showFundingOkx: flag(source, "SHOW_FUNDING_OKX", true),
+    showFundingBybit: flag(source, "SHOW_FUNDING_BYBIT", true),
+    showOutcomeOdds: flag(source, "SHOW_OUTCOME_ODDS", true),
+    nsPivotLeft4h: optionalNum(source, "NS_PIVOT_LEFT_4H") ?? num(source, "NS_PIVOT_LEFT", 3),
+    nsPivotRight4h: optionalNum(source, "NS_PIVOT_RIGHT_4H") ?? num(source, "NS_PIVOT_RIGHT", 3),
+    nsPivotLeft1d: optionalNum(source, "NS_PIVOT_LEFT_1D") ?? 2,
+    nsPivotRight1d: optionalNum(source, "NS_PIVOT_RIGHT_1D") ?? 2,
+    nsPeakNear: num(source, "NS_PEAK_NEAR", 0.95),
+    nsPeakLookback4h: optionalNum(source, "NS_PEAK_LOOKBACK_4H") ?? num(source, "NS_PEAK_LOOKBACK", 60),
+    nsPeakLookback1d: optionalNum(source, "NS_PEAK_LOOKBACK_1D") ?? 30,
   };
 }
 
@@ -70,7 +82,7 @@ export function normalizeSettings(input = {}, env) {
   const next = { ...base };
   for (const key of Object.keys(base)) {
     if (input[key] == null || input[key] === "") continue;
-    if (key === "rsiSmaVisible") {
+    if (FLAGS.includes(key)) {
       next[key] = asFlag(input[key], base[key]);
       continue;
     }
@@ -99,6 +111,10 @@ export function validateSettings(input, env) {
   if (!Number.isInteger(settings.rsiPeriod) || settings.rsiPeriod < 2) errors.push("RSI period must be an integer of at least 2");
   if (!Number.isInteger(settings.rsiSmaPeriod) || settings.rsiSmaPeriod < 2) errors.push("RSI SMA period must be an integer of at least 2");
   if (typeof settings.rsiSmaVisible !== "boolean") errors.push("RSI SMA visibility must be on or off");
+  if (typeof settings.showFundingHistory !== "boolean") errors.push("Funding history visibility must be on or off");
+  if (typeof settings.showFundingOkx !== "boolean") errors.push("OKX funding visibility must be on or off");
+  if (typeof settings.showFundingBybit !== "boolean") errors.push("Bybit funding visibility must be on or off");
+  if (typeof settings.showOutcomeOdds !== "boolean") errors.push("Outcome odds visibility must be on or off");
   if (!(settings.rsiOversold > 0 && settings.rsiOversold < settings.rsiOverbought && settings.rsiOverbought < 100)) {
     errors.push("RSI oversold must be below RSI overbought, and both must sit between 0 and 100");
   }
@@ -118,6 +134,12 @@ export function validateSettings(input, env) {
   }
   if (settings.divMaxBars < settings.divMinBars) errors.push("Divergence max bars must be at least the minimum");
   if (!["A", "B", "C"].includes(settings.divergenceStyle)) errors.push("Divergence style must be A, B, or C");
+  for (const key of ["nsPivotLeft4h", "nsPivotRight4h", "nsPivotLeft1d", "nsPivotRight1d", "nsPeakLookback4h", "nsPeakLookback1d"]) {
+    if (!Number.isInteger(settings[key]) || settings[key] < 1) errors.push("Net-short pivot and lookback must be integers of at least 1");
+  }
+  if (!(Number(settings.nsPeakNear) > 0 && Number(settings.nsPeakNear) <= 1)) {
+    errors.push("Net-short peak near ratio must be above 0 and at most 1");
+  }
   return { ok: errors.length === 0, errors: [...new Set(errors)], settings };
 }
 

@@ -1,3 +1,4 @@
+import { COINS } from "../../shared/coins.js";
 import { DYNAMIC_TARGET_VERSION, PLAYBOOK_1, PLAYBOOKS, allowedRewardRisk, indicatorRows, keepStoredResult, playbookById, recordedFillDrift, resumeFrozenOpen, simulateMarket, simulatePlaybook, tradeExits } from "../../shared/playbook.js";
 
 const UPSERT = `
@@ -101,6 +102,40 @@ export function saveRewardRisk(db, { symbol, timeframe, playbookId = PLAYBOOK_1.
       reward_risk = excluded.reward_risk
   `).run(symbol, timeframe, playbookId, ratio);
   return ratio;
+}
+
+export function readOutcomeSamples(db) {
+  if (!db) return [];
+  const rows = db.prepare(`
+    SELECT coin_id AS coinId, symbol, timeframe, playbook_id AS playbookId, outcome,
+      signal_open_time AS signalOpenTime, payload
+    FROM playbook_trades
+  `).all();
+  const samples = [];
+  for (const row of rows) {
+    let payload = null;
+    try {
+      payload = row.payload ? JSON.parse(row.payload) : null;
+    } catch {
+      payload = null;
+    }
+    const book = playbookById(row.playbookId);
+    const direction = payload?.direction === "short" || book?.direction === "short" ? "short" : "long";
+    const coin = COINS.find((item) => item.id === row.coinId || item.symbol === row.symbol);
+    const coinId = row.coinId || coin?.id || null;
+    if (!coinId || !row.timeframe || !row.playbookId) continue;
+    samples.push({
+      coinId,
+      timeframe: row.timeframe,
+      direction,
+      setupType: row.playbookId,
+      outcome: row.outcome,
+      signalOpenTime: Number(row.signalOpenTime),
+      dataStatus: payload?.dataStatus || null,
+      ambiguous: payload?.ambiguous === true || payload?.fillAmbiguous === true || payload?.ambiguousFill === true,
+    });
+  }
+  return samples;
 }
 
 export function readPlaybookHistory(db, symbol, timeframe, playbookId) {
@@ -358,8 +393,10 @@ export function syncPlaybookRows(db, meta, rows) {
   });
   persistTrades(db, setups, { ...meta, playbook });
   const openSetup = setups.find((setup) => setup.outcome === "open") || null;
+  const waitingSetup = setups.find((setup) => setup.outcome === "waiting") || null;
   return {
     open: openSetup ? presentPlaybookTrade(openSetup, { ...meta, playbook }) : null,
+    pending: waitingSetup ? presentPlaybookTrade(waitingSetup, { ...meta, playbook }) : null,
     history: readPlaybookHistory(db, meta.symbol, meta.timeframe, playbook.id),
     skipped: skipped || [],
     rewardRisk: preference,
@@ -370,11 +407,12 @@ export function syncPlaybookRows(db, meta, rows) {
 export function syncPlaybookTrades(db, options = {}) {
   const playbook = options.playbook || PLAYBOOK_1;
   const { symbol, timeframe } = options;
-  if (!symbol || !timeframe) return { open: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
+  if (!symbol || !timeframe) return { open: null, pending: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
   // Rows that fall out of the current candle window stay stored. History is not rebuilt from scratch.
   if (!playbook.enabledTimeframes.includes(timeframe)) {
     return {
       open: null,
+      pending: null,
       history: readPlaybookHistory(db, symbol, timeframe, playbook.id),
       skipped: [],
       rewardRisk: readRewardRisk(db, symbol, timeframe, playbook.id),
@@ -400,10 +438,10 @@ function comparisonMarket(rows, preference) {
 
 export function syncMarketTrades(db, options = {}) {
   const { symbol, timeframe } = options;
-  if (!symbol || !timeframe) return { open: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
+  if (!symbol || !timeframe) return { open: null, pending: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
   const enabled = PLAYBOOKS.filter((playbook) => playbook.enabledTimeframes.includes(timeframe));
   if (!enabled.length) {
-    return { open: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
+    return { open: null, pending: null, history: [], skipped: [], rewardRisk: 2, comparison: null };
   }
   const preference = options.rewardRisk == null
     ? readRewardRisk(db, symbol, timeframe, PLAYBOOK_1.id)
@@ -461,12 +499,15 @@ export function syncMarketTrades(db, options = {}) {
     persistTrades(db, mine, { ...options, playbook });
   }
   const openSetup = simulated.setups.find((setup) => setup.outcome === "open") || null;
+  const waitingSetup = simulated.setups.find((setup) => setup.outcome === "waiting") || null;
   const openBook = openSetup ? (playbookById(openSetup.playbookId) || PLAYBOOK_1) : PLAYBOOK_1;
+  const waitingBook = waitingSetup ? (playbookById(waitingSetup.playbookId) || PLAYBOOK_1) : PLAYBOOK_1;
   const history = enabled
     .flatMap((playbook) => readPlaybookHistory(db, symbol, timeframe, playbook.id))
     .sort((a, b) => Number(b.signalOpenTime) - Number(a.signalOpenTime));
   return {
     open: openSetup ? presentPlaybookTrade(openSetup, { ...options, playbook: openBook }) : null,
+    pending: waitingSetup ? presentPlaybookTrade(waitingSetup, { ...options, playbook: waitingBook }) : null,
     history,
     skipped: simulated.skipped || [],
     rewardRisk: preference,

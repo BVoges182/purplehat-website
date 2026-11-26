@@ -102,6 +102,93 @@ CREATE TABLE IF NOT EXISTS playbook_preferences (
   reward_risk REAL NOT NULL,
   PRIMARY KEY (symbol, timeframe, playbook_id)
 );
+CREATE TABLE IF NOT EXISTS funding_rates (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  funding_time INTEGER NOT NULL,
+  rate TEXT NOT NULL,
+  mark_price TEXT,
+  PRIMARY KEY (symbol, venue, funding_time)
+);
+CREATE TABLE IF NOT EXISTS funding_live (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  rate TEXT NOT NULL,
+  next_funding_time INTEGER NOT NULL,
+  mark_price TEXT,
+  fetched_at INTEGER NOT NULL,
+  PRIMARY KEY (symbol, venue)
+);
+CREATE TABLE IF NOT EXISTS venue_funding_live (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  status TEXT NOT NULL,
+  rate TEXT,
+  interval_hours REAL,
+  next_funding_time INTEGER,
+  fetched_at INTEGER NOT NULL,
+  PRIMARY KEY (symbol, venue)
+);
+CREATE TABLE IF NOT EXISTS venue_funding_rates (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  funding_time INTEGER NOT NULL,
+  rate TEXT NOT NULL,
+  interval_hours REAL,
+  PRIMARY KEY (symbol, venue, funding_time)
+);
+CREATE TABLE IF NOT EXISTS funding_venue_status (
+  venue TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  http_status INTEGER,
+  checked_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS futures_oi (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  time INTEGER NOT NULL,
+  oi_coin TEXT NOT NULL,
+  oi_usd TEXT,
+  PRIMARY KEY (symbol, venue, time)
+);
+CREATE TABLE IF NOT EXISTS futures_klines (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  interval TEXT NOT NULL,
+  open_time INTEGER NOT NULL,
+  open TEXT NOT NULL,
+  high TEXT NOT NULL,
+  low TEXT NOT NULL,
+  close TEXT NOT NULL,
+  volume TEXT NOT NULL,
+  taker_buy TEXT NOT NULL,
+  close_time INTEGER NOT NULL,
+  PRIMARY KEY (symbol, venue, interval, open_time)
+);
+CREATE TABLE IF NOT EXISTS net_positioning (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  interval TEXT NOT NULL,
+  open_time INTEGER NOT NULL,
+  d_oi TEXT NOT NULL,
+  taker_buy TEXT NOT NULL,
+  taker_sell TEXT NOT NULL,
+  d_nl TEXT NOT NULL,
+  d_ns TEXT NOT NULL,
+  method TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (symbol, venue, interval, open_time)
+);
+CREATE TABLE IF NOT EXISTS readout_markers (
+  symbol TEXT NOT NULL,
+  venue TEXT NOT NULL,
+  interval TEXT NOT NULL,
+  open_time INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (symbol, venue, interval, open_time, kind)
+);
 `;
 
 export function openDatabase(file) {
@@ -127,6 +214,9 @@ export function openDatabase(file) {
   }
   if (venueColumns.length && !venueColumns.some((column) => column.name === "tick_size")) {
     db.exec("ALTER TABLE market_sources ADD COLUMN tick_size TEXT");
+  }
+  if (venueColumns.length && !venueColumns.some((column) => column.name === "step_size")) {
+    db.exec("ALTER TABLE market_sources ADD COLUMN step_size TEXT");
   }
   const tradeColumns = db.prepare("PRAGMA table_info(playbook_trades)").all();
   if (tradeColumns.length && !tradeColumns.some((column) => column.name === "reward_risk")) {
@@ -243,8 +333,8 @@ export function readTicker(db, symbol) {
 
 export function saveVenue(db, symbol, venue, at = Date.now()) {
   db.prepare(`
-    INSERT INTO market_sources (symbol, provider, market, label, kind, decimals, tick_size, checked_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO market_sources (symbol, provider, market, label, kind, decimals, tick_size, step_size, checked_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(symbol) DO UPDATE SET
       provider = excluded.provider,
       market = excluded.market,
@@ -252,13 +342,14 @@ export function saveVenue(db, symbol, venue, at = Date.now()) {
       kind = excluded.kind,
       decimals = excluded.decimals,
       tick_size = excluded.tick_size,
+      step_size = COALESCE(excluded.step_size, market_sources.step_size),
       checked_at = excluded.checked_at
-  `).run(symbol, venue.provider, venue.market, venue.label, venue.kind || null, venue.decimals ?? null, venue.tickSize ?? null, at);
+  `).run(symbol, venue.provider, venue.market, venue.label, venue.kind || null, venue.decimals ?? null, venue.tickSize ?? null, venue.stepSize ?? null, at);
 }
 
 export function readVenue(db, symbol) {
   const row = db.prepare(`
-    SELECT provider, market, label, kind, decimals, tick_size AS tickSize, checked_at AS checkedAt
+    SELECT provider, market, label, kind, decimals, tick_size AS tickSize, step_size AS stepSize, checked_at AS checkedAt
     FROM market_sources WHERE symbol = ?
   `).get(symbol);
   return row || null;

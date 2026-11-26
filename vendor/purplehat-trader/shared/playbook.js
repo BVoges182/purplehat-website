@@ -1,3 +1,4 @@
+import { formatPrice } from "./coins.js";
 import { bollinger, chartTime, closedCandles, rsi } from "./indicators.js";
 import { envDefaults } from "./settings.js";
 import { divergencePairs } from "./signals.js";
@@ -74,11 +75,8 @@ export function playbookById(id) {
   return PLAYBOOKS.find((playbook) => playbook.id === id) || null;
 }
 
-export function formatSetupPrice(value) {
-  return Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+export function formatSetupPrice(value, decimals = 2) {
+  return formatPrice(value, decimals);
 }
 
 export function formatMove(entry, price) {
@@ -219,7 +217,7 @@ export function unrealizedR(state, price) {
 }
 
 function statusFor(outcome, tp1Hit) {
-  if (outcome === "waiting") return "Waiting";
+  if (outcome === "waiting") return "Awaiting entry";
   if (outcome === "open") return tp1Hit ? "TP1 hit — stop at BE" : "Open";
   if (outcome === "stopped") return "Stopped";
   if (outcome === "tp1-be") return "Stopped at BE";
@@ -941,7 +939,8 @@ function currentStop(trade) {
 }
 
 export function tradeStatus(trade) {
-  if (!trade || trade.outcome === "waiting") return null;
+  if (!trade) return null;
+  if (trade.outcome === "waiting") return "Awaiting entry";
   if (trade.outcome === "open") return stopMoved(trade) ? "TP1 hit — stop at break-even" : "Open";
   if (trade.outcome === "stopped") return "Stopped before TP1";
   if (trade.outcome === "tp1-be") return "TP1 then break-even stop";
@@ -970,7 +969,7 @@ export function tradeExits(trade) {
 }
 
 export function tradeDetails(trade) {
-  if (!trade || trade.outcome === "waiting" || !Number.isFinite(Number(trade.entry))) return null;
+  if (!trade || !Number.isFinite(Number(trade.entry))) return null;
   const moved = stopMoved(trade);
   return {
     entry: Number(trade.entry),
@@ -1079,11 +1078,12 @@ export function compactResultLabel(trade) {
   return [direction, ratioText, mark].filter(Boolean).join(" · ");
 }
 
-export function associateDivergence(marker, { open = null, history = [], skipped = [] } = {}) {
+export function associateDivergence(marker, { open = null, history = [], skipped = [], pending = null } = {}) {
   const time = Number(marker?.barOpenTime);
   if (!Number.isFinite(time)) return { trade: null, note: null };
   const trades = [];
   if (open) trades.push(open);
+  if (pending?.outcome === "waiting") trades.push(pending);
   for (const trade of history || []) {
     if (trade) trades.push(trade);
   }
@@ -1100,12 +1100,13 @@ export function divergenceSkipNote(skipped, time) {
 }
 
 function sceneRole(trade) {
-  if (!trade || trade.outcome === "waiting") return null;
+  if (!trade) return null;
+  if (trade.outcome === "waiting") return "awaiting";
   if (trade.outcome === "open") return "current";
   return "history";
 }
 
-export function levelScene({ pinned = false, hover = null, selected = null, openTrade = null, history = [] } = {}) {
+export function levelScene({ pinned = false, hover = null, selected = null, openTrade = null, pending = null, history = [] } = {}) {
   if (pinned) {
     const trades = [];
     const seen = new Set();
@@ -1123,6 +1124,7 @@ export function levelScene({ pinned = false, hover = null, selected = null, open
       });
     }
     if (sceneRole(openTrade) === "current") trades.push({ ...openTrade, role: "current" });
+    if (sceneRole(pending) === "awaiting") trades.push({ ...pending, role: "awaiting" });
     return { trades };
   }
   const trade = hover || selected || null;

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dest = path.join(root, "release", "purplehat-combined");
 const pin = JSON.parse(fs.readFileSync(path.join(root, "trader.pin.json"), "utf8"));
-if (pin.commit !== "603b207ffa18cc151701bd79659967bff9779584") {
+if (pin.commit !== "4293cb59e50f1dedc9ac9f835538382267d13101") {
   console.error("trader.pin.json is not the prepared Trader commit.");
   process.exit(1);
 }
