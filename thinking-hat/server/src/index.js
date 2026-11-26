@@ -73,6 +73,15 @@ import {
 } from "./managementReports.js";
 import { parseManagementWorkbook } from "./parseManagementWorkbook.js";
 import { viewerCanReadAnnual } from "./annualWorkbook.js";
+import { budgetPack, cashMonthPack, cashWeekPack, isPlanningClient, variancePack } from "./planning.js";
+import { approveCommentary, commentaryRecord, saveCommentary } from "./planningStore.js";
+import {
+  PLANNING_FILES,
+  buildBudgetWorkbook,
+  buildMonthWorkbook,
+  buildVarianceWorkbook,
+  buildWeekWorkbook,
+} from "./planningWorkbook.js";
 import {
   annualFile,
   latestPublished,
@@ -2187,6 +2196,109 @@ app.get("/api/me/annual-statements/:year/xlsx", requireAuth, (req, res) => {
     return;
   }
   sendAnnual(res, statement, "xlsx", file.buffer, file.name || "statements.xlsx");
+});
+
+function planningGate(req, res) {
+  if (!isPlanningClient(req.user)) {
+    res.status(404).json({ error: "Not found." });
+    return false;
+  }
+  return true;
+}
+
+function sendPlanningXlsx(res, buffer, filename) {
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-Length", buffer.length);
+  res.send(buffer);
+}
+
+app.get("/api/me/planning/status", requireAuth, (req, res) => {
+  res.json({ available: isPlanningClient(req.user) });
+});
+
+app.get("/api/me/planning/budgets/2027", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  res.json(budgetPack());
+});
+
+app.get("/api/me/planning/budget-vs-actual/2026-12", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  res.json(variancePack());
+});
+
+app.get("/api/me/planning/cash/13-week", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  const scenario = String(req.query.scenario || "base");
+  if (!["base", "downside", "upside"].includes(scenario)) {
+    res.status(400).json({ error: "Choose base, downside, or upside." });
+    return;
+  }
+  res.json(cashWeekPack("purple-hat-demo", scenario));
+});
+
+app.get("/api/me/planning/cash/monthly/2027", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  res.json(cashMonthPack());
+});
+
+app.get("/api/me/planning/commentary/2026-12", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  res.json(commentaryRecord(req.user.id, "2026-12"));
+});
+
+app.put("/api/me/planning/commentary/2026-12", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    res.json(saveCommentary(req.user.id, "2026-12", req.body || {}));
+  } catch (error) {
+    res.status(error.status || 400).json({ error: error.message || "Could not save the commentary." });
+  }
+});
+
+app.post("/api/me/planning/commentary/2026-12/approve", requireAuth, (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    res.json(approveCommentary(req.user.id, "2026-12"));
+  } catch (error) {
+    res.status(error.status || 400).json({ error: error.message || "Could not approve the commentary." });
+  }
+});
+
+app.get("/api/me/planning/budgets/2027/xlsx", requireAuth, async (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    sendPlanningXlsx(res, await buildBudgetWorkbook(), PLANNING_FILES.budget);
+  } catch {
+    res.status(500).json({ error: "Could not build the workbook." });
+  }
+});
+
+app.get("/api/me/planning/budget-vs-actual/2026-12/xlsx", requireAuth, async (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    sendPlanningXlsx(res, await buildVarianceWorkbook(), PLANNING_FILES.variance);
+  } catch {
+    res.status(500).json({ error: "Could not build the workbook." });
+  }
+});
+
+app.get("/api/me/planning/cash/13-week/xlsx", requireAuth, async (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    sendPlanningXlsx(res, await buildWeekWorkbook(), PLANNING_FILES.week);
+  } catch {
+    res.status(500).json({ error: "Could not build the workbook." });
+  }
+});
+
+app.get("/api/me/planning/cash/monthly/2027/xlsx", requireAuth, async (req, res) => {
+  if (!planningGate(req, res)) return;
+  try {
+    sendPlanningXlsx(res, await buildMonthWorkbook(), PLANNING_FILES.month);
+  } catch {
+    res.status(500).json({ error: "Could not build the workbook." });
+  }
 });
 
 app.get("/api/admin/users/:id/annual-statements/:year", requireAuth, requireAdmin, (req, res) => {

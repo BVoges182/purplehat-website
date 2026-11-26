@@ -347,6 +347,19 @@ CREATE TABLE IF NOT EXISTS app_flags (
   value TEXT NOT NULL
 );
 `);
+db.exec(`
+CREATE TABLE IF NOT EXISTS planning_commentary (
+  user_id INTEGER NOT NULL,
+  period TEXT NOT NULL,
+  paragraphs_json TEXT NOT NULL,
+  line_reasons_json TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('draft', 'approved')),
+  approved_at TEXT,
+  updated_at TEXT NOT NULL,
+  UNIQUE (user_id, period),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+`);
 const assignDemoTemplate = db.prepare(
   "UPDATE users SET report_template = 'purple-hat-demo' WHERE id = ? AND report_template = 'wealth-tech'",
 );
