@@ -1,0 +1,520 @@
+{
+  "entity": "Purple Hat Demo LLC",
+  "currency": "USD",
+  "schemaVersion": 1,
+  "demoOnly": true,
+  "type": "cash13week",
+  "method": "direct",
+  "weekStarts": [
+    "2027-01-04",
+    "2027-01-11",
+    "2027-01-18",
+    "2027-01-25",
+    "2027-02-01",
+    "2027-02-08",
+    "2027-02-15",
+    "2027-02-22",
+    "2027-03-01",
+    "2027-03-08",
+    "2027-03-15",
+    "2027-03-22",
+    "2027-03-29"
+  ],
+  "openingDate": "2026-12-31",
+  "openingCash": 71970,
+  "openingCashSource": "REAL: 31 Dec 2026 bank balance",
+  "minimumCash": 50000,
+  "arAgingOpening": {
+    "source": "REAL: 31 Dec 2026 aged receivables",
+    "rows": {
+      "Northwind Buyers": {
+        "current": 4200,
+        "30": 800,
+        "60": 0,
+        "90": 0,
+        "total": 5000
+      },
+      "Harbour & Co": {
+        "current": 2600,
+        "30": 400,
+        "60": 0,
+        "90": 0,
+        "total": 3000
+      },
+      "Lumen Retail": {
+        "current": 1800,
+        "30": 300,
+        "60": 200,
+        "90": 0,
+        "total": 2300
+      },
+      "Maple Street Shop": {
+        "current": 1100,
+        "30": 0,
+        "60": 0,
+        "90": 0,
+        "total": 1100
+      },
+      "Kite & Parcel": {
+        "current": 900,
+        "30": 200,
+        "60": 0,
+        "90": 0,
+        "total": 1100
+      }
+    },
+    "total": 12500
+  },
+  "apAgingOpening": {
+    "source": "REAL: 31 Dec 2026 aged payables",
+    "rows": {
+      "Summit Supplies": {
+        "current": 3100,
+        "30": 600,
+        "60": 0,
+        "90": 0,
+        "total": 3700
+      },
+      "Bright Courier": {
+        "current": 1800,
+        "30": 200,
+        "60": 0,
+        "90": 0,
+        "total": 2000
+      },
+      "Packright Ltd": {
+        "current": 700,
+        "30": 100,
+        "60": 0,
+        "90": 0,
+        "total": 800
+      },
+      "Adstream Media": {
+        "current": 900,
+        "30": 200,
+        "60": 0,
+        "90": 0,
+        "total": 1100
+      },
+      "Stripe Fees": {
+        "current": 600,
+        "30": 200,
+        "60": 0,
+        "90": 0,
+        "total": 800
+      }
+    },
+    "total": 8400
+  },
+  "lines": [
+    {
+      "key": "card",
+      "label": "Card sales (Stripe payouts)",
+      "direction": "receipt",
+      "weekly": [
+        9940,
+        9940,
+        9940,
+        9940,
+        10340,
+        10340,
+        10340,
+        10340,
+        10330,
+        10330,
+        10330,
+        10330,
+        10270
+      ]
+    },
+    {
+      "key": "wholesale_ar",
+      "label": "Wholesale: Dec receivables",
+      "direction": "receipt",
+      "weekly": [
+        2610,
+        3860,
+        3180,
+        2650,
+        0,
+        200,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "wholesale_new",
+      "label": "Wholesale: new invoices",
+      "direction": "receipt",
+      "weekly": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1350,
+        1350,
+        1350,
+        1350,
+        1410,
+        1410,
+        1410,
+        1410
+      ]
+    },
+    {
+      "key": "ap_old",
+      "label": "Dec payables (aged)",
+      "direction": "payment",
+      "weekly": [
+        4850,
+        2130,
+        1420,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "summit",
+      "label": "Summit Supplies spring restock",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        15600,
+        0,
+        0,
+        0,
+        36400,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "loom",
+      "label": "Loom Wholesale",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        6000,
+        0,
+        0,
+        0,
+        0,
+        6000,
+        0,
+        0,
+        0,
+        6000,
+        0
+      ]
+    },
+    {
+      "key": "courier_pack",
+      "label": "Bright Courier + Packright",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        1920,
+        1920,
+        1920,
+        1920,
+        2000,
+        2000,
+        2000,
+        2000,
+        2000,
+        2000,
+        2000
+      ]
+    },
+    {
+      "key": "marketing",
+      "label": "Adstream Media (ads)",
+      "direction": "payment",
+      "weekly": [
+        0,
+        5000,
+        0,
+        0,
+        0,
+        0,
+        4700,
+        0,
+        0,
+        0,
+        5200,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "payroll",
+      "label": "Harbour Wages payroll",
+      "direction": "payment",
+      "weekly": [
+        0,
+        4900,
+        0,
+        4900,
+        0,
+        0,
+        4900,
+        4900,
+        0,
+        0,
+        4900,
+        0,
+        4900
+      ]
+    },
+    {
+      "key": "rent",
+      "label": "Warehouse rent",
+      "direction": "payment",
+      "weekly": [
+        2200,
+        0,
+        0,
+        0,
+        2200,
+        0,
+        0,
+        0,
+        2200,
+        0,
+        0,
+        0,
+        2200
+      ]
+    },
+    {
+      "key": "software",
+      "label": "Software",
+      "direction": "payment",
+      "weekly": [
+        990,
+        0,
+        0,
+        0,
+        990,
+        0,
+        0,
+        0,
+        990,
+        0,
+        0,
+        0,
+        990
+      ]
+    },
+    {
+      "key": "salestax",
+      "label": "NC sales tax",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        1800,
+        0,
+        0,
+        0,
+        1800,
+        0,
+        0,
+        0,
+        1800,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "insurance",
+      "label": "Insurance",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        450,
+        0,
+        0
+      ]
+    },
+    {
+      "key": "office",
+      "label": "Office",
+      "direction": "payment",
+      "weekly": [
+        450,
+        0,
+        0,
+        0,
+        450,
+        0,
+        0,
+        0,
+        450,
+        0,
+        0,
+        0,
+        450
+      ]
+    },
+    {
+      "key": "drawings",
+      "label": "Member drawings",
+      "direction": "payment",
+      "weekly": [
+        0,
+        0,
+        0,
+        1500,
+        0,
+        0,
+        0,
+        1500,
+        0,
+        0,
+        0,
+        0,
+        1500
+      ]
+    }
+  ],
+  "scenarios": {
+    "base": {
+      "label": "Base",
+      "cardSalesFactor": 1.0,
+      "restockFactor": 1.0,
+      "closing": [
+        76030,
+        77800,
+        79780,
+        84050,
+        88830,
+        83200,
+        81490,
+        78780,
+        84820,
+        58160,
+        55550,
+        59290,
+        58930
+      ]
+    },
+    "downside": {
+      "label": "Downside",
+      "cardSalesFactor": 0.9,
+      "restockFactor": 1.1,
+      "closing": [
+        75036,
+        75812,
+        76798,
+        80074,
+        83820,
+        75596,
+        72852,
+        69108,
+        74115,
+        42782,
+        39139,
+        41846,
+        40459
+      ]
+    },
+    "upside": {
+      "label": "Upside",
+      "cardSalesFactor": 1.05,
+      "restockFactor": 1.0,
+      "closing": [
+        76527,
+        78794,
+        81271,
+        86038,
+        91335,
+        86222,
+        85029,
+        82836,
+        89392,
+        63249,
+        61156,
+        65412,
+        65566
+      ]
+    }
+  },
+  "assumptions": [
+    "Stripe payouts = 88% of budgeted net revenue, paid weekly (7/days-in-month share).",
+    "Wholesale (12% of revenue) collected ~35 days after sale.",
+    "Dec receivables: 30-day bucket wk1-2, current bucket wk1-4 (15/30/30/25%), Lumen Retail 60-day $200 assumed wk6.",
+    "Dec payables: 30-day + 50% of current wk1, 30% wk2, 20% wk3.",
+    "Summit Supplies spring restock $52,000: 30% deposit wk6, 70% on shipment wk10.",
+    "Loom Wholesale $6,000 in wk3, wk8, wk12.",
+    "Bright Courier + Packright 17% of revenue, paid weekly two weeks in arrears.",
+    "Adstream Media 10% of month revenue, paid mid-month.",
+    "Payroll $9,800/month paid on 15th and last day.",
+    "Rent $2,200 and software $990 and office $450 on the 1st; NC sales tax $1,800 by the 20th; insurance $450 mid-March; drawings $1,500 month end."
+  ],
+  "accuracyLastCycle": {
+    "label": "Dec 2026 week-4 forecast vs actual closing",
+    "pct": 97.8,
+    "illustrative": true
+  },
+  "risks": [
+    {
+      "tone": "red",
+      "title": "Summit restock: $36,400 due wk 10",
+      "detail": "Balance on shipment cuts headroom to about $5.5k; downside breaches the $50k minimum."
+    },
+    {
+      "tone": "amber",
+      "title": "Lumen Retail $200 at 60+ days",
+      "detail": "Assumed paid wk 6. Chase and put the account on hold if unpaid."
+    },
+    {
+      "tone": "amber",
+      "title": "Tariffs on Indian bed linen (HTS 6302)",
+      "detail": "A 10% duty rise adds about $5,200 to the restock."
+    }
+  ],
+  "opportunities": [
+    {
+      "tone": "green",
+      "title": "Ask Summit for 60-day terms",
+      "detail": "Moves $36,400 out of the window; low point rises to about $92k."
+    },
+    {
+      "tone": "green",
+      "title": "Collect Northwind and Harbour & Co overdue $1,200",
+      "detail": "Collect in wk 1 to bring receipts forward."
+    }
+  ],
+  "source": "Illustrative forecast on real 31 Dec 2026 opening balances."
+}
